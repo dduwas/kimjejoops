@@ -18,15 +18,13 @@ html,body{margin:0;padding:0}
 body{
   font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   color:var(--ink); background:var(--bg);
-  -webkit-font-smoothing:antialiased;
-  font-feature-settings:"tnum";
+  -webkit-font-smoothing:antialiased; font-feature-settings:"tnum";
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
 a{color:var(--blue)}
 .hide{display:none !important}
 
-/* ---------- 공통 폼 ---------- */
 .field{margin-bottom:14px}
 .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--muted);margin-bottom:5px}
 .field input,.field select,.field textarea{
@@ -36,10 +34,7 @@ a{color:var(--blue)}
 .field input:focus,.field select:focus,.field textarea:focus{
   outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)
 }
-.btn{
-  padding:11px 18px;border-radius:8px;border:1px solid var(--navy);
-  background:var(--navy);color:#fff;font-weight:600;
-}
+.btn{padding:11px 18px;border-radius:8px;border:1px solid var(--navy);background:var(--navy);color:#fff;font-weight:600}
 .btn:hover{background:var(--navy-2)}
 .btn.ghost{background:#fff;color:var(--navy);border-color:var(--line)}
 .btn.ghost:hover{background:var(--wash)}
@@ -50,7 +45,6 @@ a{color:var(--blue)}
 .msg.err{background:var(--warn-bg);color:var(--warn);border:1px solid #F0C9B4}
 .msg.ok{background:var(--blue-50);color:var(--navy);border:1px solid var(--blue-100)}
 
-/* ---------- 로그인 화면 ---------- */
 #screen-auth{min-height:100vh;display:grid;place-items:center;background:var(--wash);padding:28px 18px}
 .auth-card{width:100%;max-width:420px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:34px 30px}
 .brand{margin-bottom:26px}
@@ -61,19 +55,17 @@ a{color:var(--blue)}
 .tabs button{flex:1;padding:9px;border:0;background:transparent;border-radius:7px;font-weight:600;font-size:14px;color:var(--muted)}
 .tabs button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(11,42,91,.12)}
 
-/* ---------- 승인 대기 ---------- */
 #screen-pending{min-height:100vh;display:grid;place-items:center;background:var(--wash);padding:28px 18px}
 .pending-card{max-width:460px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:36px 32px;text-align:center}
 .pending-card .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);display:inline-block;margin-right:7px;animation:pulse 1.8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.pending-card .dot{animation:none}}
 
-/* ---------- 앱 헤더 ---------- */
 header{background:var(--navy);color:#fff;padding:0 20px}
 .hrow{display:flex;align-items:center;gap:18px;height:56px}
 .hbrand{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
 .hbrand span{color:var(--blue-100);font-weight:500}
-nav{display:flex;gap:3px;margin-left:6px}
+nav{display:flex;gap:3px;margin-left:6px;flex-wrap:wrap}
 nav button{background:transparent;border:0;color:#A9C4EA;padding:7px 13px;border-radius:7px;font-weight:600;font-size:14px}
 nav button.on{background:var(--navy-3);color:#fff}
 nav button:hover{color:#fff}
@@ -82,12 +74,18 @@ nav button:hover{color:#fff}
 .linkbtn{background:transparent;border:0;color:#A9C4EA;text-decoration:underline;font-size:13px;padding:0}
 .linkbtn:hover{color:#fff}
 
-.toolbar{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+/* 도구 막대 — 내 담당 / 채널 분리 */
+.toolbar{display:flex;align-items:center;gap:10px;padding:13px 20px 0;flex-wrap:wrap}
+.toolbar.second{padding:11px 20px 13px;border-bottom:1px solid var(--line)}
+.filterlabel{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--muted);margin-right:2px}
+.sep{width:1px;height:20px;background:var(--line);margin:0 4px}
 .chip{padding:6px 12px;border:1px solid var(--line);border-radius:99px;background:#fff;font-size:13px;font-weight:600;color:var(--muted)}
+.chip:hover{border-color:var(--blue)}
 .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.chip.ch.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.reset{border-style:dashed}
 .count{margin-left:auto;font-size:13px;color:var(--muted)}
 
-/* ---------- 생산 라인 (칸반) ---------- */
 .line{display:flex;gap:12px;padding:18px 20px 40px;overflow-x:auto;align-items:flex-start}
 .col{flex:0 0 250px;min-height:120px}
 .colhead{display:flex;align-items:baseline;gap:8px;padding:0 3px 9px;border-bottom:2px solid var(--navy);margin-bottom:11px}
@@ -96,20 +94,13 @@ nav button:hover{color:#fff}
 .colcount{margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .col.drop{background:var(--blue-50);border-radius:var(--r)}
 
-.card{
-  background:#fff;border:1px solid var(--line);border-left:3px solid var(--blue-100);
+.card{background:#fff;border:1px solid var(--line);border-left:3px solid var(--line);
   border-radius:var(--r);padding:12px 13px;margin-bottom:9px;cursor:pointer;
-  transition:border-color .12s, box-shadow .12s;
-}
-.card:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(11,42,91,.09)}
-.card.moat-a{border-left-color:var(--blue)}
-.card.moat-b{border-left-color:#7C4DBE}
-.card.moat-none{border-left-color:#E2A08A}
+  transition:border-color .12s, box-shadow .12s}
+.card:hover{box-shadow:0 2px 10px rgba(11,42,91,.09)}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
 .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--wash);color:var(--muted)}
-.badge.b-a{background:var(--blue-50);color:var(--navy-2)}
-.badge.b-b{background:#F1EAFB;color:#5B2E96}
 .badge.b-none{background:var(--warn-bg);color:var(--warn)}
 .badge.b-cta{background:#fff;border:1px dashed var(--line);color:var(--muted)}
 .card .next{font-size:12px;color:var(--muted);line-height:1.5}
@@ -118,10 +109,19 @@ nav button:hover{color:#fff}
 .pip{width:100%;height:3px;border-radius:2px;background:var(--line)}
 .pip.on{background:var(--blue)}
 .pip.final.on{background:var(--navy)}
-
+.cardbtn{margin-top:9px;width:100%;padding:7px;border-radius:7px;border:1px solid var(--navy);
+  background:var(--navy);color:#fff;font-size:12px;font-weight:700;letter-spacing:.01em}
+.cardbtn:hover{background:var(--navy-2)}
+.cardbtn.off{background:#fff;color:var(--muted);border-color:var(--line);border-style:dashed;cursor:not-allowed}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
+.stat{border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;background:#fff}
+.stat-k{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+.stat-v{font-size:24px;font-weight:800;color:var(--navy);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat-s{font-size:11.5px;color:var(--muted);margin-top:5px;min-height:14px}
+.barwrap{background:var(--wash);border-radius:3px;height:7px;overflow:hidden}
+.bar{background:var(--blue);height:100%;border-radius:3px}
 .empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7}
 
-/* ---------- 카드 상세 ---------- */
 .scrim{position:fixed;inset:0;background:rgba(8,32,74,.42);display:flex;justify-content:flex-end;z-index:50}
 .drawer{width:min(560px,100%);background:#fff;height:100%;overflow-y:auto;padding:26px 28px 60px}
 .drawer h2{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
@@ -139,7 +139,6 @@ nav button:hover{color:#fff}
 .drawer-actions{display:flex;gap:9px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
 .note{font-size:12px;color:var(--muted);line-height:1.65;margin-top:9px}
 
-/* ---------- 표 ---------- */
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{text-align:left;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
 td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -151,7 +150,9 @@ tr:hover td{background:var(--wash)}
 .wrap{padding:20px}
 .wrap h3{margin:0 0 4px;font-size:17px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
 .wrap p.lede{margin:0 0 20px;font-size:13px;color:var(--muted);line-height:1.65}
-select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff}
+select.mini,input.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff}
+input[type=color].mini{padding:2px;width:44px;height:30px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 
 @media (max-width:720px){
   .grid2,.checks{grid-template-columns:1fr}
@@ -162,13 +163,12 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
 </head>
 <body>
 
-<!-- ============ 로그인 / 가입 ============ -->
 <div id="screen-auth">
   <div class="auth-card">
     <div class="brand">
       <div class="kicker">약공장 김제조</div>
       <h1>콘텐츠 운영 시스템</h1>
-      <p>승인된 담당자만 들어올 수 있습니다. 처음이면 가입 신청 후 대표 승인을 기다려 주세요.</p>
+      <p>승인된 담당자만 들어올 수 있습니다. 처음이면 가입 신청 후 관리자 승인을 기다려 주세요.</p>
     </div>
     <div class="tabs">
       <button id="tab-login" class="on">로그인</button>
@@ -196,17 +196,16 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
   </div>
 </div>
 
-<!-- ============ 승인 대기 ============ -->
 <div id="screen-pending" class="hide">
   <div class="pending-card">
     <div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--blue);margin-bottom:14px">
       <span class="dot"></span>승인 대기 중
     </div>
     <h2 style="margin:0 0 12px;font-size:20px;font-weight:800;color:var(--navy);letter-spacing:-.02em">
-      대표 승인을 기다리고 있습니다
+      관리자 승인을 기다리고 있습니다
     </h2>
     <p id="pending-text" style="margin:0 0 24px;font-size:14px;color:var(--muted);line-height:1.75">
-      가입 신청이 접수됐습니다. 대표가 승인하면 바로 들어올 수 있습니다.<br>
+      가입 신청이 접수됐습니다. 관리자가 승인하면 바로 들어올 수 있습니다.<br>
       승인 후 이 페이지를 새로고침해 주세요.
     </p>
     <button class="btn ghost" onclick="location.reload()">새로고침</button>
@@ -214,7 +213,6 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
   </div>
 </div>
 
-<!-- ============ 앱 ============ -->
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
@@ -223,7 +221,10 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="approve">승인 대기</button>
         <button data-view="schedule">게시 일정</button>
-        <button data-view="team" id="nav-team">팀 관리</button>
+        <button data-view="archive">게시완료</button>
+        <button data-view="analytics">성과분석</button>
+        <button data-view="team" class="admin-only">팀 관리</button>
+        <button data-view="settings" class="admin-only">설정</button>
       </nav>
       <div class="hright">
         <span><b id="me-name"></b> · <span id="me-role"></span></span>
@@ -232,36 +233,83 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
     </div>
   </header>
 
-  <!-- 보드 -->
   <section id="view-board">
     <div class="toolbar">
       <button class="btn sm" id="btn-new">+ 콘텐츠 추가</button>
-      <button class="chip" data-filter="mine">내 담당만</button>
-      <button class="chip" data-filter="noMoat">해자 미정만</button>
+      <div class="sep"></div>
+      <button class="chip" id="chip-mine">내 담당만</button>
       <span class="count" id="board-count"></span>
+    </div>
+    <div class="toolbar second">
+      <span class="filterlabel">채널</span>
+      <div id="channel-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      <button class="chip reset hide" id="chip-clear">채널 전체</button>
     </div>
     <div class="line" id="line"></div>
   </section>
 
-  <!-- 승인 대기 -->
   <section id="view-approve" class="hide wrap">
-    <h3>대표 승인 대기</h3>
+    <h3>승인 대기</h3>
     <p class="lede">검수·승인 단계에 있는 카드입니다. 네 칸이 모두 채워져야 게시완료로 넘어갑니다.</p>
     <div id="approve-list"></div>
   </section>
 
-  <!-- 게시 일정 -->
   <section id="view-schedule" class="hide wrap">
     <h3>게시 일정</h3>
     <p class="lede">게시예정일이 정해진 카드를 날짜순으로 봅니다. 오늘 이전인데 게시완료가 아니면 지연입니다.</p>
     <div id="schedule-list"></div>
   </section>
 
-  <!-- 팀 관리 -->
+  <section id="view-archive" class="hide wrap">
+    <h3>게시완료</h3>
+    <p class="lede">게시가 끝난 콘텐츠 보관함입니다. 성과를 여기서 입력하고 비교합니다.
+      잘못 넘긴 카드는 되돌리기로 생산 라인에 다시 올릴 수 있습니다.</p>
+    <div style="display:flex;gap:9px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <input id="ar-q" class="mini" style="min-width:220px;padding:8px 11px" placeholder="제목·핵심 메시지 검색">
+      <select id="ar-month" class="mini" style="padding:8px 11px"></select>
+      <span class="count" id="archive-count"></span>
+    </div>
+    <div id="archive-list"></div>
+  </section>
+
+  <section id="view-analytics" class="hide wrap">
+    <h3>성과분석</h3>
+    <p class="lede">게시완료된 콘텐츠의 숫자만 계산합니다. 저장률과 공유율을 1차 지표로 봅니다.
+      좋아요는 후행 지표라 넣지 않았습니다.</p>
+    <div style="display:flex;gap:9px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+      <span class="filterlabel">기간</span>
+      <button class="chip an-period on" data-days="0">전체</button>
+      <button class="chip an-period" data-days="30">최근 30일</button>
+      <button class="chip an-period" data-days="90">최근 90일</button>
+      <div class="sep"></div>
+      <span class="filterlabel">순위 기준</span>
+      <select id="an-metric" class="mini" style="padding:7px 10px">
+        <option value="saveRate">저장률</option>
+        <option value="shareRate">공유율</option>
+        <option value="views">조회수</option>
+        <option value="link_clicks">링크 클릭</option>
+      </select>
+    </div>
+    <div id="analytics-body"></div>
+  </section>
+
   <section id="view-team" class="hide wrap">
     <h3>팀 관리</h3>
-    <p class="lede">가입 신청은 여기로 들어옵니다. 승인하기 전에는 어떤 데이터도 보이지 않습니다.</p>
+    <p class="lede">가입 신청은 여기로 들어옵니다. 승인하기 전에는 어떤 데이터도 보이지 않습니다.
+      부관리자는 관리자와 같은 기능을 모두 씁니다.</p>
     <div id="team-list"></div>
+  </section>
+
+  <section id="view-settings" class="hide wrap">
+    <h3>차별점 설정</h3>
+    <p class="lede">이 기획을 왜 우리가 해야 하는지를 정하는 칸입니다. 여기 없는 차별점은 콘텐츠 카드에서 고를 수 없습니다.
+      순서 숫자가 작을수록 위에 옵니다.</p>
+    <div id="moat-list"></div>
+
+    <h3 style="margin-top:38px">채널 설정</h3>
+    <p class="lede">콘텐츠 카드와 생산 라인 필터에 쓰이는 채널 목록입니다.
+      순서 숫자가 작을수록 앞에 옵니다.</p>
+    <div id="channel-list"></div>
   </section>
 </div>
 
@@ -272,9 +320,10 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 const STAGES = ['아이디어','자료조사','대본','촬영','편집','검수·승인','게시예정','게시완료'];
-const CHANNELS = ['유튜브 롱폼','유튜브 숏폼','인스타 릴스','인스타 카루셀','인스타 스토리','틱톡','샤오홍슈'];
+const BOARD_STAGES = STAGES.slice(0, 7);   // 게시완료는 아카이브 탭으로 분리
+const DONE = '게시완료';
 const ROLES = {
-  master:'마스터(대표)', lead:'콘텐츠 총괄', company:'회사 담당자',
+  master:'마스터(대표)', admin:'부관리자', lead:'콘텐츠 총괄', company:'회사 담당자',
   academic:'학술 담당자', pd:'PD·편집', publisher:'게시 담당', partner:'외부 파트너'
 };
 const STATUS_KO = { pending:'승인 대기', approved:'활동중', rejected:'거절', suspended:'중지' };
@@ -286,14 +335,38 @@ const esc = s => (s ?? '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':
 if (!window.SUPABASE_URL || window.SUPABASE_URL.includes('여기에')) {
   document.body.innerHTML = '<div style="max-width:520px;margin:80px auto;padding:28px;font-family:sans-serif;line-height:1.7">'
     + '<h2 style="color:#0B2A5B">config.js 를 아직 안 채웠습니다</h2>'
-    + '<p>config.js 파일을 열어 Supabase 주소와 키를 붙여넣고 다시 올려주세요. 설치 가이드 2단계입니다.</p></div>';
+    + '<p>config.js 파일을 열어 Supabase 주소와 키를 붙여넣고 다시 올려주세요.</p></div>';
   throw new Error('config missing');
 }
 const sb = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
-let me = null, profile = null, cards = [], team = [], filters = new Set();
+let me = null, profile = null, cards = [], team = [], moats = [], channels = [];
+let onlyMine = false;
+let channelFilter = new Set();
+
+const isAdmin  = () => profile && (profile.role === 'master' || profile.role === 'admin');
+const isMaster = () => profile && profile.role === 'master';
 
 /* ---------------- 인증 ---------------- */
+const AUTH_HINTS = [
+  ['Invalid login credentials', '이메일 또는 비밀번호가 맞지 않습니다.'],
+  ['Email not confirmed', '이 계정이 아직 확인 처리되지 않았습니다. Supabase → Authentication → Users 에서 확인 처리하세요.'],
+  ['Email logins are disabled', 'Supabase 에서 이메일 로그인이 꺼져 있습니다. Authentication → Sign In / Providers → Email 을 켜세요.'],
+  ['Email signups are disabled', 'Supabase 에서 이메일 가입이 꺼져 있습니다. Allow new users to sign up 을 켜세요.'],
+  ['Signups not allowed', 'Supabase 에서 신규 가입이 꺼져 있습니다.'],
+  ['rate limit', 'Supabase 내장 메일 한도에 걸렸습니다. Confirm email 을 끄면 메일 없이 진행됩니다.'],
+  ['Password should be', '비밀번호가 너무 짧습니다. 8자 이상으로 다시 시도해 주세요.'],
+  ['User already registered', '이미 신청된 이메일입니다. 로그인 탭에서 로그인하세요.'],
+  ['Failed to fetch', '서버에 연결하지 못했습니다. config.js 의 Supabase 주소를 확인해 주세요.']
+];
+function authHint(msg){
+  const m = (msg || '').toString();
+  for (const [k, ko] of AUTH_HINTS)
+    if (m.toLowerCase().includes(k.toLowerCase())) return ko + '\n(원문: ' + m + ')';
+  return m;
+}
+function cleanErr(m){ return (m || '').replace(/^.*?:\s*/, '').trim() || m; }
+
 $('#tab-login').onclick = () => switchAuth(true);
 $('#tab-signup').onclick = () => switchAuth(false);
 function switchAuth(login){
@@ -303,44 +376,12 @@ function switchAuth(login){
   $('#form-signup').classList.toggle('hide', login);
   $('#auth-msg').innerHTML = '';
 }
-function authMsg(text, kind='err'){
-  $('#auth-msg').innerHTML = `<div class="msg ${kind}">${esc(text)}</div>`;
-}
-
-const AUTH_HINTS = [
-  ['Invalid login credentials',
-   '이메일 또는 비밀번호가 맞지 않습니다.'],
-  ['Email not confirmed',
-   '이 계정이 아직 확인 처리되지 않았습니다. Supabase → Authentication → Users 에서 해당 계정을 확인 처리하거나, Add user 로 다시 만들 때 Auto Confirm User 를 체크하세요.'],
-  ['Email logins are disabled',
-   'Supabase 에서 이메일 로그인이 꺼져 있습니다. Authentication → Sign In / Providers → Email 을 켜세요.'],
-  ['Email signups are disabled',
-   'Supabase 에서 이메일 가입이 꺼져 있습니다. Authentication → Sign In / Providers → Email 에서 Allow new users to sign up 을 켜세요.'],
-  ['Signups not allowed',
-   'Supabase 에서 신규 가입이 꺼져 있습니다. Authentication → Sign In / Providers 의 User Signups 를 켜세요.'],
-  ['rate limit',
-   'Supabase 내장 메일 발송 한도에 걸렸습니다. Authentication → Sign In / Providers → Email 에서 Confirm email 을 끄면 메일 없이 진행됩니다.'],
-  ['Password should be',
-   '비밀번호가 너무 짧습니다. 8자 이상으로 다시 시도해 주세요.'],
-  ['User already registered',
-   '이미 신청된 이메일입니다. 로그인 탭에서 로그인하시거나 대표에게 승인 상태를 확인하세요.'],
-  ['Failed to fetch',
-   '서버에 연결하지 못했습니다. config.js 의 Supabase 주소가 맞는지 확인해 주세요.']
-];
-
-function authHint(msg){
-  const m = (msg || '').toString();
-  for (const [key, ko] of AUTH_HINTS) {
-    if (m.toLowerCase().includes(key.toLowerCase())) return ko + '\n(원문: ' + m + ')';
-  }
-  return m;
-}
+function authMsg(t, kind='err'){ $('#auth-msg').innerHTML = `<div class="msg ${kind}">${esc(t)}</div>`; }
 
 $('#form-login').onsubmit = async e => {
   e.preventDefault();
   const { error } = await sb.auth.signInWithPassword({
-    email: $('#li-email').value.trim(), password: $('#li-pw').value
-  });
+    email: $('#li-email').value.trim(), password: $('#li-pw').value });
   if (error) return authMsg(authHint(error.message));
   boot();
 };
@@ -348,17 +389,13 @@ $('#form-login').onsubmit = async e => {
 $('#form-signup').onsubmit = async e => {
   e.preventDefault();
   const { error } = await sb.auth.signUp({
-    email: $('#su-email').value.trim(),
-    password: $('#su-pw').value,
+    email: $('#su-email').value.trim(), password: $('#su-pw').value,
     options: { data: {
-      name: $('#su-name').value.trim(),
-      company: $('#su-company').value.trim(),
-      role_title: $('#su-title').value.trim(),
-      apply_reason: $('#su-reason').value.trim()
-    }}
+      name: $('#su-name').value.trim(), company: $('#su-company').value.trim(),
+      role_title: $('#su-title').value.trim(), apply_reason: $('#su-reason').value.trim() }}
   });
   if (error) return authMsg(authHint(error.message));
-  authMsg('신청을 보냈습니다. 메일함에서 인증 링크를 눌러 확인한 뒤, 대표 승인을 기다려 주세요.', 'ok');
+  authMsg('신청을 보냈습니다. 관리자 승인을 기다려 주세요.', 'ok');
   $('#form-signup').reset();
 };
 
@@ -376,15 +413,14 @@ async function boot(){
   profile = data;
 
   if (!profile || profile.status !== 'approved') {
-    if (profile?.status === 'rejected' || profile?.status === 'suspended') {
-      $('#pending-text').innerHTML = '이 계정은 현재 접근이 중지된 상태입니다.<br>대표에게 문의해 주세요.';
-    }
+    if (profile?.status === 'rejected' || profile?.status === 'suspended')
+      $('#pending-text').innerHTML = '이 계정은 현재 접근이 중지된 상태입니다.<br>관리자에게 문의해 주세요.';
     return show('pending');
   }
 
   $('#me-name').textContent = profile.name || profile.email;
   $('#me-role').textContent = ROLES[profile.role] || profile.role;
-  $('#nav-team').classList.toggle('hide', profile.role !== 'master');
+  $$('.admin-only').forEach(el => el.classList.toggle('hide', !isAdmin()));
   show('app');
   await refresh();
 }
@@ -396,74 +432,117 @@ function show(which){
 }
 
 async function refresh(){
-  const [c, p] = await Promise.all([
+  const [c, p, m, ch] = await Promise.all([
     sb.from('contents').select('*').order('updated_at', { ascending:false }),
-    sb.from('profiles').select('*').order('created_at', { ascending:false })
+    sb.from('profiles').select('*').order('created_at', { ascending:false }),
+    sb.from('moats').select('*').order('sort_order', { ascending:true }),
+    sb.from('channels').select('*').order('sort_order', { ascending:true })
   ]);
-  cards = c.data || [];
-  team = p.data || [];
+  cards = c.data || []; team = p.data || []; moats = m.data || []; channels = ch.data || [];
   render();
 }
 
-/* ---------------- 화면 전환 ---------------- */
 $$('nav button').forEach(b => b.onclick = () => {
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','approve','schedule','team'].forEach(v =>
+  ['board','approve','schedule','archive','analytics','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
 
-$$('.chip').forEach(c => c.onclick = () => {
-  const f = c.dataset.filter;
-  filters.has(f) ? filters.delete(f) : filters.add(f);
-  c.classList.toggle('on', filters.has(f));
-  render();
-});
+/* ---------------- 필터 ---------------- */
+$('#chip-mine').onclick = () => {
+  onlyMine = !onlyMine;
+  $('#chip-mine').classList.toggle('on', onlyMine);
+  renderBoard();
+};
 
-/* ---------------- 렌더 ---------------- */
-function render(){ renderBoard(); renderApprove(); renderSchedule(); renderTeam(); }
+function buildChannelChips(){
+  const active = channels.filter(c => c.active);
+  // 사라진 채널이 필터에 남아 있으면 정리
+  [...channelFilter].forEach(l => { if (!active.some(c => c.label === l)) channelFilter.delete(l); });
+
+  $('#channel-chips').innerHTML = active.map(c =>
+    `<button class="chip ch ${channelFilter.has(c.label)?'on':''}" data-ch="${esc(c.label)}">${esc(c.label)}</button>`
+  ).join('') || '<span style="font-size:12.5px;color:var(--muted)">설정 탭에서 채널을 추가하세요</span>';
+
+  $$('#channel-chips .chip').forEach(b => b.onclick = () => {
+    const ch = b.dataset.ch;
+    channelFilter.has(ch) ? channelFilter.delete(ch) : channelFilter.add(ch);
+    b.classList.toggle('on', channelFilter.has(ch));
+    $('#chip-clear').classList.toggle('hide', channelFilter.size === 0);
+    renderBoard();
+  });
+  $('#chip-clear').classList.toggle('hide', channelFilter.size === 0);
+  $('#chip-clear').onclick = () => {
+    channelFilter.clear();
+    $$('#channel-chips .chip').forEach(b => b.classList.remove('on'));
+    $('#chip-clear').classList.add('hide');
+    renderBoard();
+  };
+}
 
 function visible(){
   return cards.filter(c => {
-    if (filters.has('mine') && c.owner_id !== me.id) return false;
-    if (filters.has('noMoat') && c.moat) return false;
+    if (c.stage === DONE) return false;
+    if (onlyMine && !(c.owner_ids || []).includes(me.id)) return false;
+    if (channelFilter.size) {
+      const list = c.channels || [];
+      if (!list.some(ch => channelFilter.has(ch))) return false;
+    }
     return true;
   });
 }
 
-function moatClass(m){ return m === 'A-공장' ? 'moat-a' : m === 'B-서울대기술지주' ? 'moat-b' : 'moat-none'; }
-function ownerName(id){ return team.find(t => t.id === id)?.name || '담당 미정'; }
+/* ---------------- 렌더 ---------------- */
+function render(){ buildChannelChips(); renderBoard(); renderApprove(); renderSchedule(); renderArchive(); renderAnalytics(); renderTeam(); renderSettings(); }
+
+const moatOf = label => moats.find(m => m.label === label);
+const nameOf = id => team.find(t => t.id === id)?.name || team.find(t => t.id === id)?.email || '알 수 없음';
+function ownerNames(ids){
+  const list = (ids || []).map(nameOf);
+  if (!list.length) return '담당 미정';
+  return list.length <= 2 ? list.join(', ') : `${list[0]} 외 ${list.length-1}명`;
+}
 
 function cardHTML(c){
+  const m = moatOf(c.moat);
+  const color = m ? m.color : '#E2A08A';
   const badges = [];
-  if (c.moat === 'A-공장') badges.push('<span class="badge b-a">공장</span>');
-  else if (c.moat === 'B-서울대기술지주') badges.push('<span class="badge b-b">기술지주</span>');
-  else badges.push('<span class="badge b-none">해자 미정</span>');
+  badges.push(m
+    ? `<span class="badge" style="background:${color}1F;color:${color}">${esc(m.label)}</span>`
+    : '<span class="badge b-none">차별점 미정</span>');
   (c.channels || []).slice(0,2).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
   if (c.cta_keyword) badges.push(`<span class="badge b-cta">CTA ${esc(c.cta_keyword)}</span>`);
 
-  return `<div class="card ${moatClass(c.moat)}" draggable="true" data-id="${c.id}">
+  const ready = c.chk_academic && c.chk_brand && c.chk_ad && c.chk_final;
+  const doneBtn = c.stage === '게시예정'
+    ? `<button class="cardbtn ${ready?'':'off'}" data-done="${c.id}">${ready ? '게시완료로 넘기기' : '승인 4개 필요'}</button>`
+    : '';
+
+  return `<div class="card" draggable="true" data-id="${c.id}" style="border-left-color:${color}">
     <h4>${esc(c.title)}</h4>
     <div class="badges">${badges.join('')}</div>
     ${c.next_action ? `<div class="next">${esc(c.next_action)}</div>` : ''}
-    <div class="meta">
-      <span>${esc(ownerName(c.owner_id))}</span>
-      ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}
-    </div>
+    <div class="meta"><span>${esc(ownerNames(c.owner_ids))}</span>
+      ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}</div>
     <div class="approvals">
       <div class="pip ${c.chk_academic?'on':''}"></div>
       <div class="pip ${c.chk_brand?'on':''}"></div>
       <div class="pip ${c.chk_ad?'on':''}"></div>
       <div class="pip final ${c.chk_final?'on':''}"></div>
-    </div>
-  </div>`;
+    </div>${doneBtn}</div>`;
 }
 
 function renderBoard(){
   const list = visible();
-  $('#board-count').textContent = `전체 ${cards.length}개 · 보이는 카드 ${list.length}개`;
-  $('#line').innerHTML = STAGES.map((s, i) => {
+  const live = cards.filter(c => c.stage !== DONE).length;
+  const bits = [`진행 중 ${live}개`];
+  if (onlyMine || channelFilter.size) bits.push(`보이는 카드 ${list.length}개`);
+  bits.push(`게시완료 ${cards.length - live}개`);
+  $('#board-count').textContent = bits.join(' · ');
+
+  $('#line').innerHTML = BOARD_STAGES.map((s, i) => {
     const items = list.filter(c => c.stage === s);
     return `<div class="col" data-stage="${esc(s)}">
       <div class="colhead">
@@ -474,21 +553,27 @@ function renderBoard(){
       ${items.map(cardHTML).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px 3px">비어 있음</div>'}
     </div>`;
   }).join('');
-  wireBoard();
-}
 
-function wireBoard(){
   $$('#line .card').forEach(el => {
     el.onclick = () => openCard(cards.find(c => c.id === el.dataset.id));
     el.ondragstart = e => e.dataTransfer.setData('text/plain', el.dataset.id);
   });
+
+  $$('#line [data-done]').forEach(b => b.onclick = async e => {
+    e.stopPropagation();
+    const c = cards.find(x => x.id === b.dataset.done);
+    if (!(c.chk_academic && c.chk_brand && c.chk_ad && c.chk_final))
+      return alert('학술검수·브랜드승인·광고심의·최종승인이 모두 끝나야 게시완료로 넘길 수 있습니다.');
+    if (!confirm(`"${c.title}" 을(를) 게시완료로 넘깁니다.\n게시완료 탭으로 이동하며, 거기서 되돌릴 수 있습니다.`)) return;
+    await moveStage(c.id, DONE);
+  });
+
   $$('#line .col').forEach(col => {
     col.ondragover = e => { e.preventDefault(); col.classList.add('drop'); };
     col.ondragleave = () => col.classList.remove('drop');
     col.ondrop = async e => {
       e.preventDefault(); col.classList.remove('drop');
-      const id = e.dataTransfer.getData('text/plain');
-      await moveStage(id, col.dataset.stage);
+      await moveStage(e.dataTransfer.getData('text/plain'), col.dataset.stage);
     };
   });
 }
@@ -501,18 +586,13 @@ async function moveStage(id, stage){
   await refresh();
 }
 
-function cleanErr(m){
-  const i = m.indexOf('.');
-  return m.replace(/^.*?:\s*/, '').trim() || m;
-}
-
 function renderApprove(){
   const rows = cards.filter(c => c.stage === '검수·승인')
     .sort((a,b) => (a.publish_date||'9999').localeCompare(b.publish_date||'9999'));
   $('#approve-list').innerHTML = rows.length ? `<table>
-    <tr><th>콘텐츠</th><th>학술</th><th>브랜드</th><th>광고심의</th><th>대표 최종</th><th>게시예정</th></tr>
+    <tr><th>콘텐츠</th><th>학술</th><th>브랜드</th><th>광고심의</th><th>최종</th><th>게시예정</th></tr>
     ${rows.map(c => `<tr data-id="${c.id}" style="cursor:pointer">
-      <td><b>${esc(c.title)}</b><br><span style="color:var(--muted);font-size:12px">${esc(ownerName(c.owner_id))}</span></td>
+      <td><b>${esc(c.title)}</b><br><span style="color:var(--muted);font-size:12px">${esc(ownerNames(c.owner_ids))}</span></td>
       <td>${c.chk_academic?'✓':'—'}</td><td>${c.chk_brand?'✓':'—'}</td>
       <td>${c.chk_ad?'✓':'—'}</td><td>${c.chk_final?'✓':'—'}</td>
       <td>${c.publish_date || '—'}</td></tr>`).join('')}
@@ -523,7 +603,8 @@ function renderApprove(){
 
 function renderSchedule(){
   const today = new Date().toISOString().slice(0,10);
-  const rows = cards.filter(c => c.publish_date).sort((a,b) => a.publish_date.localeCompare(b.publish_date));
+  const rows = cards.filter(c => c.publish_date && c.stage !== DONE)
+    .sort((a,b) => a.publish_date.localeCompare(b.publish_date));
   $('#schedule-list').innerHTML = rows.length ? `<table>
     <tr><th>게시예정일</th><th>콘텐츠</th><th>단계</th><th>채널</th><th>담당</th></tr>
     ${rows.map(c => {
@@ -533,34 +614,253 @@ function renderSchedule(){
           ${late ? '<span class="pill rejected" style="margin-left:6px">지연</span>' : ''}</td>
         <td><b>${esc(c.title)}</b></td><td>${esc(c.stage)}</td>
         <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
-        <td>${esc(ownerName(c.owner_id))}</td></tr>`;
+        <td>${esc(ownerNames(c.owner_ids))}</td></tr>`;
     }).join('')}
   </table>` : '<div class="empty">게시예정일이 입력된 카드가 없습니다.</div>';
   $$('#schedule-list tr[data-id]').forEach(tr =>
     tr.onclick = () => openCard(cards.find(c => c.id === tr.dataset.id)));
 }
 
+/* ---------------- 게시완료 아카이브 ---------------- */
+let archiveQuery = '', archiveMonth = '';
+
+function renderArchive(){
+  const all = cards.filter(c => c.stage === DONE);
+
+  // 월 선택지 구성
+  const months = [...new Set(all.map(c => (c.publish_date || '').slice(0,7)).filter(Boolean))].sort().reverse();
+  if (archiveMonth && !months.includes(archiveMonth)) archiveMonth = '';
+  $('#ar-month').innerHTML = `<option value="">전체 기간</option>`
+    + months.map(m => `<option value="${m}" ${archiveMonth===m?'selected':''}>${m.replace('-','년 ')}월</option>`).join('');
+
+  const q = archiveQuery.trim().toLowerCase();
+  const rows = all.filter(c => {
+    if (archiveMonth && (c.publish_date || '').slice(0,7) !== archiveMonth) return false;
+    if (q && !((c.title||'') + ' ' + (c.key_message||'')).toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b) => (b.publish_date || '0000').localeCompare(a.publish_date || '0000'));
+
+  $('#archive-count').textContent = `전체 ${all.length}개` + (rows.length !== all.length ? ` · 보이는 것 ${rows.length}개` : '');
+
+  $('#archive-list').innerHTML = rows.length ? `<table>
+    <tr><th>게시일</th><th>콘텐츠</th><th>채널</th><th>조회</th><th>저장</th><th>공유</th><th>링크클릭</th><th></th></tr>
+    ${rows.map(c => {
+      const m = moatOf(c.moat);
+      const color = m ? m.color : '#E2A08A';
+      const n = v => (v ?? null) === null ? '—' : Number(v).toLocaleString();
+      return `<tr>
+        <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${c.publish_date || '—'}</td>
+        <td data-open="${c.id}" style="cursor:pointer">
+          <b>${esc(c.title)}</b>
+          ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:12px">링크</a>` : ''}
+          <br><span style="font-size:12px;color:var(--muted)">
+            <span class="swatch" style="background:${color}"></span>${esc(c.moat || '차별점 미정')} · ${esc(ownerNames(c.owner_ids))}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
+        <td style="font-variant-numeric:tabular-nums">${n(c.views)}</td>
+        <td style="font-variant-numeric:tabular-nums">${n(c.saves)}</td>
+        <td style="font-variant-numeric:tabular-nums">${n(c.shares)}</td>
+        <td style="font-variant-numeric:tabular-nums">${n(c.link_clicks)}</td>
+        <td style="white-space:nowrap"><button class="btn sm ghost" data-undo="${c.id}">되돌리기</button></td>
+      </tr>`;
+    }).join('')}
+  </table>
+  <p class="note">되돌리기를 누르면 생산 라인의 게시예정 칸으로 돌아갑니다. 승인 표시와 입력한 성과는 그대로 남습니다.</p>`
+  : `<div class="empty">${all.length ? '조건에 맞는 콘텐츠가 없습니다.' : '아직 게시완료된 콘텐츠가 없습니다.<br>생산 라인의 게시예정 칸에서 게시완료로 넘기면 여기 쌓입니다.'}</div>`;
+
+  $$('#archive-list [data-open]').forEach(td =>
+    td.onclick = () => openCard(cards.find(c => c.id === td.dataset.open)));
+
+  $$('#archive-list [data-undo]').forEach(b => b.onclick = async () => {
+    const c = cards.find(x => x.id === b.dataset.undo);
+    if (!confirm(`"${c.title}" 을(를) 게시예정으로 되돌립니다.`)) return;
+    await moveStage(c.id, '게시예정');
+  });
+}
+
+$('#ar-q').oninput = e => { archiveQuery = e.target.value; renderArchive(); };
+$('#ar-month').onchange = e => { archiveMonth = e.target.value; renderArchive(); };
+
+/* ---------------- 성과분석 ---------------- */
+let anDays = 0, anMetric = 'saveRate';
+
+const num = v => (v === null || v === undefined || v === '') ? null : Number(v);
+const rate = (a, b) => (num(a) === null || !num(b)) ? null : num(a) / num(b);
+const fmtN = v => num(v) === null ? '—' : Number(v).toLocaleString();
+const fmtP = v => v === null ? '—' : (v * 100).toFixed(1) + '%';
+const avg = arr => arr.length ? arr.reduce((s,x) => s+x, 0) / arr.length : null;
+
+function metricOf(c, key){
+  if (key === 'saveRate')  return rate(c.saves, c.views);
+  if (key === 'shareRate') return rate(c.shares, c.views);
+  return num(c[key]);
+}
+const METRIC_KO = { saveRate:'저장률', shareRate:'공유율', views:'조회수', link_clicks:'링크 클릭' };
+
+function bar(v, max){
+  const w = (max && v) ? Math.max(2, Math.round(v / max * 100)) : 0;
+  return `<div class="barwrap"><div class="bar" style="width:${w}%"></div></div>`;
+}
+
+function renderAnalytics(){
+  let pool = cards.filter(c => c.stage === DONE);
+
+  if (anDays) {
+    const from = new Date(Date.now() - anDays * 864e5).toISOString().slice(0,10);
+    pool = pool.filter(c => (c.publish_date || '') >= from);
+  }
+
+  const scored = pool.filter(c => num(c.views) !== null);
+  const missing = pool.filter(c => num(c.views) === null);
+
+  if (!pool.length) {
+    $('#analytics-body').innerHTML = `<div class="empty">이 기간에 게시완료된 콘텐츠가 없습니다.</div>`;
+    return;
+  }
+
+  /* ---- 요약 ---- */
+  const summary = [
+    ['분석 대상',  `${scored.length}편`, missing.length ? `숫자 미입력 ${missing.length}편 제외` : '전부 입력 완료'],
+    ['평균 조회',  fmtN(Math.round(avg(scored.map(c => num(c.views))) || 0)), ''],
+    ['평균 저장률', fmtP(avg(scored.map(c => rate(c.saves, c.views)).filter(v => v !== null))), '저장 ÷ 조회'],
+    ['평균 공유율', fmtP(avg(scored.map(c => rate(c.shares, c.views)).filter(v => v !== null))), '공유 ÷ 조회'],
+    ['링크 클릭 합', fmtN(scored.reduce((s,c) => s + (num(c.link_clicks) || 0), 0)), '퍼널 유입량']
+  ];
+
+  /* ---- 그룹 비교 ---- */
+  function groupRows(getKeys){
+    const map = new Map();
+    scored.forEach(c => getKeys(c).forEach(k => {
+      if (!map.has(k)) map.set(k, []);
+      map.get(k).push(c);
+    }));
+    return [...map.entries()].map(([k, list]) => ({
+      key: k, n: list.length,
+      views: avg(list.map(c => num(c.views))),
+      saveRate: avg(list.map(c => rate(c.saves, c.views)).filter(v => v !== null)),
+      shareRate: avg(list.map(c => rate(c.shares, c.views)).filter(v => v !== null)),
+      clicks: list.reduce((s,c) => s + (num(c.link_clicks) || 0), 0)
+    })).sort((a,b) => (b.saveRate || 0) - (a.saveRate || 0));
+  }
+
+  const byChannel = groupRows(c => (c.channels || []).length ? c.channels : ['(채널 미지정)']);
+  const byMoat    = groupRows(c => [c.moat || '(차별점 미정)']);
+  const maxChSave = Math.max(...byChannel.map(r => r.saveRate || 0), 0.0001);
+  const maxMoSave = Math.max(...byMoat.map(r => r.saveRate || 0), 0.0001);
+
+  const groupTable = (rows, max, label) => `<table>
+    <tr><th>${label}</th><th>편수</th><th>평균 조회</th><th>저장률</th><th></th><th>공유율</th><th>링크클릭</th></tr>
+    ${rows.map(r => `<tr>
+      <td><b>${esc(r.key)}</b></td>
+      <td style="color:var(--muted)">${r.n}</td>
+      <td style="font-variant-numeric:tabular-nums">${fmtN(Math.round(r.views || 0))}</td>
+      <td style="font-variant-numeric:tabular-nums"><b>${fmtP(r.saveRate)}</b></td>
+      <td style="width:110px">${bar(r.saveRate, max)}</td>
+      <td style="font-variant-numeric:tabular-nums">${fmtP(r.shareRate)}</td>
+      <td style="font-variant-numeric:tabular-nums">${fmtN(r.clicks)}</td>
+    </tr>`).join('')}
+  </table>`;
+
+  /* ---- 순위 ---- */
+  const ranked = scored
+    .map(c => ({ c, v: metricOf(c, anMetric) }))
+    .filter(x => x.v !== null)
+    .sort((a,b) => b.v - a.v);
+  const isRate = anMetric === 'saveRate' || anMetric === 'shareRate';
+  const show = x => isRate ? fmtP(x.v) : fmtN(x.v);
+
+  const rankTable = (list, title, note) => `<table>
+    <tr><th>${title}</th><th>${esc(METRIC_KO[anMetric])}</th><th>조회</th><th>채널</th><th>CTA</th></tr>
+    ${list.map(x => `<tr data-open="${x.c.id}" style="cursor:pointer">
+      <td><b>${esc(x.c.title)}</b><br><span style="font-size:12px;color:var(--muted)">${esc(x.c.moat || '차별점 미정')} · ${x.c.publish_date || '게시일 미입력'}</span></td>
+      <td style="font-variant-numeric:tabular-nums"><b>${show(x)}</b></td>
+      <td style="font-variant-numeric:tabular-nums">${fmtN(x.c.views)}</td>
+      <td style="font-size:12px;color:var(--muted)">${esc((x.c.channels || []).join(', ') || '—')}</td>
+      <td style="font-size:12px;color:var(--muted)">${esc(x.c.cta_keyword || '—')}</td>
+    </tr>`).join('')}
+  </table>${note ? `<p class="note">${note}</p>` : ''}`;
+
+  /* ---- 자동 3줄 ---- */
+  const topCh = byChannel[0], topMo = byMoat[0];
+  const thin = scored.length < 5;
+  const readout = `
+    <div class="msg ok" style="margin-bottom:22px">
+      <b>무엇이 통했는가</b><br>
+      ① 저장률이 가장 높은 채널은 ${topCh ? `<b>${esc(topCh.key)}</b> (${fmtP(topCh.saveRate)}, ${topCh.n}편)` : '데이터 없음'}<br>
+      ② 저장률이 가장 높은 차별점은 ${topMo ? `<b>${esc(topMo.key)}</b> (${fmtP(topMo.saveRate)}, ${topMo.n}편)` : '데이터 없음'}<br>
+      ③ ${ranked[0] ? `${esc(METRIC_KO[anMetric])} 1위는 <b>${esc(ranked[0].c.title)}</b> (${show(ranked[0])})` : '순위를 낼 데이터가 없습니다'}
+      ${thin ? '<br><br>표본이 5편 미만입니다. 방향을 정하는 근거로 쓰기엔 이릅니다.' : ''}
+    </div>`;
+
+  /* ---- 미입력 알림 ---- */
+  const today = new Date().toISOString().slice(0,10);
+  const overdue = missing.filter(c => c.publish_date && c.publish_date <= new Date(Date.now() - 7*864e5).toISOString().slice(0,10));
+  const alertBox = overdue.length ? `<div class="msg err" style="margin-bottom:22px">
+      <b>숫자 입력이 밀린 콘텐츠 ${overdue.length}편</b> — 게시한 지 7일이 지났는데 조회수가 비어 있습니다.<br>
+      ${overdue.slice(0,5).map(c => esc(c.title)).join(' · ')}${overdue.length > 5 ? ` 외 ${overdue.length-5}편` : ''}
+    </div>` : '';
+
+  $('#analytics-body').innerHTML = `
+    ${alertBox}${readout}
+    <div class="stats">${summary.map(([k,v,s]) => `<div class="stat">
+      <div class="stat-k">${k}</div><div class="stat-v">${v}</div>
+      <div class="stat-s">${s}</div></div>`).join('')}</div>
+
+    <div class="sect" style="margin-top:30px">채널별</div>
+    ${groupTable(byChannel, maxChSave, '채널')}
+    <p class="note">한 콘텐츠에 채널이 여러 개면 각 채널에 모두 집계됩니다. 편수 합이 전체보다 클 수 있습니다.</p>
+
+    <div class="sect" style="margin-top:30px">차별점별</div>
+    ${groupTable(byMoat, maxMoSave, '차별점')}
+
+    <div class="sect" style="margin-top:30px">상위 5편</div>
+    ${ranked.length ? rankTable(ranked.slice(0,5), '콘텐츠', '') : '<div class="empty">순위를 낼 데이터가 없습니다.</div>'}
+
+    <div class="sect" style="margin-top:30px">하위 3편</div>
+    ${ranked.length > 3 ? rankTable(ranked.slice(-3).reverse(), '콘텐츠',
+      '왜 안 됐는지는 숫자가 알려주지 않습니다. 훅과 커버 문구를 상위 5편과 나란히 놓고 비교하세요.')
+      : '<div class="empty">비교할 만큼 쌓이지 않았습니다.</div>'}
+  `;
+
+  $$('#analytics-body [data-open]').forEach(tr =>
+    tr.onclick = () => openCard(cards.find(c => c.id === tr.dataset.open)));
+}
+
+$$('.an-period').forEach(b => b.onclick = () => {
+  $$('.an-period').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  anDays = Number(b.dataset.days);
+  renderAnalytics();
+});
+$('#an-metric').onchange = e => { anMetric = e.target.value; renderAnalytics(); };
+
+/* ---------------- 팀 관리 ---------------- */
 function renderTeam(){
-  if (profile?.role !== 'master') return;
+  if (!isAdmin()) return;
   const order = { pending:0, approved:1, suspended:2, rejected:3 };
-  const rows = [...team].sort((a,b) => (order[a.status]-order[b.status]) || a.created_at.localeCompare(b.created_at));
+  const rows = [...team].sort((a,b) =>
+    (order[a.status]-order[b.status]) || a.created_at.localeCompare(b.created_at));
+
   $('#team-list').innerHTML = `<table>
     <tr><th>이름</th><th>회사 · 직책</th><th>신청 사유</th><th>권한</th><th>상태</th><th></th></tr>
-    ${rows.map(t => `<tr>
+    ${rows.map(t => {
+      const locked = (t.role === 'master' && !isMaster()) || t.id === me.id;
+      return `<tr>
       <td><b>${esc(t.name || '(이름 없음)')}</b><br><span style="color:var(--muted);font-size:12px">${esc(t.email)}</span></td>
       <td>${esc(t.company || '—')}<br><span style="color:var(--muted);font-size:12px">${esc(t.role_title || '')}</span></td>
-      <td style="max-width:240px;font-size:12.5px;color:var(--muted)">${esc(t.apply_reason || '—')}</td>
-      <td><select class="mini" data-role="${t.id}">
-        ${Object.entries(ROLES).map(([k,v]) => `<option value="${k}" ${t.role===k?'selected':''}>${v}</option>`).join('')}
+      <td style="max-width:230px;font-size:12.5px;color:var(--muted)">${esc(t.apply_reason || '—')}</td>
+      <td><select class="mini" data-role="${t.id}" ${locked?'disabled':''}>
+        ${Object.entries(ROLES).filter(([k]) => k !== 'master' || isMaster())
+          .map(([k,v]) => `<option value="${k}" ${t.role===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
       <td><span class="pill ${t.status}">${STATUS_KO[t.status]}</span></td>
       <td style="white-space:nowrap">
-        ${t.status !== 'approved' ? `<button class="btn sm" data-approve="${t.id}">승인</button>` : ''}
-        ${t.status === 'approved' && t.id !== me.id ? `<button class="btn sm danger" data-suspend="${t.id}">중지</button>` : ''}
-        ${t.status === 'pending' ? `<button class="btn sm ghost" data-reject="${t.id}">거절</button>` : ''}
-      </td></tr>`).join('')}
+        ${(t.status !== 'approved' && !locked) ? `<button class="btn sm" data-approve="${t.id}">승인</button>` : ''}
+        ${(t.status === 'approved' && !locked) ? `<button class="btn sm danger" data-suspend="${t.id}">중지</button>` : ''}
+        ${(t.status === 'pending' && !locked) ? `<button class="btn sm ghost" data-reject="${t.id}">거절</button>` : ''}
+      </td></tr>`;
+    }).join('')}
   </table>
-  <p class="note">승인은 되돌릴 수 있습니다. 중지된 계정은 로그인은 되지만 데이터는 보이지 않습니다.</p>`;
+  <p class="note">부관리자는 관리자와 같은 기능을 모두 씁니다. 마스터 계정의 권한과 상태는 마스터 본인만 바꿀 수 있습니다.</p>`;
 
   $$('[data-approve]').forEach(b => b.onclick = () => setStatus(b.dataset.approve, 'approved'));
   $$('[data-suspend]').forEach(b => b.onclick = () => setStatus(b.dataset.suspend, 'suspended'));
@@ -578,48 +878,188 @@ async function setStatus(id, status){
   await refresh();
 }
 
+/* ---------------- 설정: 차별점 + 채널 ---------------- */
+function renderSettings(){ renderMoats(); renderChannels(); }
+
+function renderMoats(){
+  if (!isAdmin()) return;
+  const used = label => cards.filter(c => c.moat === label).length;
+
+  $('#moat-list').innerHTML = `<table>
+    <tr><th>순서</th><th>차별점 이름</th><th>색</th><th>사용 중</th><th>노출</th><th></th></tr>
+    ${moats.map(m => `<tr>
+      <td><input class="mini" type="number" style="width:60px" value="${m.sort_order}" data-order="${m.id}"></td>
+      <td><input class="mini" style="width:100%" value="${esc(m.label)}" data-label="${m.id}"></td>
+      <td><input class="mini" type="color" value="${esc(m.color)}" data-color="${m.id}"></td>
+      <td style="color:var(--muted)">${used(m.label)}개</td>
+      <td><input type="checkbox" ${m.active?'checked':''} data-active="${m.id}"></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" data-save="${m.id}">저장</button>
+        <button class="btn sm danger" data-del="${m.id}">삭제</button>
+      </td></tr>`).join('')}
+    <tr>
+      <td><input class="mini" type="number" style="width:60px" id="new-order" value="${moats.length+1}"></td>
+      <td><input class="mini" style="width:100%" id="new-label" placeholder="새 차별점 이름"></td>
+      <td><input class="mini" type="color" id="new-color" value="#2E7BE4"></td>
+      <td colspan="2"></td>
+      <td><button class="btn sm" id="moat-add">추가</button></td>
+    </tr>
+  </table>
+  <p class="note">이름을 바꾸면 그 차별점을 쓰고 있는 콘텐츠 카드도 함께 따라갑니다.
+    사용 중인 차별점은 삭제할 수 없습니다. 더 안 쓸 거면 노출을 꺼두세요.</p>`;
+
+  $$('#moat-list [data-save]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.save;
+    const old = moats.find(m => m.id === id);
+    const label = $(`#moat-list [data-label="${id}"]`).value.trim();
+    if (!label) return alert('차별점 이름을 비울 수 없습니다.');
+    const patch = {
+      label, color: $(`#moat-list [data-color="${id}"]`).value,
+      sort_order: Number($(`#moat-list [data-order="${id}"]`).value) || 0,
+      active: $(`#moat-list [data-active="${id}"]`).checked
+    };
+    const { error } = await sb.from('moats').update(patch).eq('id', id);
+    if (error) return alert(cleanErr(error.message));
+    if (old.label !== label) {
+      const r = await sb.from('contents').update({ moat: label }).eq('moat', old.label);
+      if (r.error) alert('차별점 이름은 바뀌었지만 카드 반영에 실패했습니다: ' + cleanErr(r.error.message));
+    }
+    await refresh();
+  });
+
+  $$('#moat-list [data-del]').forEach(b => b.onclick = async () => {
+    const m = moats.find(x => x.id === b.dataset.del);
+    if (used(m.label)) return alert(`이 차별점을 쓰는 카드가 ${used(m.label)}개 있습니다. 삭제 대신 노출을 꺼주세요.`);
+    if (!confirm(`"${m.label}" 차별점을 삭제합니다.`)) return;
+    const { error } = await sb.from('moats').delete().eq('id', m.id);
+    if (error) return alert(cleanErr(error.message));
+    await refresh();
+  });
+
+  $('#moat-add').onclick = async () => {
+    const label = $('#new-label').value.trim();
+    if (!label) return alert('차별점 이름을 입력해 주세요.');
+    const { error } = await sb.from('moats').insert({
+      label, color: $('#new-color').value, sort_order: Number($('#new-order').value) || 0 });
+    if (error) return alert(cleanErr(error.message));
+    await refresh();
+  };
+}
+
+function renderChannels(){
+  if (!isAdmin()) return;
+  const used = label => cards.filter(c => (c.channels || []).includes(label)).length;
+
+  $('#channel-list').innerHTML = `<table>
+    <tr><th>순서</th><th>채널 이름</th><th>사용 중</th><th>노출</th><th></th></tr>
+    ${channels.map(c => `<tr>
+      <td><input class="mini" type="number" style="width:60px" value="${c.sort_order}" data-corder="${c.id}"></td>
+      <td><input class="mini" style="width:100%" value="${esc(c.label)}" data-clabel="${c.id}"></td>
+      <td style="color:var(--muted)">${used(c.label)}개</td>
+      <td><input type="checkbox" ${c.active?'checked':''} data-cactive="${c.id}"></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" data-csave="${c.id}">저장</button>
+        <button class="btn sm danger" data-cdel="${c.id}">삭제</button>
+      </td></tr>`).join('')}
+    <tr>
+      <td><input class="mini" type="number" style="width:60px" id="new-corder" value="${channels.length+1}"></td>
+      <td><input class="mini" style="width:100%" id="new-clabel" placeholder="새 채널 이름"></td>
+      <td colspan="2"></td>
+      <td><button class="btn sm" id="channel-add">추가</button></td>
+    </tr>
+  </table>
+  <p class="note">이름을 바꾸면 그 채널이 붙어 있던 콘텐츠 카드도 함께 따라갑니다.
+    사용 중인 채널은 삭제할 수 없습니다. 더 안 쓸 거면 노출을 꺼두세요. 노출을 끄면 새 카드에서만 안 보이고, 이미 쓰던 카드는 그대로 유지됩니다.</p>`;
+
+  $$('#channel-list [data-csave]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.csave;
+    const old = channels.find(c => c.id === id);
+    const label = $(`#channel-list [data-clabel="${id}"]`).value.trim();
+    if (!label) return alert('채널 이름을 비울 수 없습니다.');
+    const { error } = await sb.from('channels').update({
+      label,
+      sort_order: Number($(`#channel-list [data-corder="${id}"]`).value) || 0,
+      active: $(`#channel-list [data-cactive="${id}"]`).checked
+    }).eq('id', id);
+    if (error) return alert(cleanErr(error.message));
+
+    if (old.label !== label) {
+      const targets = cards.filter(c => (c.channels || []).includes(old.label));
+      for (const t of targets) {
+        const next = (t.channels || []).map(x => x === old.label ? label : x);
+        const r = await sb.from('contents').update({ channels: next }).eq('id', t.id);
+        if (r.error) { alert('카드 반영 중 오류: ' + cleanErr(r.error.message)); break; }
+      }
+      if (channelFilter.has(old.label)) { channelFilter.delete(old.label); channelFilter.add(label); }
+    }
+    await refresh();
+  });
+
+  $$('#channel-list [data-cdel]').forEach(b => b.onclick = async () => {
+    const c = channels.find(x => x.id === b.dataset.cdel);
+    if (used(c.label)) return alert(`이 채널을 쓰는 카드가 ${used(c.label)}개 있습니다. 삭제 대신 노출을 꺼주세요.`);
+    if (!confirm(`"${c.label}" 채널을 삭제합니다.`)) return;
+    const { error } = await sb.from('channels').delete().eq('id', c.id);
+    if (error) return alert(cleanErr(error.message));
+    await refresh();
+  });
+
+  $('#channel-add').onclick = async () => {
+    const label = $('#new-clabel').value.trim();
+    if (!label) return alert('채널 이름을 입력해 주세요.');
+    const { error } = await sb.from('channels').insert({
+      label, sort_order: Number($('#new-corder').value) || 0 });
+    if (error) return alert(cleanErr(error.message));
+    await refresh();
+  };
+}
+
 /* ---------------- 카드 상세 ---------------- */
 $('#btn-new').onclick = () => openCard(null);
 
 function openCard(c){
   const isNew = !c;
-  const d = c || { title:'', stage:'아이디어', channels:[], chk_academic:false, chk_brand:false, chk_ad:false, chk_final:false };
-  const isMaster = profile.role === 'master';
+  const d = c || { title:'', stage:'아이디어', channels:[],
+                   chk_academic:false, chk_brand:false, chk_ad:false, chk_final:false };
+  const admin = isAdmin();
+  const moatOptions = moats
+    .filter(m => m.active || m.label === d.moat)
+    .map(m => `<option ${d.moat===m.label?'selected':''}>${esc(m.label)}</option>`).join('');
 
   $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" style="position:relative">
     <button class="close" id="dr-close">닫기</button>
     <h2>${isNew ? '새 콘텐츠' : esc(d.title)}</h2>
-    <div class="sub">${isNew ? '제목과 해자만 먼저 채워도 됩니다.' : '단계 ' + esc(d.stage)}</div>
+    <div class="sub">${isNew ? '제목과 차별점만 먼저 채워도 됩니다.' : '단계 ' + esc(d.stage)}</div>
     <div id="dr-msg"></div>
 
     <div class="field"><label>콘텐츠 제목</label><input id="f-title" value="${esc(d.title)}"></div>
     <div class="grid2">
       <div class="field"><label>단계</label><select id="f-stage">
         ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}</select></div>
-      <div class="field"><label>해자 — 없으면 기획 반려</label><select id="f-moat">
-        <option value="">— 미정 —</option>
-        <option ${d.moat==='A-공장'?'selected':''}>A-공장</option>
-        <option ${d.moat==='B-서울대기술지주'?'selected':''}>B-서울대기술지주</option>
-      </select></div>
+      <div class="field"><label>차별점 — 없으면 기획 반려</label><select id="f-moat">
+        <option value="">— 미정 —</option>${moatOptions}</select></div>
     </div>
     <div class="field"><label>핵심 메시지 — 이 콘텐츠가 남길 한 줄</label>
       <input id="f-key" value="${esc(d.key_message)}"></div>
-    <div class="field"><label>채널</label><div class="chgroup">
-      ${CHANNELS.map(ch => `<label><input type="checkbox" value="${ch}" ${(d.channels||[]).includes(ch)?'checked':''}>${ch}</label>`).join('')}
+    <div class="field"><label>채널</label><div class="chgroup" id="f-channels">
+      ${channels.filter(c => c.active || (d.channels||[]).includes(c.label))
+        .map(c => `<label><input type="checkbox" value="${esc(c.label)}" ${(d.channels||[]).includes(c.label)?'checked':''}>${esc(c.label)}</label>`).join('')
+        || '<span style="font-size:12.5px;color:var(--muted)">설정 탭에서 채널을 먼저 추가하세요</span>'}
     </div></div>
 
     <div class="sect">담당과 일정</div>
+    <div class="field"><label>담당자 — 여러 명 선택 가능</label><div class="chgroup" id="f-owners">
+      ${team.filter(t => t.status === 'approved')
+        .map(t => `<label><input type="checkbox" value="${t.id}" ${(d.owner_ids||[]).includes(t.id)?'checked':''}>${esc(t.name || t.email)}</label>`).join('')}
+    </div></div>
     <div class="grid2">
-      <div class="field"><label>담당자</label><select id="f-owner">
-        <option value="">— 미정 —</option>
-        ${team.filter(t => t.status==='approved').map(t => `<option value="${t.id}" ${d.owner_id===t.id?'selected':''}>${esc(t.name||t.email)}</option>`).join('')}
-      </select></div>
       <div class="field"><label>CTA 댓글 키워드 — 한 단어</label>
         <input id="f-cta" value="${esc(d.cta_keyword)}" placeholder="라벨"></div>
+      <div class="field"><label>촬영일</label><input type="date" id="f-shoot" value="${d.shoot_date||''}"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>촬영일</label><input type="date" id="f-shoot" value="${d.shoot_date||''}"></div>
       <div class="field"><label>게시예정일</label><input type="date" id="f-pub" value="${d.publish_date||''}"></div>
+      <div class="field"></div>
     </div>
     <div class="field"><label>다음 액션 — 지금 누가 뭘 해야 하는지</label>
       <input id="f-next" value="${esc(d.next_action)}"></div>
@@ -629,10 +1069,10 @@ function openCard(c){
       <label class="check"><input type="checkbox" id="f-ac" ${d.chk_academic?'checked':''}>학술 검수</label>
       <label class="check"><input type="checkbox" id="f-br" ${d.chk_brand?'checked':''}>브랜드 승인</label>
       <label class="check"><input type="checkbox" id="f-ad" ${d.chk_ad?'checked':''}>광고 심의</label>
-      <label class="check ${isMaster?'':'locked'}">
-        <input type="checkbox" id="f-fi" ${d.chk_final?'checked':''} ${isMaster?'':'disabled'}>대표 최종승인</label>
+      <label class="check ${admin?'':'locked'}">
+        <input type="checkbox" id="f-fi" ${d.chk_final?'checked':''} ${admin?'':'disabled'}>최종승인</label>
     </div>
-    <p class="note">네 개가 모두 켜져야 게시완료로 옮길 수 있습니다. 대표 최종승인은 마스터 계정에서만 켜집니다.</p>
+    <p class="note">네 개가 모두 켜져야 게시완료로 옮길 수 있습니다. 최종승인은 관리자·부관리자만 켤 수 있습니다.</p>
 
     <div class="sect">대본과 결과</div>
     <div class="field"><label>대본 · 메모</label><textarea id="f-script" style="min-height:150px">${esc(d.script)}</textarea></div>
@@ -649,7 +1089,7 @@ function openCard(c){
     <div class="drawer-actions">
       <button class="btn" id="dr-save">저장</button>
       <button class="btn ghost" id="dr-cancel">취소</button>
-      ${(!isNew && isMaster) ? '<button class="btn danger" id="dr-del" style="margin-left:auto">삭제</button>' : ''}
+      ${(!isNew && admin) ? '<button class="btn danger" id="dr-del" style="margin-left:auto">삭제</button>' : ''}
     </div>
   </div></div>`;
 
@@ -664,8 +1104,8 @@ function openCard(c){
       stage: $('#f-stage').value,
       moat: $('#f-moat').value || null,
       key_message: $('#f-key').value.trim() || null,
-      channels: [...document.querySelectorAll('.chgroup input:checked')].map(i => i.value),
-      owner_id: $('#f-owner').value || null,
+      channels: [...document.querySelectorAll('#f-channels input:checked')].map(i => i.value),
+      owner_ids: [...document.querySelectorAll('#f-owners input:checked')].map(i => i.value),
       cta_keyword: $('#f-cta').value.trim() || null,
       shoot_date: $('#f-shoot').value || null,
       publish_date: $('#f-pub').value || null,
@@ -677,13 +1117,12 @@ function openCard(c){
       publish_url: $('#f-url').value.trim() || null,
       views: num('#f-v'), saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
     };
-    if (isMaster) payload.chk_final = $('#f-fi').checked;
+    if (admin) payload.chk_final = $('#f-fi').checked;
     if (!payload.title) { $('#dr-msg').innerHTML = '<div class="msg err">제목을 입력해 주세요.</div>'; return; }
 
     const res = isNew
       ? await sb.from('contents').insert({ ...payload, created_by: me.id })
       : await sb.from('contents').update(payload).eq('id', c.id);
-
     if (res.error) { $('#dr-msg').innerHTML = `<div class="msg err">${esc(cleanErr(res.error.message))}</div>`; return; }
     close(); await refresh();
   };
