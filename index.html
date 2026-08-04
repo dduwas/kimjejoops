@@ -18,15 +18,13 @@ html,body{margin:0;padding:0}
 body{
   font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   color:var(--ink); background:var(--bg);
-  -webkit-font-smoothing:antialiased;
-  font-feature-settings:"tnum";
+  -webkit-font-smoothing:antialiased; font-feature-settings:"tnum";
 }
 button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 button{cursor:pointer}
 a{color:var(--blue)}
 .hide{display:none !important}
 
-/* ---------- 공통 폼 ---------- */
 .field{margin-bottom:14px}
 .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--muted);margin-bottom:5px}
 .field input,.field select,.field textarea{
@@ -36,21 +34,17 @@ a{color:var(--blue)}
 .field input:focus,.field select:focus,.field textarea:focus{
   outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)
 }
-.btn{
-  padding:11px 18px;border-radius:8px;border:1px solid var(--navy);
-  background:var(--navy);color:#fff;font-weight:600;
-}
+.btn{padding:11px 18px;border-radius:8px;border:1px solid var(--navy);background:var(--navy);color:#fff;font-weight:600}
 .btn:hover{background:var(--navy-2)}
 .btn.ghost{background:#fff;color:var(--navy);border-color:var(--line)}
 .btn.ghost:hover{background:var(--wash)}
 .btn.sm{padding:6px 11px;font-size:13px;border-radius:6px}
 .btn.danger{background:#fff;color:var(--warn);border-color:#F0C9B4}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.msg{padding:11px 13px;border-radius:8px;font-size:13.5px;line-height:1.55;margin-bottom:14px}
+.msg{padding:11px 13px;border-radius:8px;font-size:13.5px;line-height:1.55;margin-bottom:14px;white-space:pre-wrap}
 .msg.err{background:var(--warn-bg);color:var(--warn);border:1px solid #F0C9B4}
 .msg.ok{background:var(--blue-50);color:var(--navy);border:1px solid var(--blue-100)}
 
-/* ---------- 로그인 화면 ---------- */
 #screen-auth{min-height:100vh;display:grid;place-items:center;background:var(--wash);padding:28px 18px}
 .auth-card{width:100%;max-width:420px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:34px 30px}
 .brand{margin-bottom:26px}
@@ -61,19 +55,17 @@ a{color:var(--blue)}
 .tabs button{flex:1;padding:9px;border:0;background:transparent;border-radius:7px;font-weight:600;font-size:14px;color:var(--muted)}
 .tabs button.on{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(11,42,91,.12)}
 
-/* ---------- 승인 대기 ---------- */
 #screen-pending{min-height:100vh;display:grid;place-items:center;background:var(--wash);padding:28px 18px}
 .pending-card{max-width:460px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:36px 32px;text-align:center}
 .pending-card .dot{width:9px;height:9px;border-radius:50%;background:var(--blue);display:inline-block;margin-right:7px;animation:pulse 1.8s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.pending-card .dot{animation:none}}
 
-/* ---------- 앱 헤더 ---------- */
 header{background:var(--navy);color:#fff;padding:0 20px}
 .hrow{display:flex;align-items:center;gap:18px;height:56px}
 .hbrand{font-weight:800;font-size:15px;letter-spacing:-.01em;white-space:nowrap}
 .hbrand span{color:var(--blue-100);font-weight:500}
-nav{display:flex;gap:3px;margin-left:6px}
+nav{display:flex;gap:3px;margin-left:6px;flex-wrap:wrap}
 nav button{background:transparent;border:0;color:#A9C4EA;padding:7px 13px;border-radius:7px;font-weight:600;font-size:14px}
 nav button.on{background:var(--navy-3);color:#fff}
 nav button:hover{color:#fff}
@@ -82,12 +74,18 @@ nav button:hover{color:#fff}
 .linkbtn{background:transparent;border:0;color:#A9C4EA;text-decoration:underline;font-size:13px;padding:0}
 .linkbtn:hover{color:#fff}
 
-.toolbar{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+/* 도구 막대 — 내 담당 / 채널 분리 */
+.toolbar{display:flex;align-items:center;gap:10px;padding:13px 20px 0;flex-wrap:wrap}
+.toolbar.second{padding:11px 20px 13px;border-bottom:1px solid var(--line)}
+.filterlabel{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--muted);margin-right:2px}
+.sep{width:1px;height:20px;background:var(--line);margin:0 4px}
 .chip{padding:6px 12px;border:1px solid var(--line);border-radius:99px;background:#fff;font-size:13px;font-weight:600;color:var(--muted)}
+.chip:hover{border-color:var(--blue)}
 .chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.chip.ch.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.reset{border-style:dashed}
 .count{margin-left:auto;font-size:13px;color:var(--muted)}
 
-/* ---------- 생산 라인 (칸반) ---------- */
 .line{display:flex;gap:12px;padding:18px 20px 40px;overflow-x:auto;align-items:flex-start}
 .col{flex:0 0 250px;min-height:120px}
 .colhead{display:flex;align-items:baseline;gap:8px;padding:0 3px 9px;border-bottom:2px solid var(--navy);margin-bottom:11px}
@@ -96,20 +94,13 @@ nav button:hover{color:#fff}
 .colcount{margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 .col.drop{background:var(--blue-50);border-radius:var(--r)}
 
-.card{
-  background:#fff;border:1px solid var(--line);border-left:3px solid var(--blue-100);
+.card{background:#fff;border:1px solid var(--line);border-left:3px solid var(--line);
   border-radius:var(--r);padding:12px 13px;margin-bottom:9px;cursor:pointer;
-  transition:border-color .12s, box-shadow .12s;
-}
-.card:hover{border-color:var(--blue);box-shadow:0 2px 10px rgba(11,42,91,.09)}
-.card.moat-a{border-left-color:var(--blue)}
-.card.moat-b{border-left-color:#7C4DBE}
-.card.moat-none{border-left-color:#E2A08A}
+  transition:border-color .12s, box-shadow .12s}
+.card:hover{box-shadow:0 2px 10px rgba(11,42,91,.09)}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
 .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--wash);color:var(--muted)}
-.badge.b-a{background:var(--blue-50);color:var(--navy-2)}
-.badge.b-b{background:#F1EAFB;color:#5B2E96}
 .badge.b-none{background:var(--warn-bg);color:var(--warn)}
 .badge.b-cta{background:#fff;border:1px dashed var(--line);color:var(--muted)}
 .card .next{font-size:12px;color:var(--muted);line-height:1.5}
@@ -118,10 +109,8 @@ nav button:hover{color:#fff}
 .pip{width:100%;height:3px;border-radius:2px;background:var(--line)}
 .pip.on{background:var(--blue)}
 .pip.final.on{background:var(--navy)}
-
 .empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7}
 
-/* ---------- 카드 상세 ---------- */
 .scrim{position:fixed;inset:0;background:rgba(8,32,74,.42);display:flex;justify-content:flex-end;z-index:50}
 .drawer{width:min(560px,100%);background:#fff;height:100%;overflow-y:auto;padding:26px 28px 60px}
 .drawer h2{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
@@ -139,7 +128,6 @@ nav button:hover{color:#fff}
 .drawer-actions{display:flex;gap:9px;margin-top:28px;padding-top:20px;border-top:1px solid var(--line)}
 .note{font-size:12px;color:var(--muted);line-height:1.65;margin-top:9px}
 
-/* ---------- 표 ---------- */
 table{width:100%;border-collapse:collapse;font-size:13.5px}
 th{text-align:left;font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
 td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
@@ -151,7 +139,9 @@ tr:hover td{background:var(--wash)}
 .wrap{padding:20px}
 .wrap h3{margin:0 0 4px;font-size:17px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
 .wrap p.lede{margin:0 0 20px;font-size:13px;color:var(--muted);line-height:1.65}
-select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff}
+select.mini,input.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;background:#fff}
+input[type=color].mini{padding:2px;width:44px;height:30px}
+.swatch{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 
 @media (max-width:720px){
   .grid2,.checks{grid-template-columns:1fr}
@@ -162,13 +152,12 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
 </head>
 <body>
 
-<!-- ============ 로그인 / 가입 ============ -->
 <div id="screen-auth">
   <div class="auth-card">
     <div class="brand">
       <div class="kicker">약공장 김제조</div>
       <h1>콘텐츠 운영 시스템</h1>
-      <p>승인된 담당자만 들어올 수 있습니다. 처음이면 가입 신청 후 대표 승인을 기다려 주세요.</p>
+      <p>승인된 담당자만 들어올 수 있습니다. 처음이면 가입 신청 후 관리자 승인을 기다려 주세요.</p>
     </div>
     <div class="tabs">
       <button id="tab-login" class="on">로그인</button>
@@ -196,17 +185,16 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
   </div>
 </div>
 
-<!-- ============ 승인 대기 ============ -->
 <div id="screen-pending" class="hide">
   <div class="pending-card">
     <div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--blue);margin-bottom:14px">
       <span class="dot"></span>승인 대기 중
     </div>
     <h2 style="margin:0 0 12px;font-size:20px;font-weight:800;color:var(--navy);letter-spacing:-.02em">
-      대표 승인을 기다리고 있습니다
+      관리자 승인을 기다리고 있습니다
     </h2>
     <p id="pending-text" style="margin:0 0 24px;font-size:14px;color:var(--muted);line-height:1.75">
-      가입 신청이 접수됐습니다. 대표가 승인하면 바로 들어올 수 있습니다.<br>
+      가입 신청이 접수됐습니다. 관리자가 승인하면 바로 들어올 수 있습니다.<br>
       승인 후 이 페이지를 새로고침해 주세요.
     </p>
     <button class="btn ghost" onclick="location.reload()">새로고침</button>
@@ -214,7 +202,6 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
   </div>
 </div>
 
-<!-- ============ 앱 ============ -->
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
@@ -223,7 +210,8 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="approve">승인 대기</button>
         <button data-view="schedule">게시 일정</button>
-        <button data-view="team" id="nav-team">팀 관리</button>
+        <button data-view="team" class="admin-only">팀 관리</button>
+        <button data-view="settings" class="admin-only">설정</button>
       </nav>
       <div class="hright">
         <span><b id="me-name"></b> · <span id="me-role"></span></span>
@@ -232,36 +220,45 @@ select.mini{padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-
     </div>
   </header>
 
-  <!-- 보드 -->
   <section id="view-board">
     <div class="toolbar">
       <button class="btn sm" id="btn-new">+ 콘텐츠 추가</button>
-      <button class="chip" data-filter="mine">내 담당만</button>
-      <button class="chip" data-filter="noMoat">해자 미정만</button>
+      <div class="sep"></div>
+      <button class="chip" id="chip-mine">내 담당만</button>
       <span class="count" id="board-count"></span>
+    </div>
+    <div class="toolbar second">
+      <span class="filterlabel">채널</span>
+      <div id="channel-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      <button class="chip reset hide" id="chip-clear">채널 전체</button>
     </div>
     <div class="line" id="line"></div>
   </section>
 
-  <!-- 승인 대기 -->
   <section id="view-approve" class="hide wrap">
-    <h3>대표 승인 대기</h3>
+    <h3>승인 대기</h3>
     <p class="lede">검수·승인 단계에 있는 카드입니다. 네 칸이 모두 채워져야 게시완료로 넘어갑니다.</p>
     <div id="approve-list"></div>
   </section>
 
-  <!-- 게시 일정 -->
   <section id="view-schedule" class="hide wrap">
     <h3>게시 일정</h3>
     <p class="lede">게시예정일이 정해진 카드를 날짜순으로 봅니다. 오늘 이전인데 게시완료가 아니면 지연입니다.</p>
     <div id="schedule-list"></div>
   </section>
 
-  <!-- 팀 관리 -->
   <section id="view-team" class="hide wrap">
     <h3>팀 관리</h3>
-    <p class="lede">가입 신청은 여기로 들어옵니다. 승인하기 전에는 어떤 데이터도 보이지 않습니다.</p>
+    <p class="lede">가입 신청은 여기로 들어옵니다. 승인하기 전에는 어떤 데이터도 보이지 않습니다.
+      부관리자는 관리자와 같은 기능을 모두 씁니다.</p>
     <div id="team-list"></div>
+  </section>
+
+  <section id="view-settings" class="hide wrap">
+    <h3>해자 설정</h3>
+    <p class="lede">기획을 판정하는 기준 축입니다. 여기 없는 해자는 콘텐츠 카드에서 고를 수 없습니다.
+      순서 숫자가 작을수록 위에 옵니다.</p>
+    <div id="moat-list"></div>
   </section>
 </div>
 
@@ -274,7 +271,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const STAGES = ['아이디어','자료조사','대본','촬영','편집','검수·승인','게시예정','게시완료'];
 const CHANNELS = ['유튜브 롱폼','유튜브 숏폼','인스타 릴스','인스타 카루셀','인스타 스토리','틱톡','샤오홍슈'];
 const ROLES = {
-  master:'마스터(대표)', lead:'콘텐츠 총괄', company:'회사 담당자',
+  master:'마스터(대표)', admin:'부관리자', lead:'콘텐츠 총괄', company:'회사 담당자',
   academic:'학술 담당자', pd:'PD·편집', publisher:'게시 담당', partner:'외부 파트너'
 };
 const STATUS_KO = { pending:'승인 대기', approved:'활동중', rejected:'거절', suspended:'중지' };
@@ -286,14 +283,38 @@ const esc = s => (s ?? '').toString().replace(/[&<>"]/g, c => ({'&':'&amp;','<':
 if (!window.SUPABASE_URL || window.SUPABASE_URL.includes('여기에')) {
   document.body.innerHTML = '<div style="max-width:520px;margin:80px auto;padding:28px;font-family:sans-serif;line-height:1.7">'
     + '<h2 style="color:#0B2A5B">config.js 를 아직 안 채웠습니다</h2>'
-    + '<p>config.js 파일을 열어 Supabase 주소와 키를 붙여넣고 다시 올려주세요. 설치 가이드 2단계입니다.</p></div>';
+    + '<p>config.js 파일을 열어 Supabase 주소와 키를 붙여넣고 다시 올려주세요.</p></div>';
   throw new Error('config missing');
 }
 const sb = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
-let me = null, profile = null, cards = [], team = [], filters = new Set();
+let me = null, profile = null, cards = [], team = [], moats = [];
+let onlyMine = false;
+let channelFilter = new Set();
+
+const isAdmin  = () => profile && (profile.role === 'master' || profile.role === 'admin');
+const isMaster = () => profile && profile.role === 'master';
 
 /* ---------------- 인증 ---------------- */
+const AUTH_HINTS = [
+  ['Invalid login credentials', '이메일 또는 비밀번호가 맞지 않습니다.'],
+  ['Email not confirmed', '이 계정이 아직 확인 처리되지 않았습니다. Supabase → Authentication → Users 에서 확인 처리하세요.'],
+  ['Email logins are disabled', 'Supabase 에서 이메일 로그인이 꺼져 있습니다. Authentication → Sign In / Providers → Email 을 켜세요.'],
+  ['Email signups are disabled', 'Supabase 에서 이메일 가입이 꺼져 있습니다. Allow new users to sign up 을 켜세요.'],
+  ['Signups not allowed', 'Supabase 에서 신규 가입이 꺼져 있습니다.'],
+  ['rate limit', 'Supabase 내장 메일 한도에 걸렸습니다. Confirm email 을 끄면 메일 없이 진행됩니다.'],
+  ['Password should be', '비밀번호가 너무 짧습니다. 8자 이상으로 다시 시도해 주세요.'],
+  ['User already registered', '이미 신청된 이메일입니다. 로그인 탭에서 로그인하세요.'],
+  ['Failed to fetch', '서버에 연결하지 못했습니다. config.js 의 Supabase 주소를 확인해 주세요.']
+];
+function authHint(msg){
+  const m = (msg || '').toString();
+  for (const [k, ko] of AUTH_HINTS)
+    if (m.toLowerCase().includes(k.toLowerCase())) return ko + '\n(원문: ' + m + ')';
+  return m;
+}
+function cleanErr(m){ return (m || '').replace(/^.*?:\s*/, '').trim() || m; }
+
 $('#tab-login').onclick = () => switchAuth(true);
 $('#tab-signup').onclick = () => switchAuth(false);
 function switchAuth(login){
@@ -303,33 +324,26 @@ function switchAuth(login){
   $('#form-signup').classList.toggle('hide', login);
   $('#auth-msg').innerHTML = '';
 }
-function authMsg(text, kind='err'){
-  $('#auth-msg').innerHTML = `<div class="msg ${kind}">${esc(text)}</div>`;
-}
+function authMsg(t, kind='err'){ $('#auth-msg').innerHTML = `<div class="msg ${kind}">${esc(t)}</div>`; }
 
 $('#form-login').onsubmit = async e => {
   e.preventDefault();
   const { error } = await sb.auth.signInWithPassword({
-    email: $('#li-email').value.trim(), password: $('#li-pw').value
-  });
-  if (error) return authMsg('로그인하지 못했습니다. 이메일과 비밀번호를 확인해 주세요.');
+    email: $('#li-email').value.trim(), password: $('#li-pw').value });
+  if (error) return authMsg(authHint(error.message));
   boot();
 };
 
 $('#form-signup').onsubmit = async e => {
   e.preventDefault();
   const { error } = await sb.auth.signUp({
-    email: $('#su-email').value.trim(),
-    password: $('#su-pw').value,
+    email: $('#su-email').value.trim(), password: $('#su-pw').value,
     options: { data: {
-      name: $('#su-name').value.trim(),
-      company: $('#su-company').value.trim(),
-      role_title: $('#su-title').value.trim(),
-      apply_reason: $('#su-reason').value.trim()
-    }}
+      name: $('#su-name').value.trim(), company: $('#su-company').value.trim(),
+      role_title: $('#su-title').value.trim(), apply_reason: $('#su-reason').value.trim() }}
   });
-  if (error) return authMsg('가입 신청을 보내지 못했습니다. ' + error.message);
-  authMsg('신청을 보냈습니다. 메일함에서 인증 링크를 눌러 확인한 뒤, 대표 승인을 기다려 주세요.', 'ok');
+  if (error) return authMsg(authHint(error.message));
+  authMsg('신청을 보냈습니다. 관리자 승인을 기다려 주세요.', 'ok');
   $('#form-signup').reset();
 };
 
@@ -347,16 +361,16 @@ async function boot(){
   profile = data;
 
   if (!profile || profile.status !== 'approved') {
-    if (profile?.status === 'rejected' || profile?.status === 'suspended') {
-      $('#pending-text').innerHTML = '이 계정은 현재 접근이 중지된 상태입니다.<br>대표에게 문의해 주세요.';
-    }
+    if (profile?.status === 'rejected' || profile?.status === 'suspended')
+      $('#pending-text').innerHTML = '이 계정은 현재 접근이 중지된 상태입니다.<br>관리자에게 문의해 주세요.';
     return show('pending');
   }
 
   $('#me-name').textContent = profile.name || profile.email;
   $('#me-role').textContent = ROLES[profile.role] || profile.role;
-  $('#nav-team').classList.toggle('hide', profile.role !== 'master');
+  $$('.admin-only').forEach(el => el.classList.toggle('hide', !isAdmin()));
   show('app');
+  buildChannelChips();
   await refresh();
 }
 
@@ -367,73 +381,95 @@ function show(which){
 }
 
 async function refresh(){
-  const [c, p] = await Promise.all([
+  const [c, p, m] = await Promise.all([
     sb.from('contents').select('*').order('updated_at', { ascending:false }),
-    sb.from('profiles').select('*').order('created_at', { ascending:false })
+    sb.from('profiles').select('*').order('created_at', { ascending:false }),
+    sb.from('moats').select('*').order('sort_order', { ascending:true })
   ]);
-  cards = c.data || [];
-  team = p.data || [];
+  cards = c.data || []; team = p.data || []; moats = m.data || [];
   render();
 }
 
-/* ---------------- 화면 전환 ---------------- */
 $$('nav button').forEach(b => b.onclick = () => {
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','approve','schedule','team'].forEach(v =>
+  ['board','approve','schedule','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
 
-$$('.chip').forEach(c => c.onclick = () => {
-  const f = c.dataset.filter;
-  filters.has(f) ? filters.delete(f) : filters.add(f);
-  c.classList.toggle('on', filters.has(f));
-  render();
-});
+/* ---------------- 필터 ---------------- */
+$('#chip-mine').onclick = () => {
+  onlyMine = !onlyMine;
+  $('#chip-mine').classList.toggle('on', onlyMine);
+  renderBoard();
+};
 
-/* ---------------- 렌더 ---------------- */
-function render(){ renderBoard(); renderApprove(); renderSchedule(); renderTeam(); }
+function buildChannelChips(){
+  $('#channel-chips').innerHTML = CHANNELS
+    .map(ch => `<button class="chip ch" data-ch="${esc(ch)}">${esc(ch)}</button>`).join('');
+  $$('#channel-chips .chip').forEach(b => b.onclick = () => {
+    const ch = b.dataset.ch;
+    channelFilter.has(ch) ? channelFilter.delete(ch) : channelFilter.add(ch);
+    b.classList.toggle('on', channelFilter.has(ch));
+    $('#chip-clear').classList.toggle('hide', channelFilter.size === 0);
+    renderBoard();
+  });
+  $('#chip-clear').onclick = () => {
+    channelFilter.clear();
+    $$('#channel-chips .chip').forEach(b => b.classList.remove('on'));
+    $('#chip-clear').classList.add('hide');
+    renderBoard();
+  };
+}
 
 function visible(){
   return cards.filter(c => {
-    if (filters.has('mine') && c.owner_id !== me.id) return false;
-    if (filters.has('noMoat') && c.moat) return false;
+    if (onlyMine && c.owner_id !== me.id) return false;
+    if (channelFilter.size) {
+      const list = c.channels || [];
+      if (!list.some(ch => channelFilter.has(ch))) return false;
+    }
     return true;
   });
 }
 
-function moatClass(m){ return m === 'A-공장' ? 'moat-a' : m === 'B-서울대기술지주' ? 'moat-b' : 'moat-none'; }
-function ownerName(id){ return team.find(t => t.id === id)?.name || '담당 미정'; }
+/* ---------------- 렌더 ---------------- */
+function render(){ renderBoard(); renderApprove(); renderSchedule(); renderTeam(); renderMoats(); }
+
+const moatOf = label => moats.find(m => m.label === label);
+const ownerName = id => team.find(t => t.id === id)?.name || '담당 미정';
 
 function cardHTML(c){
+  const m = moatOf(c.moat);
+  const color = m ? m.color : '#E2A08A';
   const badges = [];
-  if (c.moat === 'A-공장') badges.push('<span class="badge b-a">공장</span>');
-  else if (c.moat === 'B-서울대기술지주') badges.push('<span class="badge b-b">기술지주</span>');
-  else badges.push('<span class="badge b-none">해자 미정</span>');
+  badges.push(m
+    ? `<span class="badge" style="background:${color}1F;color:${color}">${esc(m.label)}</span>`
+    : '<span class="badge b-none">해자 미정</span>');
   (c.channels || []).slice(0,2).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
   if (c.cta_keyword) badges.push(`<span class="badge b-cta">CTA ${esc(c.cta_keyword)}</span>`);
 
-  return `<div class="card ${moatClass(c.moat)}" draggable="true" data-id="${c.id}">
+  return `<div class="card" draggable="true" data-id="${c.id}" style="border-left-color:${color}">
     <h4>${esc(c.title)}</h4>
     <div class="badges">${badges.join('')}</div>
     ${c.next_action ? `<div class="next">${esc(c.next_action)}</div>` : ''}
-    <div class="meta">
-      <span>${esc(ownerName(c.owner_id))}</span>
-      ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}
-    </div>
+    <div class="meta"><span>${esc(ownerName(c.owner_id))}</span>
+      ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}</div>
     <div class="approvals">
       <div class="pip ${c.chk_academic?'on':''}"></div>
       <div class="pip ${c.chk_brand?'on':''}"></div>
       <div class="pip ${c.chk_ad?'on':''}"></div>
       <div class="pip final ${c.chk_final?'on':''}"></div>
-    </div>
-  </div>`;
+    </div></div>`;
 }
 
 function renderBoard(){
   const list = visible();
-  $('#board-count').textContent = `전체 ${cards.length}개 · 보이는 카드 ${list.length}개`;
+  const bits = [`전체 ${cards.length}개`];
+  if (onlyMine || channelFilter.size) bits.push(`보이는 카드 ${list.length}개`);
+  $('#board-count').textContent = bits.join(' · ');
+
   $('#line').innerHTML = STAGES.map((s, i) => {
     const items = list.filter(c => c.stage === s);
     return `<div class="col" data-stage="${esc(s)}">
@@ -445,10 +481,7 @@ function renderBoard(){
       ${items.map(cardHTML).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px 3px">비어 있음</div>'}
     </div>`;
   }).join('');
-  wireBoard();
-}
 
-function wireBoard(){
   $$('#line .card').forEach(el => {
     el.onclick = () => openCard(cards.find(c => c.id === el.dataset.id));
     el.ondragstart = e => e.dataTransfer.setData('text/plain', el.dataset.id);
@@ -458,8 +491,7 @@ function wireBoard(){
     col.ondragleave = () => col.classList.remove('drop');
     col.ondrop = async e => {
       e.preventDefault(); col.classList.remove('drop');
-      const id = e.dataTransfer.getData('text/plain');
-      await moveStage(id, col.dataset.stage);
+      await moveStage(e.dataTransfer.getData('text/plain'), col.dataset.stage);
     };
   });
 }
@@ -472,16 +504,11 @@ async function moveStage(id, stage){
   await refresh();
 }
 
-function cleanErr(m){
-  const i = m.indexOf('.');
-  return m.replace(/^.*?:\s*/, '').trim() || m;
-}
-
 function renderApprove(){
   const rows = cards.filter(c => c.stage === '검수·승인')
     .sort((a,b) => (a.publish_date||'9999').localeCompare(b.publish_date||'9999'));
   $('#approve-list').innerHTML = rows.length ? `<table>
-    <tr><th>콘텐츠</th><th>학술</th><th>브랜드</th><th>광고심의</th><th>대표 최종</th><th>게시예정</th></tr>
+    <tr><th>콘텐츠</th><th>학술</th><th>브랜드</th><th>광고심의</th><th>최종</th><th>게시예정</th></tr>
     ${rows.map(c => `<tr data-id="${c.id}" style="cursor:pointer">
       <td><b>${esc(c.title)}</b><br><span style="color:var(--muted);font-size:12px">${esc(ownerName(c.owner_id))}</span></td>
       <td>${c.chk_academic?'✓':'—'}</td><td>${c.chk_brand?'✓':'—'}</td>
@@ -511,27 +538,34 @@ function renderSchedule(){
     tr.onclick = () => openCard(cards.find(c => c.id === tr.dataset.id)));
 }
 
+/* ---------------- 팀 관리 ---------------- */
 function renderTeam(){
-  if (profile?.role !== 'master') return;
+  if (!isAdmin()) return;
   const order = { pending:0, approved:1, suspended:2, rejected:3 };
-  const rows = [...team].sort((a,b) => (order[a.status]-order[b.status]) || a.created_at.localeCompare(b.created_at));
+  const rows = [...team].sort((a,b) =>
+    (order[a.status]-order[b.status]) || a.created_at.localeCompare(b.created_at));
+
   $('#team-list').innerHTML = `<table>
     <tr><th>이름</th><th>회사 · 직책</th><th>신청 사유</th><th>권한</th><th>상태</th><th></th></tr>
-    ${rows.map(t => `<tr>
+    ${rows.map(t => {
+      const locked = (t.role === 'master' && !isMaster()) || t.id === me.id;
+      return `<tr>
       <td><b>${esc(t.name || '(이름 없음)')}</b><br><span style="color:var(--muted);font-size:12px">${esc(t.email)}</span></td>
       <td>${esc(t.company || '—')}<br><span style="color:var(--muted);font-size:12px">${esc(t.role_title || '')}</span></td>
-      <td style="max-width:240px;font-size:12.5px;color:var(--muted)">${esc(t.apply_reason || '—')}</td>
-      <td><select class="mini" data-role="${t.id}">
-        ${Object.entries(ROLES).map(([k,v]) => `<option value="${k}" ${t.role===k?'selected':''}>${v}</option>`).join('')}
+      <td style="max-width:230px;font-size:12.5px;color:var(--muted)">${esc(t.apply_reason || '—')}</td>
+      <td><select class="mini" data-role="${t.id}" ${locked?'disabled':''}>
+        ${Object.entries(ROLES).filter(([k]) => k !== 'master' || isMaster())
+          .map(([k,v]) => `<option value="${k}" ${t.role===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
       <td><span class="pill ${t.status}">${STATUS_KO[t.status]}</span></td>
       <td style="white-space:nowrap">
-        ${t.status !== 'approved' ? `<button class="btn sm" data-approve="${t.id}">승인</button>` : ''}
-        ${t.status === 'approved' && t.id !== me.id ? `<button class="btn sm danger" data-suspend="${t.id}">중지</button>` : ''}
-        ${t.status === 'pending' ? `<button class="btn sm ghost" data-reject="${t.id}">거절</button>` : ''}
-      </td></tr>`).join('')}
+        ${(t.status !== 'approved' && !locked) ? `<button class="btn sm" data-approve="${t.id}">승인</button>` : ''}
+        ${(t.status === 'approved' && !locked) ? `<button class="btn sm danger" data-suspend="${t.id}">중지</button>` : ''}
+        ${(t.status === 'pending' && !locked) ? `<button class="btn sm ghost" data-reject="${t.id}">거절</button>` : ''}
+      </td></tr>`;
+    }).join('')}
   </table>
-  <p class="note">승인은 되돌릴 수 있습니다. 중지된 계정은 로그인은 되지만 데이터는 보이지 않습니다.</p>`;
+  <p class="note">부관리자는 관리자와 같은 기능을 모두 씁니다. 마스터 계정의 권한과 상태는 마스터 본인만 바꿀 수 있습니다.</p>`;
 
   $$('[data-approve]').forEach(b => b.onclick = () => setStatus(b.dataset.approve, 'approved'));
   $$('[data-suspend]').forEach(b => b.onclick = () => setStatus(b.dataset.suspend, 'suspended'));
@@ -549,13 +583,83 @@ async function setStatus(id, status){
   await refresh();
 }
 
+/* ---------------- 해자 설정 ---------------- */
+function renderMoats(){
+  if (!isAdmin()) return;
+  const used = label => cards.filter(c => c.moat === label).length;
+
+  $('#moat-list').innerHTML = `<table>
+    <tr><th>순서</th><th>해자 이름</th><th>색</th><th>사용 중</th><th>노출</th><th></th></tr>
+    ${moats.map(m => `<tr>
+      <td><input class="mini" type="number" style="width:60px" value="${m.sort_order}" data-order="${m.id}"></td>
+      <td><input class="mini" style="width:100%" value="${esc(m.label)}" data-label="${m.id}"></td>
+      <td><input class="mini" type="color" value="${esc(m.color)}" data-color="${m.id}"></td>
+      <td style="color:var(--muted)">${used(m.label)}개</td>
+      <td><input type="checkbox" ${m.active?'checked':''} data-active="${m.id}"></td>
+      <td style="white-space:nowrap">
+        <button class="btn sm" data-save="${m.id}">저장</button>
+        <button class="btn sm danger" data-del="${m.id}">삭제</button>
+      </td></tr>`).join('')}
+    <tr>
+      <td><input class="mini" type="number" style="width:60px" id="new-order" value="${moats.length+1}"></td>
+      <td><input class="mini" style="width:100%" id="new-label" placeholder="새 해자 이름"></td>
+      <td><input class="mini" type="color" id="new-color" value="#2E7BE4"></td>
+      <td colspan="2"></td>
+      <td><button class="btn sm" id="moat-add">추가</button></td>
+    </tr>
+  </table>
+  <p class="note">이름을 바꾸면 그 해자를 쓰고 있는 콘텐츠 카드도 함께 따라갑니다.
+    사용 중인 해자는 삭제할 수 없습니다. 더 안 쓸 거면 노출을 꺼두세요.</p>`;
+
+  $$('[data-save]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.save;
+    const old = moats.find(m => m.id === id);
+    const label = $(`[data-label="${id}"]`).value.trim();
+    if (!label) return alert('해자 이름을 비울 수 없습니다.');
+    const patch = {
+      label, color: $(`[data-color="${id}"]`).value,
+      sort_order: Number($(`[data-order="${id}"]`).value) || 0,
+      active: $(`[data-active="${id}"]`).checked
+    };
+    const { error } = await sb.from('moats').update(patch).eq('id', id);
+    if (error) return alert(cleanErr(error.message));
+    if (old.label !== label) {
+      const r = await sb.from('contents').update({ moat: label }).eq('moat', old.label);
+      if (r.error) alert('해자 이름은 바뀌었지만 카드 반영에 실패했습니다: ' + cleanErr(r.error.message));
+    }
+    await refresh();
+  });
+
+  $$('[data-del]').forEach(b => b.onclick = async () => {
+    const m = moats.find(x => x.id === b.dataset.del);
+    if (used(m.label)) return alert(`이 해자를 쓰는 카드가 ${used(m.label)}개 있습니다. 삭제 대신 노출을 꺼주세요.`);
+    if (!confirm(`"${m.label}" 해자를 삭제합니다.`)) return;
+    const { error } = await sb.from('moats').delete().eq('id', m.id);
+    if (error) return alert(cleanErr(error.message));
+    await refresh();
+  });
+
+  $('#moat-add').onclick = async () => {
+    const label = $('#new-label').value.trim();
+    if (!label) return alert('해자 이름을 입력해 주세요.');
+    const { error } = await sb.from('moats').insert({
+      label, color: $('#new-color').value, sort_order: Number($('#new-order').value) || 0 });
+    if (error) return alert(cleanErr(error.message));
+    await refresh();
+  };
+}
+
 /* ---------------- 카드 상세 ---------------- */
 $('#btn-new').onclick = () => openCard(null);
 
 function openCard(c){
   const isNew = !c;
-  const d = c || { title:'', stage:'아이디어', channels:[], chk_academic:false, chk_brand:false, chk_ad:false, chk_final:false };
-  const isMaster = profile.role === 'master';
+  const d = c || { title:'', stage:'아이디어', channels:[],
+                   chk_academic:false, chk_brand:false, chk_ad:false, chk_final:false };
+  const admin = isAdmin();
+  const moatOptions = moats
+    .filter(m => m.active || m.label === d.moat)
+    .map(m => `<option ${d.moat===m.label?'selected':''}>${esc(m.label)}</option>`).join('');
 
   $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" style="position:relative">
     <button class="close" id="dr-close">닫기</button>
@@ -568,10 +672,7 @@ function openCard(c){
       <div class="field"><label>단계</label><select id="f-stage">
         ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}</select></div>
       <div class="field"><label>해자 — 없으면 기획 반려</label><select id="f-moat">
-        <option value="">— 미정 —</option>
-        <option ${d.moat==='A-공장'?'selected':''}>A-공장</option>
-        <option ${d.moat==='B-서울대기술지주'?'selected':''}>B-서울대기술지주</option>
-      </select></div>
+        <option value="">— 미정 —</option>${moatOptions}</select></div>
     </div>
     <div class="field"><label>핵심 메시지 — 이 콘텐츠가 남길 한 줄</label>
       <input id="f-key" value="${esc(d.key_message)}"></div>
@@ -581,8 +682,7 @@ function openCard(c){
 
     <div class="sect">담당과 일정</div>
     <div class="grid2">
-      <div class="field"><label>담당자</label><select id="f-owner">
-        <option value="">— 미정 —</option>
+      <div class="field"><label>담당자</label><select id="f-owner"><option value="">— 미정 —</option>
         ${team.filter(t => t.status==='approved').map(t => `<option value="${t.id}" ${d.owner_id===t.id?'selected':''}>${esc(t.name||t.email)}</option>`).join('')}
       </select></div>
       <div class="field"><label>CTA 댓글 키워드 — 한 단어</label>
@@ -600,10 +700,10 @@ function openCard(c){
       <label class="check"><input type="checkbox" id="f-ac" ${d.chk_academic?'checked':''}>학술 검수</label>
       <label class="check"><input type="checkbox" id="f-br" ${d.chk_brand?'checked':''}>브랜드 승인</label>
       <label class="check"><input type="checkbox" id="f-ad" ${d.chk_ad?'checked':''}>광고 심의</label>
-      <label class="check ${isMaster?'':'locked'}">
-        <input type="checkbox" id="f-fi" ${d.chk_final?'checked':''} ${isMaster?'':'disabled'}>대표 최종승인</label>
+      <label class="check ${admin?'':'locked'}">
+        <input type="checkbox" id="f-fi" ${d.chk_final?'checked':''} ${admin?'':'disabled'}>최종승인</label>
     </div>
-    <p class="note">네 개가 모두 켜져야 게시완료로 옮길 수 있습니다. 대표 최종승인은 마스터 계정에서만 켜집니다.</p>
+    <p class="note">네 개가 모두 켜져야 게시완료로 옮길 수 있습니다. 최종승인은 관리자·부관리자만 켤 수 있습니다.</p>
 
     <div class="sect">대본과 결과</div>
     <div class="field"><label>대본 · 메모</label><textarea id="f-script" style="min-height:150px">${esc(d.script)}</textarea></div>
@@ -620,7 +720,7 @@ function openCard(c){
     <div class="drawer-actions">
       <button class="btn" id="dr-save">저장</button>
       <button class="btn ghost" id="dr-cancel">취소</button>
-      ${(!isNew && isMaster) ? '<button class="btn danger" id="dr-del" style="margin-left:auto">삭제</button>' : ''}
+      ${(!isNew && admin) ? '<button class="btn danger" id="dr-del" style="margin-left:auto">삭제</button>' : ''}
     </div>
   </div></div>`;
 
@@ -648,13 +748,12 @@ function openCard(c){
       publish_url: $('#f-url').value.trim() || null,
       views: num('#f-v'), saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
     };
-    if (isMaster) payload.chk_final = $('#f-fi').checked;
+    if (admin) payload.chk_final = $('#f-fi').checked;
     if (!payload.title) { $('#dr-msg').innerHTML = '<div class="msg err">제목을 입력해 주세요.</div>'; return; }
 
     const res = isNew
       ? await sb.from('contents').insert({ ...payload, created_by: me.id })
       : await sb.from('contents').update(payload).eq('id', c.id);
-
     if (res.error) { $('#dr-msg').innerHTML = `<div class="msg err">${esc(cleanErr(res.error.message))}</div>`; return; }
     close(); await refresh();
   };
