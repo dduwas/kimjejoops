@@ -109,10 +109,41 @@ nav button:hover{color:#fff}
 .pip{width:100%;height:3px;border-radius:2px;background:var(--line)}
 .pip.on{background:var(--blue)}
 .pip.final.on{background:var(--navy)}
-.cardbtn{margin-top:9px;width:100%;padding:7px;border-radius:7px;border:1px solid var(--navy);
-  background:var(--navy);color:#fff;font-size:12px;font-weight:700;letter-spacing:.01em}
+.cardbtns{display:flex;gap:5px;margin-top:9px}
+.cardbtn{flex:1;padding:7px 4px;border-radius:7px;border:1px solid var(--navy);
+  background:var(--navy);color:#fff;font-size:12px;font-weight:700}
 .cardbtn:hover{background:var(--navy-2)}
-.cardbtn.off{background:#fff;color:var(--muted);border-color:var(--line);border-style:dashed;cursor:not-allowed}
+.cardbtn.alt{background:#fff;color:var(--navy);border-color:var(--line)}
+.cardbtn.alt:hover{background:var(--wash)}
+.review{display:flex;gap:16px;border:1px solid var(--line);border-left:3px solid var(--line);
+  border-radius:var(--r);padding:15px 17px;margin-bottom:11px;background:#fff}
+.review-main{flex:1;cursor:pointer;min-width:0}
+.review-main h4{margin:0 0 8px;font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+.review-key{font-size:13px;line-height:1.55;margin:6px 0 2px}
+.review .meta{display:flex;gap:12px;margin-top:9px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.review-side{display:flex;flex-direction:column;gap:5px;width:126px;flex:0 0 126px}
+.tick{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.tick input{width:15px;height:15px;accent-color:var(--navy)}
+.tick.off{opacity:.5}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.cal-h{background:var(--wash);padding:9px 6px;text-align:center;font-size:11.5px;font-weight:800;color:var(--muted)}
+.cal-h.sun{color:#C2410C}
+.cal-h.sat{color:var(--blue-2)}
+.cell{background:#fff;min-height:96px;padding:6px 6px 8px}
+.cell.out{background:var(--wash)}
+.cell.today{background:var(--blue-50)}
+.cell-d{font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px;font-variant-numeric:tabular-nums}
+.cell-d.sun{color:#C2410C}
+.cell-d.sat{color:var(--blue-2)}
+.ev{font-size:11.5px;line-height:1.35;padding:4px 6px;margin-bottom:3px;border-radius:5px;
+  background:var(--wash);border-left:3px solid var(--line);cursor:pointer;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev:hover{background:var(--blue-50)}
+.dotmark{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.dotmark.plan{background:#fff;border:1.5px solid var(--blue)}
+.dotmark.done{background:var(--navy)}
+.callegend{display:flex;gap:16px;margin-top:12px;font-size:12px;align-items:center;flex-wrap:wrap}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
 .stat{border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;background:#fff}
 .stat-k{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
@@ -221,7 +252,6 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="approve">승인 대기</button>
         <button data-view="schedule">게시 일정</button>
-        <button data-view="archive">게시완료</button>
         <button data-view="analytics">성과분석</button>
         <button data-view="team" class="admin-only">팀 관리</button>
         <button data-view="settings" class="admin-only">설정</button>
@@ -250,26 +280,35 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 
   <section id="view-approve" class="hide wrap">
     <h3>승인 대기</h3>
-    <p class="lede">검수·승인 단계에 있는 카드입니다. 네 칸이 모두 채워져야 게시완료로 넘어갑니다.</p>
+    <p class="lede">생산 라인의 검수·승인 칸에 있는 카드입니다. 내용을 훑고 여기서 바로 게시 승인하세요.</p>
     <div id="approve-list"></div>
   </section>
 
   <section id="view-schedule" class="hide wrap">
     <h3>게시 일정</h3>
-    <p class="lede">게시예정일이 정해진 카드를 날짜순으로 봅니다. 오늘 이전인데 게시완료가 아니면 지연입니다.</p>
-    <div id="schedule-list"></div>
-  </section>
+    <p class="lede">게시 승인이 난 콘텐츠와 게시가 끝난 콘텐츠를 함께 봅니다.
+      보기 방식과 분류는 따로 고를 수 있습니다.</p>
 
-  <section id="view-archive" class="hide wrap">
-    <h3>게시완료</h3>
-    <p class="lede">게시가 끝난 콘텐츠 보관함입니다. 성과를 여기서 입력하고 비교합니다.
-      잘못 넘긴 카드는 되돌리기로 생산 라인에 다시 올릴 수 있습니다.</p>
-    <div style="display:flex;gap:9px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-      <input id="ar-q" class="mini" style="min-width:220px;padding:8px 11px" placeholder="제목·핵심 메시지 검색">
-      <select id="ar-month" class="mini" style="padding:8px 11px"></select>
-      <span class="count" id="archive-count"></span>
+    <div style="display:flex;gap:9px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <span class="filterlabel">보기</span>
+      <button class="chip sc-view on" data-view2="calendar">캘린더</button>
+      <button class="chip sc-view" data-view2="table">게시판</button>
+      <div class="sep"></div>
+      <span class="filterlabel">분류</span>
+      <button class="chip sc-cat on" data-cat="all">전체</button>
+      <button class="chip sc-cat" data-cat="planned">게시 예정</button>
+      <button class="chip sc-cat" data-cat="done">게시 완료</button>
+      <span class="count" id="schedule-count"></span>
     </div>
-    <div id="archive-list"></div>
+
+    <div id="cal-controls" style="display:flex;gap:9px;align-items:center;margin-bottom:14px">
+      <button class="btn sm ghost" id="cal-prev">← 이전달</button>
+      <b id="cal-title" style="font-size:15px;color:var(--navy);min-width:110px;text-align:center"></b>
+      <button class="btn sm ghost" id="cal-next">다음달 →</button>
+      <button class="btn sm ghost" id="cal-today">이번달</button>
+    </div>
+
+    <div id="schedule-body"></div>
   </section>
 
   <section id="view-analytics" class="hide wrap">
@@ -320,7 +359,10 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 const STAGES = ['아이디어','자료조사','대본','촬영','편집','검수·승인','게시예정','게시완료'];
-const BOARD_STAGES = STAGES.slice(0, 7);   // 게시완료는 아카이브 탭으로 분리
+const BOARD_STAGES = STAGES.slice(0, 6);   // 생산 라인은 검수·승인까지
+const IDEA = '아이디어';
+const REVIEW = '검수·승인';
+const PLANNED = '게시예정';
 const DONE = '게시완료';
 const ROLES = {
   master:'마스터(대표)', admin:'부관리자', lead:'콘텐츠 총괄', company:'회사 담당자',
@@ -445,7 +487,7 @@ async function refresh(){
 $$('nav button').forEach(b => b.onclick = () => {
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','approve','schedule','archive','analytics','team','settings'].forEach(v =>
+  ['board','approve','schedule','analytics','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
@@ -484,7 +526,7 @@ function buildChannelChips(){
 
 function visible(){
   return cards.filter(c => {
-    if (c.stage === DONE) return false;
+    if (c.stage === PLANNED || c.stage === DONE) return false;
     if (onlyMine && !(c.owner_ids || []).includes(me.id)) return false;
     if (channelFilter.size) {
       const list = c.channels || [];
@@ -495,7 +537,7 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ buildChannelChips(); renderBoard(); renderApprove(); renderSchedule(); renderArchive(); renderAnalytics(); renderTeam(); renderSettings(); }
+function render(){ buildChannelChips(); renderBoard(); renderApprove(); renderSchedule(); renderAnalytics(); renderTeam(); renderSettings(); }
 
 const moatOf = label => moats.find(m => m.label === label);
 const nameOf = id => team.find(t => t.id === id)?.name || team.find(t => t.id === id)?.email || '알 수 없음';
@@ -515,10 +557,10 @@ function cardHTML(c){
   (c.channels || []).slice(0,2).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
   if (c.cta_keyword) badges.push(`<span class="badge b-cta">CTA ${esc(c.cta_keyword)}</span>`);
 
-  const ready = c.chk_academic && c.chk_brand && c.chk_ad && c.chk_final;
-  const doneBtn = c.stage === '게시예정'
-    ? `<button class="cardbtn ${ready?'':'off'}" data-done="${c.id}">${ready ? '게시완료로 넘기기' : '승인 4개 필요'}</button>`
-    : '';
+  const doneBtn = c.stage === REVIEW ? `<div class="cardbtns">
+      <button class="cardbtn" data-pub="${c.id}">게시 승인</button>
+      <button class="cardbtn alt" data-done="${c.id}">게시 완료</button>
+    </div>` : '';
 
   return `<div class="card" draggable="true" data-id="${c.id}" style="border-left-color:${color}">
     <h4>${esc(c.title)}</h4>
@@ -536,10 +578,11 @@ function cardHTML(c){
 
 function renderBoard(){
   const list = visible();
-  const live = cards.filter(c => c.stage !== DONE).length;
-  const bits = [`진행 중 ${live}개`];
+  const live = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE).length;
+  const bits = [`제작 중 ${live}개`];
   if (onlyMine || channelFilter.size) bits.push(`보이는 카드 ${list.length}개`);
-  bits.push(`게시완료 ${cards.length - live}개`);
+  bits.push(`게시 예정 ${cards.filter(c => c.stage === PLANNED).length}개`);
+  bits.push(`게시 완료 ${cards.filter(c => c.stage === DONE).length}개`);
   $('#board-count').textContent = bits.join(' · ');
 
   $('#line').innerHTML = BOARD_STAGES.map((s, i) => {
@@ -559,13 +602,13 @@ function renderBoard(){
     el.ondragstart = e => e.dataTransfer.setData('text/plain', el.dataset.id);
   });
 
+  $$('#line [data-pub]').forEach(b => b.onclick = async e => {
+    e.stopPropagation();
+    await moveStage(b.dataset.pub, PLANNED);
+  });
   $$('#line [data-done]').forEach(b => b.onclick = async e => {
     e.stopPropagation();
-    const c = cards.find(x => x.id === b.dataset.done);
-    if (!(c.chk_academic && c.chk_brand && c.chk_ad && c.chk_final))
-      return alert('학술검수·브랜드승인·광고심의·최종승인이 모두 끝나야 게시완료로 넘길 수 있습니다.');
-    if (!confirm(`"${c.title}" 을(를) 게시완료로 넘깁니다.\n게시완료 탭으로 이동하며, 거기서 되돌릴 수 있습니다.`)) return;
-    await moveStage(c.id, DONE);
+    await moveStage(b.dataset.done, DONE);
   });
 
   $$('#line .col').forEach(col => {
@@ -586,99 +629,188 @@ async function moveStage(id, stage){
   await refresh();
 }
 
+/* ---------------- 승인 대기 ---------------- */
 function renderApprove(){
-  const rows = cards.filter(c => c.stage === '검수·승인')
-    .sort((a,b) => (a.publish_date||'9999').localeCompare(b.publish_date||'9999'));
-  $('#approve-list').innerHTML = rows.length ? `<table>
-    <tr><th>콘텐츠</th><th>학술</th><th>브랜드</th><th>광고심의</th><th>최종</th><th>게시예정</th></tr>
-    ${rows.map(c => `<tr data-id="${c.id}" style="cursor:pointer">
-      <td><b>${esc(c.title)}</b><br><span style="color:var(--muted);font-size:12px">${esc(ownerNames(c.owner_ids))}</span></td>
-      <td>${c.chk_academic?'✓':'—'}</td><td>${c.chk_brand?'✓':'—'}</td>
-      <td>${c.chk_ad?'✓':'—'}</td><td>${c.chk_final?'✓':'—'}</td>
-      <td>${c.publish_date || '—'}</td></tr>`).join('')}
-  </table>` : '<div class="empty">검수·승인 단계에 있는 카드가 없습니다.</div>';
-  $$('#approve-list tr[data-id]').forEach(tr =>
-    tr.onclick = () => openCard(cards.find(c => c.id === tr.dataset.id)));
+  const rows = cards.filter(c => c.stage === REVIEW)
+    .sort((a,b) => (a.publish_date || '9999').localeCompare(b.publish_date || '9999'));
+
+  $('#approve-list').innerHTML = rows.length ? rows.map(c => {
+    const m = moatOf(c.moat);
+    const color = m ? m.color : '#E2A08A';
+    return `<div class="review" style="border-left-color:${color}">
+      <div class="review-main" data-open="${c.id}">
+        <h4>${esc(c.title)}</h4>
+        <div class="badges">
+          <span class="badge" style="background:${color}1F;color:${color}">${esc(c.moat || '차별점 미정')}</span>
+          ${(c.channels || []).map(ch => `<span class="badge">${esc(ch)}</span>`).join('')}
+          ${c.cta_keyword ? `<span class="badge b-cta">CTA ${esc(c.cta_keyword)}</span>` : ''}
+        </div>
+        ${c.key_message ? `<div class="review-key">${esc(c.key_message)}</div>` : ''}
+        <div class="meta">
+          <span>${esc(ownerNames(c.owner_ids))}</span>
+          <span>게시예정 ${c.publish_date || '미정'}</span>
+          <span>검수 ${[c.chk_academic,c.chk_brand,c.chk_ad,c.chk_final].filter(Boolean).length}/4</span>
+        </div>
+      </div>
+      <div class="review-side">
+        <label class="tick"><input type="checkbox" data-ck="chk_academic" data-cid="${c.id}" ${c.chk_academic?'checked':''}>학술</label>
+        <label class="tick"><input type="checkbox" data-ck="chk_brand" data-cid="${c.id}" ${c.chk_brand?'checked':''}>브랜드</label>
+        <label class="tick"><input type="checkbox" data-ck="chk_ad" data-cid="${c.id}" ${c.chk_ad?'checked':''}>광고심의</label>
+        <label class="tick ${isAdmin()?'':'off'}"><input type="checkbox" data-ck="chk_final" data-cid="${c.id}" ${c.chk_final?'checked':''} ${isAdmin()?'':'disabled'}>최종</label>
+        <button class="btn sm" data-pub="${c.id}" style="margin-top:8px">게시 승인</button>
+        <button class="btn sm ghost" data-done="${c.id}">게시 완료</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty">검수·승인 칸에 있는 카드가 없습니다.<br>생산 라인에서 카드를 검수·승인으로 옮기면 여기에 나타납니다.</div>';
+
+  $$('#approve-list [data-open]').forEach(el =>
+    el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
+  $$('#approve-list [data-ck]').forEach(el => el.onchange = async () => {
+    const patch = {}; patch[el.dataset.ck] = el.checked;
+    const { error } = await sb.from('contents').update(patch).eq('id', el.dataset.cid);
+    if (error) { alert(cleanErr(error.message)); }
+    await refresh();
+  });
+  $$('#approve-list [data-pub]').forEach(b => b.onclick = () => moveStage(b.dataset.pub, PLANNED));
+  $$('#approve-list [data-done]').forEach(b => b.onclick = () => moveStage(b.dataset.done, DONE));
 }
 
-function renderSchedule(){
-  const today = new Date().toISOString().slice(0,10);
-  const rows = cards.filter(c => c.publish_date && c.stage !== DONE)
-    .sort((a,b) => a.publish_date.localeCompare(b.publish_date));
-  $('#schedule-list').innerHTML = rows.length ? `<table>
-    <tr><th>게시예정일</th><th>콘텐츠</th><th>단계</th><th>채널</th><th>담당</th></tr>
-    ${rows.map(c => {
-      const late = c.publish_date < today && c.stage !== '게시완료';
-      return `<tr data-id="${c.id}" style="cursor:pointer">
-        <td style="font-variant-numeric:tabular-nums">${c.publish_date}
-          ${late ? '<span class="pill rejected" style="margin-left:6px">지연</span>' : ''}</td>
-        <td><b>${esc(c.title)}</b></td><td>${esc(c.stage)}</td>
-        <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
-        <td>${esc(ownerNames(c.owner_ids))}</td></tr>`;
-    }).join('')}
-  </table>` : '<div class="empty">게시예정일이 입력된 카드가 없습니다.</div>';
-  $$('#schedule-list tr[data-id]').forEach(tr =>
-    tr.onclick = () => openCard(cards.find(c => c.id === tr.dataset.id)));
-}
+/* ---------------- 게시 일정 (캘린더 + 게시판) ---------------- */
+let scView = 'calendar', scCat = 'all';
+let calBase = new Date();
 
-/* ---------------- 게시완료 아카이브 ---------------- */
-let archiveQuery = '', archiveMonth = '';
-
-function renderArchive(){
-  const all = cards.filter(c => c.stage === DONE);
-
-  // 월 선택지 구성
-  const months = [...new Set(all.map(c => (c.publish_date || '').slice(0,7)).filter(Boolean))].sort().reverse();
-  if (archiveMonth && !months.includes(archiveMonth)) archiveMonth = '';
-  $('#ar-month').innerHTML = `<option value="">전체 기간</option>`
-    + months.map(m => `<option value="${m}" ${archiveMonth===m?'selected':''}>${m.replace('-','년 ')}월</option>`).join('');
-
-  const q = archiveQuery.trim().toLowerCase();
-  const rows = all.filter(c => {
-    if (archiveMonth && (c.publish_date || '').slice(0,7) !== archiveMonth) return false;
-    if (q && !((c.title||'') + ' ' + (c.key_message||'')).toLowerCase().includes(q)) return false;
+function schedulePool(){
+  return cards.filter(c => {
+    if (c.stage !== PLANNED && c.stage !== DONE) return false;
+    if (scCat === 'planned' && c.stage !== PLANNED) return false;
+    if (scCat === 'done' && c.stage !== DONE) return false;
     return true;
-  }).sort((a,b) => (b.publish_date || '0000').localeCompare(a.publish_date || '0000'));
-
-  $('#archive-count').textContent = `전체 ${all.length}개` + (rows.length !== all.length ? ` · 보이는 것 ${rows.length}개` : '');
-
-  $('#archive-list').innerHTML = rows.length ? `<table>
-    <tr><th>게시일</th><th>콘텐츠</th><th>채널</th><th>조회</th><th>저장</th><th>공유</th><th>링크클릭</th><th></th></tr>
-    ${rows.map(c => {
-      const m = moatOf(c.moat);
-      const color = m ? m.color : '#E2A08A';
-      const n = v => (v ?? null) === null ? '—' : Number(v).toLocaleString();
-      return `<tr>
-        <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${c.publish_date || '—'}</td>
-        <td data-open="${c.id}" style="cursor:pointer">
-          <b>${esc(c.title)}</b>
-          ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="font-size:12px">링크</a>` : ''}
-          <br><span style="font-size:12px;color:var(--muted)">
-            <span class="swatch" style="background:${color}"></span>${esc(c.moat || '차별점 미정')} · ${esc(ownerNames(c.owner_ids))}</span></td>
-        <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
-        <td style="font-variant-numeric:tabular-nums">${n(c.views)}</td>
-        <td style="font-variant-numeric:tabular-nums">${n(c.saves)}</td>
-        <td style="font-variant-numeric:tabular-nums">${n(c.shares)}</td>
-        <td style="font-variant-numeric:tabular-nums">${n(c.link_clicks)}</td>
-        <td style="white-space:nowrap"><button class="btn sm ghost" data-undo="${c.id}">되돌리기</button></td>
-      </tr>`;
-    }).join('')}
-  </table>
-  <p class="note">되돌리기를 누르면 생산 라인의 게시예정 칸으로 돌아갑니다. 승인 표시와 입력한 성과는 그대로 남습니다.</p>`
-  : `<div class="empty">${all.length ? '조건에 맞는 콘텐츠가 없습니다.' : '아직 게시완료된 콘텐츠가 없습니다.<br>생산 라인의 게시예정 칸에서 게시완료로 넘기면 여기 쌓입니다.'}</div>`;
-
-  $$('#archive-list [data-open]').forEach(td =>
-    td.onclick = () => openCard(cards.find(c => c.id === td.dataset.open)));
-
-  $$('#archive-list [data-undo]').forEach(b => b.onclick = async () => {
-    const c = cards.find(x => x.id === b.dataset.undo);
-    if (!confirm(`"${c.title}" 을(를) 게시예정으로 되돌립니다.`)) return;
-    await moveStage(c.id, '게시예정');
   });
 }
 
-$('#ar-q').oninput = e => { archiveQuery = e.target.value; renderArchive(); };
-$('#ar-month').onchange = e => { archiveMonth = e.target.value; renderArchive(); };
+function renderSchedule(){
+  const pool = schedulePool();
+  const planned = pool.filter(c => c.stage === PLANNED).length;
+  $('#schedule-count').textContent = `게시 예정 ${planned}개 · 게시 완료 ${pool.length - planned}개`;
+  $('#cal-controls').classList.toggle('hide', scView !== 'calendar');
+  scView === 'calendar' ? renderCalendar(pool) : renderScheduleTable(pool);
+  wireScheduleButtons();
+}
+
+function stageDot(c){
+  return c.stage === DONE
+    ? '<span class="dotmark done"></span>'
+    : '<span class="dotmark plan"></span>';
+}
+
+function renderCalendar(pool){
+  const y = calBase.getFullYear(), mo = calBase.getMonth();
+  $('#cal-title').textContent = `${y}년 ${mo+1}월`;
+
+  const first = new Date(y, mo, 1);
+  const startPad = first.getDay();
+  const daysInMonth = new Date(y, mo+1, 0).getDate();
+  const today = new Date().toISOString().slice(0,10);
+
+  const byDay = {};
+  pool.forEach(c => { if (c.publish_date) (byDay[c.publish_date] ||= []).push(c); });
+
+  const cells = [];
+  for (let i = 0; i < startPad; i++) cells.push('<div class="cell out"></div>');
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const items = byDay[key] || [];
+    const dow = (startPad + d - 1) % 7;
+    cells.push(`<div class="cell ${key===today?'today':''}">
+      <div class="cell-d ${dow===0?'sun':''} ${dow===6?'sat':''}">${d}</div>
+      ${items.map(c => {
+        const m = moatOf(c.moat); const color = m ? m.color : '#E2A08A';
+        return `<div class="ev" data-open="${c.id}" style="border-left-color:${color}" title="${esc(c.title)}">
+          ${stageDot(c)}${esc(c.title)}</div>`;
+      }).join('')}
+    </div>`);
+  }
+  while (cells.length % 7) cells.push('<div class="cell out"></div>');
+
+  const noDate = pool.filter(c => !c.publish_date);
+
+  $('#schedule-body').innerHTML = `
+    <div class="calgrid">
+      ${['일','월','화','수','목','금','토'].map((d,i) =>
+        `<div class="cal-h ${i===0?'sun':''} ${i===6?'sat':''}">${d}</div>`).join('')}
+      ${cells.join('')}
+    </div>
+    <div class="callegend">
+      <span><span class="dotmark plan"></span>게시 예정</span>
+      <span><span class="dotmark done"></span>게시 완료</span>
+      <span style="color:var(--muted)">항목을 누르면 상세가 열립니다</span>
+    </div>
+    ${noDate.length ? `<div class="sect" style="margin-top:26px">날짜 미정 ${noDate.length}개</div>
+      ${scheduleTableHTML(noDate)}` : ''}`;
+}
+
+function scheduleTableHTML(rows){
+  const today = new Date().toISOString().slice(0,10);
+  const n = v => (v === null || v === undefined) ? '—' : Number(v).toLocaleString();
+  return `<table>
+    <tr><th>게시일</th><th>분류</th><th>콘텐츠</th><th>채널</th><th>담당</th><th>조회</th><th>저장</th><th></th></tr>
+    ${rows.map(c => {
+      const late = c.stage === PLANNED && c.publish_date && c.publish_date < today;
+      return `<tr>
+        <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${c.publish_date || '미정'}
+          ${late ? '<br><span class="pill rejected">지연</span>' : ''}</td>
+        <td>${c.stage === DONE
+          ? '<span class="pill approved">게시 완료</span>'
+          : '<span class="pill pending">게시 예정</span>'}</td>
+        <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
+          ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">링크</a>` : ''}
+          <br><span style="font-size:12px;color:var(--muted)">${esc(c.moat || '차별점 미정')}</span></td>
+        <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
+        <td>${esc(ownerNames(c.owner_ids))}</td>
+        <td style="font-variant-numeric:tabular-nums">${n(c.views)}</td>
+        <td style="font-variant-numeric:tabular-nums">${n(c.saves)}</td>
+        <td style="white-space:nowrap">
+          ${c.stage === PLANNED
+            ? `<button class="btn sm" data-sdone="${c.id}">게시 완료</button>`
+            : `<button class="btn sm ghost" data-splan="${c.id}">예정으로</button>`}
+          <button class="btn sm danger" data-cancel="${c.id}">게시취소</button>
+        </td></tr>`;
+    }).join('')}
+  </table>`;
+}
+
+function renderScheduleTable(pool){
+  const rows = [...pool].sort((a,b) =>
+    (a.publish_date || '9999').localeCompare(b.publish_date || '9999'));
+  $('#schedule-body').innerHTML = rows.length
+    ? scheduleTableHTML(rows) + '<p class="note">게시취소를 누르면 아이디어 단계로 돌아갑니다. 입력한 내용과 성과는 그대로 남습니다.</p>'
+    : '<div class="empty">해당하는 콘텐츠가 없습니다.</div>';
+}
+
+function wireScheduleButtons(){
+  $$('#schedule-body [data-open]').forEach(el =>
+    el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
+  $$('#schedule-body [data-sdone]').forEach(b => b.onclick = () => moveStage(b.dataset.sdone, DONE));
+  $$('#schedule-body [data-splan]').forEach(b => b.onclick = () => moveStage(b.dataset.splan, PLANNED));
+  $$('#schedule-body [data-cancel]').forEach(b => b.onclick = async () => {
+    const c = cards.find(x => x.id === b.dataset.cancel);
+    if (!confirm(`"${c.title}" 의 게시를 취소하고 아이디어 단계로 되돌립니다.`)) return;
+    await moveStage(c.id, IDEA);
+  });
+}
+
+$$('.sc-view').forEach(b => b.onclick = () => {
+  $$('.sc-view').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); scView = b.dataset.view2; renderSchedule();
+});
+$$('.sc-cat').forEach(b => b.onclick = () => {
+  $$('.sc-cat').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); scCat = b.dataset.cat; renderSchedule();
+});
+$('#cal-prev').onclick  = () => { calBase = new Date(calBase.getFullYear(), calBase.getMonth()-1, 1); renderSchedule(); };
+$('#cal-next').onclick  = () => { calBase = new Date(calBase.getFullYear(), calBase.getMonth()+1, 1); renderSchedule(); };
+$('#cal-today').onclick = () => { calBase = new Date(); renderSchedule(); };
+
 
 /* ---------------- 성과분석 ---------------- */
 let anDays = 0, anMetric = 'saveRate';
