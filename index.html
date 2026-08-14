@@ -105,10 +105,6 @@ nav button:hover{color:#fff}
 .badge.b-cta{background:#fff;border:1px dashed var(--line);color:var(--muted)}
 .card .next{font-size:12px;color:var(--muted);line-height:1.5}
 .card .meta{display:flex;gap:9px;margin-top:8px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.approvals{display:flex;gap:3px;margin-top:8px}
-.pip{width:100%;height:3px;border-radius:2px;background:var(--line)}
-.pip.on{background:var(--blue)}
-.pip.final.on{background:var(--navy)}
 .cardbtns{display:flex;gap:5px;margin-top:9px}
 .cardbtn{flex:1;padding:7px 4px;border-radius:7px;border:1px solid var(--navy);
   background:var(--navy);color:#fff;font-size:12px;font-weight:700}
@@ -253,6 +249,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
         <button data-view="approve">승인 대기</button>
         <button data-view="schedule">게시 일정</button>
         <button data-view="analytics">성과분석</button>
+        <button data-view="drops">드랍</button>
         <button data-view="team" class="admin-only">팀 관리</button>
         <button data-view="settings" class="admin-only">설정</button>
       </nav>
@@ -332,6 +329,13 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
     <div id="analytics-body"></div>
   </section>
 
+  <section id="view-drops" class="hide wrap">
+    <h3>드랍</h3>
+    <p class="lede">접은 기획을 모아둡니다. 지워지지 않으니 나중에 다시 꺼내 쓸 수 있습니다.
+      카드 상세 아래쪽 드랍 버튼을 누르면 여기로 들어옵니다.</p>
+    <div id="drop-list"></div>
+  </section>
+
   <section id="view-team" class="hide wrap">
     <h3>팀 관리</h3>
     <p class="lede">가입 신청은 여기로 들어옵니다. 승인하기 전에는 어떤 데이터도 보이지 않습니다.
@@ -364,6 +368,7 @@ const IDEA = '아이디어';
 const REVIEW = '검수·승인';
 const PLANNED = '게시예정';
 const DONE = '게시완료';
+const DROP = '드랍';
 const ROLES = {
   master:'마스터(대표)', admin:'부관리자', lead:'콘텐츠 총괄', company:'회사 담당자',
   academic:'학술 담당자', pd:'PD·편집', publisher:'게시 담당', partner:'외부 파트너'
@@ -487,7 +492,7 @@ async function refresh(){
 $$('nav button').forEach(b => b.onclick = () => {
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','approve','schedule','analytics','team','settings'].forEach(v =>
+  ['board','approve','schedule','analytics','drops','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
@@ -526,7 +531,7 @@ function buildChannelChips(){
 
 function visible(){
   return cards.filter(c => {
-    if (c.stage === PLANNED || c.stage === DONE) return false;
+    if (c.stage === PLANNED || c.stage === DONE || c.stage === DROP) return false;
     if (onlyMine && !(c.owner_ids || []).includes(me.id)) return false;
     if (channelFilter.size) {
       const list = c.channels || [];
@@ -537,7 +542,7 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ buildChannelChips(); renderBoard(); renderApprove(); renderSchedule(); renderAnalytics(); renderTeam(); renderSettings(); }
+function render(){ buildChannelChips(); renderBoard(); renderApprove(); renderSchedule(); renderAnalytics(); renderDrops(); renderTeam(); renderSettings(); }
 
 const moatOf = label => moats.find(m => m.label === label);
 const nameOf = id => team.find(t => t.id === id)?.name || team.find(t => t.id === id)?.email || '알 수 없음';
@@ -568,12 +573,7 @@ function cardHTML(c){
     ${c.next_action ? `<div class="next">${esc(c.next_action)}</div>` : ''}
     <div class="meta"><span>${esc(ownerNames(c.owner_ids))}</span>
       ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}</div>
-    <div class="approvals">
-      <div class="pip ${c.chk_academic?'on':''}"></div>
-      <div class="pip ${c.chk_brand?'on':''}"></div>
-      <div class="pip ${c.chk_ad?'on':''}"></div>
-      <div class="pip final ${c.chk_final?'on':''}"></div>
-    </div>${doneBtn}</div>`;
+    ${doneBtn}</div>`;
 }
 
 function renderBoard(){
@@ -583,6 +583,8 @@ function renderBoard(){
   if (onlyMine || channelFilter.size) bits.push(`보이는 카드 ${list.length}개`);
   bits.push(`게시 예정 ${cards.filter(c => c.stage === PLANNED).length}개`);
   bits.push(`게시 완료 ${cards.filter(c => c.stage === DONE).length}개`);
+  const dropped = cards.filter(c => c.stage === DROP).length;
+  if (dropped) bits.push(`드랍 ${dropped}개`);
   $('#board-count').textContent = bits.join(' · ');
 
   $('#line').innerHTML = BOARD_STAGES.map((s, i) => {
@@ -649,15 +651,10 @@ function renderApprove(){
         <div class="meta">
           <span>${esc(ownerNames(c.owner_ids))}</span>
           <span>게시예정 ${c.publish_date || '미정'}</span>
-          <span>검수 ${[c.chk_academic,c.chk_brand,c.chk_ad,c.chk_final].filter(Boolean).length}/4</span>
         </div>
       </div>
       <div class="review-side">
-        <label class="tick"><input type="checkbox" data-ck="chk_academic" data-cid="${c.id}" ${c.chk_academic?'checked':''}>학술</label>
-        <label class="tick"><input type="checkbox" data-ck="chk_brand" data-cid="${c.id}" ${c.chk_brand?'checked':''}>브랜드</label>
-        <label class="tick"><input type="checkbox" data-ck="chk_ad" data-cid="${c.id}" ${c.chk_ad?'checked':''}>광고심의</label>
-        <label class="tick ${isAdmin()?'':'off'}"><input type="checkbox" data-ck="chk_final" data-cid="${c.id}" ${c.chk_final?'checked':''} ${isAdmin()?'':'disabled'}>최종</label>
-        <button class="btn sm" data-pub="${c.id}" style="margin-top:8px">게시 승인</button>
+        <button class="btn sm" data-pub="${c.id}">게시 승인</button>
         <button class="btn sm ghost" data-done="${c.id}">게시 완료</button>
       </div>
     </div>`;
@@ -665,12 +662,6 @@ function renderApprove(){
 
   $$('#approve-list [data-open]').forEach(el =>
     el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
-  $$('#approve-list [data-ck]').forEach(el => el.onchange = async () => {
-    const patch = {}; patch[el.dataset.ck] = el.checked;
-    const { error } = await sb.from('contents').update(patch).eq('id', el.dataset.cid);
-    if (error) { alert(cleanErr(error.message)); }
-    await refresh();
-  });
   $$('#approve-list [data-pub]').forEach(b => b.onclick = () => moveStage(b.dataset.pub, PLANNED));
   $$('#approve-list [data-done]').forEach(b => b.onclick = () => moveStage(b.dataset.done, DONE));
 }
@@ -965,6 +956,42 @@ $$('.an-period').forEach(b => b.onclick = () => {
 });
 $('#an-metric').onchange = e => { anMetric = e.target.value; renderAnalytics(); };
 
+/* ---------------- 드랍 게시판 ---------------- */
+function renderDrops(){
+  const rows = cards.filter(c => c.stage === DROP)
+    .sort((a,b) => (b.dropped_at || b.updated_at || '').localeCompare(a.dropped_at || a.updated_at || ''));
+
+  $('#drop-list').innerHTML = rows.length ? `<table>
+    <tr><th>드랍한 날</th><th>콘텐츠</th><th>차별점</th><th>채널</th><th>담당</th><th></th></tr>
+    ${rows.map(c => {
+      const m = moatOf(c.moat);
+      const color = m ? m.color : '#E2A08A';
+      const when = (c.dropped_at || c.updated_at || '').slice(0,10);
+      return `<tr>
+        <td style="font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)">${when || '—'}</td>
+        <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
+          ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
+        <td style="font-size:12.5px">${c.moat
+          ? `<span class="swatch" style="background:${color}"></span>${esc(c.moat)}`
+          : '<span style="color:var(--muted)">미정</span>'}</td>
+        <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
+        <td style="font-size:12.5px">${esc(ownerNames(c.owner_ids))}</td>
+        <td style="white-space:nowrap"><button class="btn sm" data-restore="${c.id}">아이디어 단계로 복구</button></td>
+      </tr>`;
+    }).join('')}
+  </table>
+  <p class="note">복구하면 생산 라인의 아이디어 칸으로 돌아갑니다. 적어둔 내용은 그대로 남아 있습니다.</p>`
+  : '<div class="empty">드랍한 기획이 없습니다.<br>카드를 열면 아래쪽에 드랍 버튼이 있습니다.</div>';
+
+  $$('#drop-list [data-open]').forEach(el =>
+    el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
+  $$('#drop-list [data-restore]').forEach(b => b.onclick = async () => {
+    const c = cards.find(x => x.id === b.dataset.restore);
+    if (!confirm(`"${c.title}" 을(를) 아이디어 단계로 되돌립니다.`)) return;
+    await moveStage(c.id, IDEA);
+  });
+}
+
 /* ---------------- 팀 관리 ---------------- */
 function renderTeam(){
   if (!isAdmin()) return;
@@ -1151,8 +1178,7 @@ $('#btn-new').onclick = () => openCard(null);
 
 function openCard(c){
   const isNew = !c;
-  const d = c || { title:'', stage:'아이디어', channels:[],
-                   chk_academic:false, chk_brand:false, chk_ad:false, chk_final:false };
+  const d = c || { title:'', stage:'아이디어', channels:[] };
   const admin = isAdmin();
   const moatOptions = moats
     .filter(m => m.active || m.label === d.moat)
@@ -1167,7 +1193,8 @@ function openCard(c){
     <div class="field"><label>콘텐츠 제목</label><input id="f-title" value="${esc(d.title)}"></div>
     <div class="grid2">
       <div class="field"><label>단계</label><select id="f-stage">
-        ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}
+        ${d.stage===DROP ? '<option selected>드랍</option>' : ''}</select></div>
       <div class="field"><label>차별점 — 없으면 기획 반려</label><select id="f-moat">
         <option value="">— 미정 —</option>${moatOptions}</select></div>
     </div>
@@ -1196,16 +1223,6 @@ function openCard(c){
     <div class="field"><label>다음 액션 — 지금 누가 뭘 해야 하는지</label>
       <input id="f-next" value="${esc(d.next_action)}"></div>
 
-    <div class="sect">승인</div>
-    <div class="checks">
-      <label class="check"><input type="checkbox" id="f-ac" ${d.chk_academic?'checked':''}>학술 검수</label>
-      <label class="check"><input type="checkbox" id="f-br" ${d.chk_brand?'checked':''}>브랜드 승인</label>
-      <label class="check"><input type="checkbox" id="f-ad" ${d.chk_ad?'checked':''}>광고 심의</label>
-      <label class="check ${admin?'':'locked'}">
-        <input type="checkbox" id="f-fi" ${d.chk_final?'checked':''} ${admin?'':'disabled'}>최종승인</label>
-    </div>
-    <p class="note">네 개가 모두 켜져야 게시완료로 옮길 수 있습니다. 최종승인은 관리자·부관리자만 켤 수 있습니다.</p>
-
     <div class="sect">대본과 결과</div>
     <div class="field"><label>대본 · 메모</label><textarea id="f-script" style="min-height:150px">${esc(d.script)}</textarea></div>
     <div class="field"><label>게시 링크</label><input id="f-url" value="${esc(d.publish_url)}" placeholder="https://"></div>
@@ -1221,7 +1238,9 @@ function openCard(c){
     <div class="drawer-actions">
       <button class="btn" id="dr-save">저장</button>
       <button class="btn ghost" id="dr-cancel">취소</button>
-      ${(!isNew && admin) ? '<button class="btn danger" id="dr-del" style="margin-left:auto">삭제</button>' : ''}
+      ${(!isNew && d.stage !== DROP) ? '<button class="btn danger" id="dr-drop" style="margin-left:auto">드랍</button>' : ''}
+      ${(!isNew && d.stage === DROP) ? '<button class="btn" id="dr-restore" style="margin-left:auto">아이디어 단계로 복구</button>' : ''}
+      ${(!isNew && admin) ? '<button class="btn danger" id="dr-del">완전 삭제</button>' : ''}
     </div>
   </div></div>`;
 
@@ -1242,14 +1261,10 @@ function openCard(c){
       shoot_date: $('#f-shoot').value || null,
       publish_date: $('#f-pub').value || null,
       next_action: $('#f-next').value.trim() || null,
-      chk_academic: $('#f-ac').checked,
-      chk_brand: $('#f-br').checked,
-      chk_ad: $('#f-ad').checked,
       script: $('#f-script').value || null,
       publish_url: $('#f-url').value.trim() || null,
       views: num('#f-v'), saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
     };
-    if (admin) payload.chk_final = $('#f-fi').checked;
     if (!payload.title) { $('#dr-msg').innerHTML = '<div class="msg err">제목을 입력해 주세요.</div>'; return; }
 
     const res = isNew
@@ -1259,8 +1274,21 @@ function openCard(c){
     close(); await refresh();
   };
 
+  if ($('#dr-drop')) $('#dr-drop').onclick = async () => {
+    if (!confirm(`"${c.title}" 을(를) 드랍합니다.\n지워지지 않고 드랍 게시판에 보관되며, 언제든 아이디어 단계로 복구할 수 있습니다.`)) return;
+    const { error } = await sb.from('contents').update({ stage: DROP }).eq('id', c.id);
+    if (error) return alert(cleanErr(error.message));
+    close(); await refresh();
+  };
+
+  if ($('#dr-restore')) $('#dr-restore').onclick = async () => {
+    const { error } = await sb.from('contents').update({ stage: IDEA }).eq('id', c.id);
+    if (error) return alert(cleanErr(error.message));
+    close(); await refresh();
+  };
+
   if ($('#dr-del')) $('#dr-del').onclick = async () => {
-    if (!confirm('이 카드를 삭제합니다. 되돌릴 수 없습니다.')) return;
+    if (!confirm('이 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 드랍을 쓰세요.')) return;
     const { error } = await sb.from('contents').delete().eq('id', c.id);
     if (error) return alert(cleanErr(error.message));
     close(); await refresh();
