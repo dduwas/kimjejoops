@@ -76,6 +76,7 @@ nav button:hover{color:#fff}
 
 /* 도구 막대 — 내 담당 / 채널 분리 */
 .toolbar{display:flex;align-items:center;gap:10px;padding:13px 20px 0;flex-wrap:wrap}
+.toolbar.mid{padding:11px 20px 0}
 .toolbar.second{padding:11px 20px 13px;border-bottom:1px solid var(--line)}
 .filterlabel{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--muted);margin-right:2px}
 .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
@@ -267,6 +268,11 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <button class="chip" id="chip-mine">내 담당만</button>
       <span class="count" id="board-count"></span>
     </div>
+    <div class="toolbar mid">
+      <span class="filterlabel">담당자</span>
+      <div id="owner-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      <button class="chip reset hide" id="owner-clear">담당자 전체</button>
+    </div>
     <div class="toolbar second">
       <span class="filterlabel">채널</span>
       <div id="channel-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
@@ -296,6 +302,17 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <button class="chip sc-cat" data-cat="planned">게시 예정</button>
       <button class="chip sc-cat" data-cat="done">게시 완료</button>
       <span class="count" id="schedule-count"></span>
+    </div>
+
+    <div style="display:flex;gap:9px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+      <span class="filterlabel">담당자</span>
+      <div id="sc-owner-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      <button class="chip reset hide" id="sc-owner-clear">담당자 전체</button>
+    </div>
+    <div style="display:flex;gap:9px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+      <span class="filterlabel">채널</span>
+      <div id="sc-channel-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      <button class="chip reset hide" id="sc-channel-clear">채널 전체</button>
     </div>
 
     <div id="cal-controls" style="display:flex;gap:9px;align-items:center;margin-bottom:14px">
@@ -390,6 +407,9 @@ const sb = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 let me = null, profile = null, cards = [], team = [], moats = [], channels = [];
 let onlyMine = false;
 let channelFilter = new Set();
+let ownerFilter = new Set();          // 생산 라인 담당자 필터
+let scOwnerFilter = new Set();        // 게시 일정 담당자 필터
+let scChannelFilter = new Set();      // 게시 일정 채널 필터
 
 const isAdmin  = () => profile && (profile.role === 'master' || profile.role === 'admin');
 const isMaster = () => profile && profile.role === 'master';
@@ -504,6 +524,71 @@ $('#chip-mine').onclick = () => {
   renderBoard();
 };
 
+// 담당자·채널 칩을 공통 규격으로 그린다
+function buildChips(boxSel, clearSel, items, filterSet, onDone){
+  const box = $(boxSel); if (!box) return;
+  const keys = items.map(i => i.key);
+  [...filterSet].forEach(k => { if (!keys.includes(k)) filterSet.delete(k); });
+
+  box.innerHTML = items.length
+    ? items.map(i => `<button class="chip ch ${filterSet.has(i.key)?'on':''}" data-key="${esc(i.key)}">${esc(i.label)}</button>`).join('')
+    : '<span style="font-size:12.5px;color:var(--muted)">표시할 항목이 없습니다</span>';
+
+  const clearBtn = $(clearSel);
+  const sync = () => clearBtn && clearBtn.classList.toggle('hide', filterSet.size === 0);
+
+  [...box.querySelectorAll('.chip')].forEach(b => b.onclick = () => {
+    const k = b.dataset.key;
+    filterSet.has(k) ? filterSet.delete(k) : filterSet.add(k);
+    b.classList.toggle('on', filterSet.has(k));
+    sync(); onDone();
+  });
+  sync();
+  if (clearBtn) clearBtn.onclick = () => {
+    filterSet.clear();
+    [...box.querySelectorAll('.chip')].forEach(b => b.classList.remove('on'));
+    sync(); onDone();
+  };
+}
+
+// 담당자 목록 — 실제로 카드에 배정된 사람만 노출한다
+function ownerItems(pool){
+  const seen = new Map();
+  pool.forEach(c => (c.owner_ids || []).forEach(id => {
+    seen.set(id, (seen.get(id) || 0) + 1);
+  }));
+  const list = [...seen.entries()]
+    .map(([id, n]) => ({ key: id, label: `${nameOf(id)} ${n}`, n }))
+    .sort((a,b) => b.n - a.n);
+  if (pool.some(c => !(c.owner_ids || []).length))
+    list.push({ key: '__none__', label: '담당 미정', n: 0 });
+  return list;
+}
+
+function matchOwner(c, set){
+  if (!set.size) return true;
+  const ids = c.owner_ids || [];
+  if (set.has('__none__') && !ids.length) return true;
+  return ids.some(id => set.has(id));
+}
+
+function matchChannel(c, set){
+  if (!set.size) return true;
+  return (c.channels || []).some(ch => set.has(ch));
+}
+
+function buildOwnerChips(){
+  const pool = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP);
+  buildChips('#owner-chips', '#owner-clear', ownerItems(pool), ownerFilter, renderBoard);
+}
+
+function buildScheduleChips(){
+  const pool = cards.filter(c => c.stage === PLANNED || c.stage === DONE);
+  buildChips('#sc-owner-chips', '#sc-owner-clear', ownerItems(pool), scOwnerFilter, renderSchedule);
+  const chs = channels.filter(c => c.active).map(c => ({ key: c.label, label: c.label }));
+  buildChips('#sc-channel-chips', '#sc-channel-clear', chs, scChannelFilter, renderSchedule);
+}
+
 function buildChannelChips(){
   const active = channels.filter(c => c.active);
   // 사라진 채널이 필터에 남아 있으면 정리
@@ -533,16 +618,14 @@ function visible(){
   return cards.filter(c => {
     if (c.stage === PLANNED || c.stage === DONE || c.stage === DROP) return false;
     if (onlyMine && !(c.owner_ids || []).includes(me.id)) return false;
-    if (channelFilter.size) {
-      const list = c.channels || [];
-      if (!list.some(ch => channelFilter.has(ch))) return false;
-    }
+    if (!matchOwner(c, ownerFilter)) return false;
+    if (!matchChannel(c, channelFilter)) return false;
     return true;
   });
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ buildChannelChips(); renderBoard(); renderApprove(); renderSchedule(); renderAnalytics(); renderDrops(); renderTeam(); renderSettings(); }
+function render(){ buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderApprove(); renderSchedule(); renderAnalytics(); renderDrops(); renderTeam(); renderSettings(); }
 
 const moatOf = label => moats.find(m => m.label === label);
 const nameOf = id => team.find(t => t.id === id)?.name || team.find(t => t.id === id)?.email || '알 수 없음';
@@ -580,7 +663,7 @@ function renderBoard(){
   const list = visible();
   const live = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE).length;
   const bits = [`제작 중 ${live}개`];
-  if (onlyMine || channelFilter.size) bits.push(`보이는 카드 ${list.length}개`);
+  if (onlyMine || channelFilter.size || ownerFilter.size) bits.push(`보이는 카드 ${list.length}개`);
   bits.push(`게시 예정 ${cards.filter(c => c.stage === PLANNED).length}개`);
   bits.push(`게시 완료 ${cards.filter(c => c.stage === DONE).length}개`);
   const dropped = cards.filter(c => c.stage === DROP).length;
@@ -675,6 +758,8 @@ function schedulePool(){
     if (c.stage !== PLANNED && c.stage !== DONE) return false;
     if (scCat === 'planned' && c.stage !== PLANNED) return false;
     if (scCat === 'done' && c.stage !== DONE) return false;
+    if (!matchOwner(c, scOwnerFilter)) return false;
+    if (!matchChannel(c, scChannelFilter)) return false;
     return true;
   });
 }
@@ -682,7 +767,9 @@ function schedulePool(){
 function renderSchedule(){
   const pool = schedulePool();
   const planned = pool.filter(c => c.stage === PLANNED).length;
-  $('#schedule-count').textContent = `게시 예정 ${planned}개 · 게시 완료 ${pool.length - planned}개`;
+  const filtered = scOwnerFilter.size || scChannelFilter.size;
+  $('#schedule-count').textContent =
+    `게시 예정 ${planned}개 · 게시 완료 ${pool.length - planned}개` + (filtered ? ' (필터 적용 중)' : '');
   $('#cal-controls').classList.toggle('hide', scView !== 'calendar');
   scView === 'calendar' ? renderCalendar(pool) : renderScheduleTable(pool);
   wireScheduleButtons();
