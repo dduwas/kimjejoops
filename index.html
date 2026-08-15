@@ -89,6 +89,8 @@ nav button:hover{color:#fff}
 
 .line{display:flex;gap:12px;padding:18px 20px 40px;overflow-x:auto;align-items:flex-start}
 .col{flex:0 0 250px;min-height:120px}
+.col.wide{flex:0 0 512px}
+.col.wide .colbody{display:grid;grid-template-columns:1fr 1fr;gap:0 9px;align-items:start}
 .colhead{display:flex;align-items:baseline;gap:8px;padding:0 3px 9px;border-bottom:2px solid var(--navy);margin-bottom:11px}
 .colnum{font-size:10px;font-weight:800;letter-spacing:.1em;color:var(--blue);font-variant-numeric:tabular-nums}
 .colname{font-size:13.5px;font-weight:700;color:var(--navy)}
@@ -186,6 +188,9 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
   .grid2,.checks{grid-template-columns:1fr}
   .hrow{height:auto;padding:12px 0;flex-wrap:wrap}
   .drawer{padding:22px 18px 60px}
+  .col.wide{flex:0 0 250px}
+  .col.wide .colbody{grid-template-columns:1fr}
+  .cell{min-height:74px}
 }
 </style>
 </head>
@@ -672,13 +677,13 @@ function renderBoard(){
 
   $('#line').innerHTML = BOARD_STAGES.map((s, i) => {
     const items = list.filter(c => c.stage === s);
-    return `<div class="col" data-stage="${esc(s)}">
+    return `<div class="col ${s === '편집' ? 'wide' : ''}" data-stage="${esc(s)}">
       <div class="colhead">
         <span class="colnum">${String(i+1).padStart(2,'0')}</span>
         <span class="colname">${esc(s)}</span>
         <span class="colcount">${items.length}</span>
       </div>
-      ${items.map(cardHTML).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px 3px">비어 있음</div>'}
+      <div class="colbody">${items.map(cardHTML).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px 3px">비어 있음</div>'}</div>
     </div>`;
   }).join('');
 
@@ -1271,7 +1276,7 @@ function openCard(c){
     .filter(m => m.active || m.label === d.moat)
     .map(m => `<option ${d.moat===m.label?'selected':''}>${esc(m.label)}</option>`).join('');
 
-  $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" style="position:relative">
+  $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" tabindex="-1" style="position:relative">
     <button class="close" id="dr-close">닫기</button>
     <h2>${isNew ? '새 콘텐츠' : esc(d.title)}</h2>
     <div class="sub">${isNew ? '제목과 차별점만 먼저 채워도 됩니다.' : '단계 ' + esc(d.stage)}</div>
@@ -1324,20 +1329,17 @@ function openCard(c){
 
     <div class="drawer-actions">
       <button class="btn" id="dr-save">저장</button>
-      <button class="btn ghost" id="dr-cancel">취소</button>
+      <button class="btn ghost" id="dr-cancel">저장 안 함</button>
       ${(!isNew && d.stage !== DROP) ? '<button class="btn danger" id="dr-drop" style="margin-left:auto">드랍</button>' : ''}
       ${(!isNew && d.stage === DROP) ? '<button class="btn" id="dr-restore" style="margin-left:auto">아이디어 단계로 복구</button>' : ''}
       ${(!isNew && admin) ? '<button class="btn danger" id="dr-del">완전 삭제</button>' : ''}
     </div>
   </div></div>`;
 
-  const close = () => $('#drawer-root').innerHTML = '';
-  $('#dr-close').onclick = $('#dr-cancel').onclick = close;
-  $('.scrim').onclick = e => { if (e.target.classList.contains('scrim')) close(); };
-
-  $('#dr-save').onclick = async () => {
+  // 현재 입력값을 한 덩어리로 읽는다 — 저장과 변경 감지에 함께 쓴다
+  const collect = () => {
     const num = id => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
-    const payload = {
+    return {
       title: $('#f-title').value.trim(),
       stage: $('#f-stage').value,
       moat: $('#f-moat').value || null,
@@ -1352,33 +1354,89 @@ function openCard(c){
       publish_url: $('#f-url').value.trim() || null,
       views: num('#f-v'), saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
     };
-    if (!payload.title) { $('#dr-msg').innerHTML = '<div class="msg err">제목을 입력해 주세요.</div>'; return; }
+  };
 
+  const snapshot = p => JSON.stringify({
+    ...p,
+    channels: [...(p.channels || [])].sort(),
+    owner_ids: [...(p.owner_ids || [])].sort()
+  });
+
+  const initial = snapshot(collect());
+  const dirty = () => snapshot(collect()) !== initial;
+
+  const forceClose = () => {
+    window.onbeforeunload = null;
+    $('#drawer-root').innerHTML = '';
+  };
+
+  // 저장하지 않은 내용이 있으면 물어본다
+  const close = async () => {
+    if (!dirty()) return forceClose();
+    const answer = confirm(
+      '저장하지 않은 내용이 있습니다.\n\n' +
+      '[확인] 을 누르면 저장하고 닫습니다.\n' +
+      '[취소] 를 누르면 편집 화면에 그대로 머무릅니다.'
+    );
+    if (!answer) return;          // 계속 편집
+    await save({ silent: true });
+  };
+
+  // 브라우저 새로고침·탭 닫기도 막는다
+  window.onbeforeunload = () => dirty() ? '' : undefined;
+
+  const save = async (opt = {}) => {
+    const payload = collect();
+    if (!payload.title) {
+      $('#dr-msg').innerHTML = '<div class="msg err">제목을 입력해 주세요.</div>';
+      $('#f-title').focus();
+      return false;
+    }
     const res = isNew
       ? await sb.from('contents').insert({ ...payload, created_by: me.id })
       : await sb.from('contents').update(payload).eq('id', c.id);
-    if (res.error) { $('#dr-msg').innerHTML = `<div class="msg err">${esc(cleanErr(res.error.message))}</div>`; return; }
-    close(); await refresh();
+    if (res.error) {
+      $('#dr-msg').innerHTML = `<div class="msg err">${esc(cleanErr(res.error.message))}</div>`;
+      return false;
+    }
+    forceClose();
+    await refresh();
+    return true;
   };
+
+  $('#dr-close').onclick = close;
+  $('#dr-cancel').onclick = () => {
+    if (dirty() && !confirm('작성하던 내용을 버리고 닫습니다.\n계속할까요?')) return;
+    forceClose();
+  };
+  $('.scrim').onclick = e => { if (e.target.classList.contains('scrim')) close(); };
+
+  // Esc 로 닫기, Ctrl+S 로 저장
+  $('.drawer').onkeydown = e => {
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
+  };
+
+  $('#dr-save').onclick = () => save();
 
   if ($('#dr-drop')) $('#dr-drop').onclick = async () => {
     if (!confirm(`"${c.title}" 을(를) 드랍합니다.\n지워지지 않고 드랍 게시판에 보관되며, 언제든 아이디어 단계로 복구할 수 있습니다.`)) return;
     const { error } = await sb.from('contents').update({ stage: DROP }).eq('id', c.id);
     if (error) return alert(cleanErr(error.message));
-    close(); await refresh();
+    forceClose(); await refresh();
   };
 
   if ($('#dr-restore')) $('#dr-restore').onclick = async () => {
     const { error } = await sb.from('contents').update({ stage: IDEA }).eq('id', c.id);
     if (error) return alert(cleanErr(error.message));
-    close(); await refresh();
+    forceClose(); await refresh();
   };
 
   if ($('#dr-del')) $('#dr-del').onclick = async () => {
     if (!confirm('이 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 드랍을 쓰세요.')) return;
     const { error } = await sb.from('contents').delete().eq('id', c.id);
     if (error) return alert(cleanErr(error.message));
-    close(); await refresh();
+    forceClose(); await refresh();
   };
 }
 
