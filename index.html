@@ -157,6 +157,13 @@ nav button:hover{color:#fff}
 .drawer h2{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
 .drawer .sub{font-size:12.5px;color:var(--muted);margin-bottom:22px}
 .drawer .close{position:absolute;top:18px;right:22px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 11px;font-size:13px}
+.drawer .close:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.hint{position:absolute;top:52px;right:22px;background:var(--navy);color:#fff;font-size:12px;
+  padding:7px 11px;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:270px;line-height:1.5}
+.hint.show{opacity:1}
+@keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.drawer.nudge{animation:nudge .22s ease}
+@media (prefers-reduced-motion:reduce){.drawer.nudge{animation:none}}
 .sect{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--blue);margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .checks{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -385,7 +392,17 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
 const STAGES = ['아이디어','자료조사','대본','촬영','편집','검수·승인','게시예정','게시완료'];
-const BOARD_STAGES = STAGES.slice(0, 6);   // 생산 라인은 검수·승인까지
+// 생산 라인 칼럼 구성
+//  stages : 이 칼럼에 모아 보여줄 단계들 (기존 데이터를 건드리지 않고 묶기만 한다)
+//  drop   : 이 칼럼에 카드를 떨어뜨렸을 때 지정될 단계
+//  wide   : 카드가 많은 칼럼은 2열로 넓게
+const BOARD_COLS = [
+  { name: '아이디어·자료조사', stages: ['아이디어','자료조사'], drop: '아이디어' },
+  { name: '대본',   stages: ['대본'],   drop: '대본',   wide: true },
+  { name: '촬영',   stages: ['촬영'],   drop: '촬영' },
+  { name: '편집',   stages: ['편집'],   drop: '편집',   wide: true },
+  { name: '검수·승인', stages: ['검수·승인'], drop: '검수·승인' }
+];
 const IDEA = '아이디어';
 const REVIEW = '검수·승인';
 const PLANNED = '게시예정';
@@ -675,12 +692,12 @@ function renderBoard(){
   if (dropped) bits.push(`드랍 ${dropped}개`);
   $('#board-count').textContent = bits.join(' · ');
 
-  $('#line').innerHTML = BOARD_STAGES.map((s, i) => {
-    const items = list.filter(c => c.stage === s);
-    return `<div class="col ${s === '편집' ? 'wide' : ''}" data-stage="${esc(s)}">
+  $('#line').innerHTML = BOARD_COLS.map((col, i) => {
+    const items = list.filter(c => col.stages.includes(c.stage));
+    return `<div class="col ${col.wide ? 'wide' : ''}" data-drop="${esc(col.drop)}" data-stages="${esc(col.stages.join('|'))}">
       <div class="colhead">
         <span class="colnum">${String(i+1).padStart(2,'0')}</span>
-        <span class="colname">${esc(s)}</span>
+        <span class="colname">${esc(col.name)}</span>
         <span class="colcount">${items.length}</span>
       </div>
       <div class="colbody">${items.map(cardHTML).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px 3px">비어 있음</div>'}</div>
@@ -706,7 +723,12 @@ function renderBoard(){
     col.ondragleave = () => col.classList.remove('drop');
     col.ondrop = async e => {
       e.preventDefault(); col.classList.remove('drop');
-      await moveStage(e.dataTransfer.getData('text/plain'), col.dataset.stage);
+      const id = e.dataTransfer.getData('text/plain');
+      const card = cards.find(x => x.id === id);
+      if (!card) return;
+      // 같은 칼럼 안에서 옮긴 경우 단계를 건드리지 않는다
+      if ((col.dataset.stages || '').split('|').includes(card.stage)) return;
+      await moveStage(id, col.dataset.drop);
     };
   });
 }
@@ -1278,6 +1300,7 @@ function openCard(c){
 
   $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" tabindex="-1" style="position:relative">
     <button class="close" id="dr-close">닫기</button>
+    <div class="hint" id="dr-hint">바깥을 눌러도 닫히지 않습니다. 오른쪽 위 <b>닫기</b> 를 눌러주세요.</div>
     <h2>${isNew ? '새 콘텐츠' : esc(d.title)}</h2>
     <div class="sub">${isNew ? '제목과 차별점만 먼저 채워도 됩니다.' : '단계 ' + esc(d.stage)}</div>
     <div id="dr-msg"></div>
@@ -1409,11 +1432,19 @@ function openCard(c){
     if (dirty() && !confirm('작성하던 내용을 버리고 닫습니다.\n계속할까요?')) return;
     forceClose();
   };
-  $('.scrim').onclick = e => { if (e.target.classList.contains('scrim')) close(); };
+  // 바깥을 눌러도 닫히지 않는다. 닫기 버튼으로만 닫는다.
+  $('.scrim').onclick = e => {
+    if (!e.target.classList.contains('scrim')) return;
+    const box = $('.drawer');
+    box.classList.remove('nudge'); void box.offsetWidth; box.classList.add('nudge');
+    const hint = $('#dr-hint');
+    hint.classList.add('show');
+    clearTimeout(window.__hintT);
+    window.__hintT = setTimeout(() => hint && hint.classList.remove('show'), 2600);
+  };
 
-  // Esc 로 닫기, Ctrl+S 로 저장
+  // Ctrl+S 로 저장 (Esc 로는 닫지 않는다)
   $('.drawer').onkeydown = e => {
-    if (e.key === 'Escape') { e.preventDefault(); close(); }
     if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
   };
 
