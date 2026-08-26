@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>약공장 김제조 · 콘텐츠 운영</title>
+<title>약공장 김제조 워크스페이스</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
 <style>
 :root{
@@ -150,6 +150,35 @@ nav button:hover{color:#fff}
 .stat-s{font-size:11.5px;color:var(--muted);margin-top:5px;min-height:14px}
 .barwrap{background:var(--wash);border-radius:3px;height:7px;overflow:hidden}
 .bar{background:var(--blue);height:100%;border-radius:3px}
+/* 할 일 */
+.todo-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
+.todo-add input[type=text],.todo-add input:not([type]){padding:9px 12px;border:1px solid var(--line);border-radius:8px}
+#td-owners-box{display:flex;gap:9px;align-items:flex-start;flex-wrap:wrap}
+.todo{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:var(--r);
+  padding:12px 14px;margin-bottom:8px;background:#fff}
+.todo.is-done{opacity:.55}
+.todo.is-done .todo-t{text-decoration:line-through}
+.tdchk{width:18px;height:18px;accent-color:var(--navy);flex:0 0 18px}
+.todo-body{flex:1;min-width:0}
+.todo-t{font-size:14.5px;font-weight:600;line-height:1.45}
+.todo-m{display:flex;gap:11px;margin-top:5px;font-size:12px;color:var(--muted);flex-wrap:wrap;align-items:center}
+.todo-m .od{color:var(--warn);font-weight:700}
+.pri{font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:4px}
+.pri.p-높음{background:var(--warn-bg);color:var(--warn)}
+.pri.p-보통{background:var(--blue-50);color:var(--navy-2)}
+.pri.p-낮음{background:var(--wash);color:var(--muted)}
+
+/* 회의록 */
+.mtcard{border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:var(--r);
+  padding:15px 17px;margin-bottom:10px;background:#fff;cursor:pointer}
+.mtcard:hover{box-shadow:0 2px 10px rgba(11,42,91,.09)}
+.mt-head{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.mt-head b{font-size:15.5px;letter-spacing:-.01em}
+.mt-sum{margin-top:9px;font-size:13px;line-height:1.6;color:var(--ink);
+  max-height:80px;overflow:hidden;position:relative}
+.filerow{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);
+  border-radius:8px;margin-bottom:6px;font-size:13px}
+
 .empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7}
 
 .scrim{position:fixed;inset:0;background:rgba(8,32,74,.42);display:flex;justify-content:flex-end;z-index:50}
@@ -207,7 +236,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
   <div class="auth-card">
     <div class="brand">
       <div class="kicker">약공장 김제조</div>
-      <h1>콘텐츠 운영 시스템</h1>
+      <h1>워크스페이스</h1>
       <p>승인된 담당자만 들어올 수 있습니다. 처음이면 가입 신청 후 관리자 승인을 기다려 주세요.</p>
     </div>
     <div class="tabs">
@@ -256,12 +285,12 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>콘텐츠 운영</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
-        <button data-view="approve">승인 대기</button>
         <button data-view="schedule">게시 일정</button>
-        <button data-view="analytics">성과분석</button>
+        <button data-view="todo">할 일</button>
+        <button data-view="meetings">회의록</button>
         <button data-view="drops">드랍</button>
         <button data-view="team" class="admin-only">팀 관리</button>
         <button data-view="settings" class="admin-only">설정</button>
@@ -291,12 +320,6 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <button class="chip reset hide" id="chip-clear">채널 전체</button>
     </div>
     <div class="line" id="line"></div>
-  </section>
-
-  <section id="view-approve" class="hide wrap">
-    <h3>승인 대기</h3>
-    <p class="lede">생산 라인의 검수·승인 칸에 있는 카드입니다. 내용을 훑고 여기서 바로 게시 승인하세요.</p>
-    <div id="approve-list"></div>
   </section>
 
   <section id="view-schedule" class="hide wrap">
@@ -337,25 +360,40 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
     <div id="schedule-body"></div>
   </section>
 
-  <section id="view-analytics" class="hide wrap">
-    <h3>성과분석</h3>
-    <p class="lede">게시완료된 콘텐츠의 숫자만 계산합니다. 저장률과 공유율을 1차 지표로 봅니다.
-      좋아요는 후행 지표라 넣지 않았습니다.</p>
-    <div style="display:flex;gap:9px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
-      <span class="filterlabel">기간</span>
-      <button class="chip an-period on" data-days="0">전체</button>
-      <button class="chip an-period" data-days="30">최근 30일</button>
-      <button class="chip an-period" data-days="90">최근 90일</button>
-      <div class="sep"></div>
-      <span class="filterlabel">순위 기준</span>
-      <select id="an-metric" class="mini" style="padding:7px 10px">
-        <option value="saveRate">저장률</option>
-        <option value="shareRate">공유율</option>
-        <option value="views">조회수</option>
-        <option value="link_clicks">링크 클릭</option>
+  <section id="view-todo" class="hide wrap">
+    <h3>할 일</h3>
+    <p class="lede">콘텐츠 카드로 만들기엔 작은 일들을 여기에 적습니다. 담당자와 기한을 정해두면 놓치지 않습니다.</p>
+
+    <div class="todo-add">
+      <input id="td-title" placeholder="할 일을 입력하고 Enter" style="flex:1;min-width:180px">
+      <select id="td-pri" class="mini" style="padding:9px 10px">
+        <option>높음</option><option selected>보통</option><option>낮음</option>
       </select>
+      <input type="date" id="td-due" class="mini" style="padding:9px 10px">
+      <button class="btn sm" id="td-add">추가</button>
     </div>
-    <div id="analytics-body"></div>
+    <div id="td-owners-box">
+      <span class="filterlabel">담당자 지정</span>
+      <div id="td-owners" class="chgroup"></div>
+    </div>
+
+    <div style="display:flex;gap:9px;align-items:center;margin:20px 0 14px;flex-wrap:wrap">
+      <span class="filterlabel">보기</span>
+      <button class="chip td-f on" data-f="open">진행 중</button>
+      <button class="chip td-f" data-f="mine">내 할 일</button>
+      <button class="chip td-f" data-f="done">완료</button>
+      <button class="chip td-f" data-f="all">전체</button>
+      <span class="count" id="todo-count"></span>
+    </div>
+    <div id="todo-list"></div>
+  </section>
+
+  <section id="view-meetings" class="hide wrap">
+    <h3>회의록</h3>
+    <p class="lede">회의 대본을 붙여넣으면 핵심 결론과 다음 액션을 정리해 줍니다.
+      정리된 액션은 할 일로 바로 옮길 수 있습니다.</p>
+    <button class="btn sm" id="mt-new">+ 회의록 작성</button>
+    <div id="meeting-list" style="margin-top:18px"></div>
   </section>
 
   <section id="view-drops" class="hide wrap">
@@ -399,7 +437,7 @@ const STAGES = ['아이디어','자료조사','대본','촬영','편집','검수
 const BOARD_COLS = [
   { name: '아이디어·자료조사', stages: ['아이디어','자료조사'], drop: '아이디어' },
   { name: '대본',   stages: ['대본'],   drop: '대본',   wide: true },
-  { name: '촬영',   stages: ['촬영'],   drop: '촬영' },
+  { name: '촬영',   stages: ['촬영'],   drop: '촬영',   wide: true },
   { name: '편집',   stages: ['편집'],   drop: '편집',   wide: true },
   { name: '검수·승인', stages: ['검수·승인'], drop: '검수·승인' }
 ];
@@ -426,7 +464,7 @@ if (!window.SUPABASE_URL || window.SUPABASE_URL.includes('여기에')) {
 }
 const sb = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
-let me = null, profile = null, cards = [], team = [], moats = [], channels = [];
+let me = null, profile = null, cards = [], team = [], moats = [], channels = [], todos = [], meetings = [];
 let onlyMine = false;
 let channelFilter = new Set();
 let ownerFilter = new Set();          // 생산 라인 담당자 필터
@@ -521,20 +559,23 @@ function show(which){
 }
 
 async function refresh(){
-  const [c, p, m, ch] = await Promise.all([
+  const [c, p, m, ch, td, mt] = await Promise.all([
     sb.from('contents').select('*').order('updated_at', { ascending:false }),
     sb.from('profiles').select('*').order('created_at', { ascending:false }),
     sb.from('moats').select('*').order('sort_order', { ascending:true }),
-    sb.from('channels').select('*').order('sort_order', { ascending:true })
+    sb.from('channels').select('*').order('sort_order', { ascending:true }),
+    sb.from('todos').select('*').order('created_at', { ascending:false }),
+    sb.from('meetings').select('*').order('met_on', { ascending:false })
   ]);
   cards = c.data || []; team = p.data || []; moats = m.data || []; channels = ch.data || [];
+  todos = td.data || []; meetings = mt.data || [];
   render();
 }
 
 $$('nav button').forEach(b => b.onclick = () => {
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','approve','schedule','analytics','drops','team','settings'].forEach(v =>
+  ['board','schedule','todo','meetings','drops','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
@@ -647,7 +688,11 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderApprove(); renderSchedule(); renderAnalytics(); renderDrops(); renderTeam(); renderSettings(); }
+function render(){ buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
+
+/* ---------------- 공용 숫자 도우미 ---------------- */
+const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
+const fmtN = v => num(v) === null ? '—' : Number(v).toLocaleString();
 
 const moatOf = label => moats.find(m => m.label === label);
 const nameOf = id => team.find(t => t.id === id)?.name || team.find(t => t.id === id)?.email || '알 수 없음';
@@ -741,41 +786,6 @@ async function moveStage(id, stage){
   await refresh();
 }
 
-/* ---------------- 승인 대기 ---------------- */
-function renderApprove(){
-  const rows = cards.filter(c => c.stage === REVIEW)
-    .sort((a,b) => (a.publish_date || '9999').localeCompare(b.publish_date || '9999'));
-
-  $('#approve-list').innerHTML = rows.length ? rows.map(c => {
-    const m = moatOf(c.moat);
-    const color = m ? m.color : '#E2A08A';
-    return `<div class="review" style="border-left-color:${color}">
-      <div class="review-main" data-open="${c.id}">
-        <h4>${esc(c.title)}</h4>
-        <div class="badges">
-          <span class="badge" style="background:${color}1F;color:${color}">${esc(c.moat || '차별점 미정')}</span>
-          ${(c.channels || []).map(ch => `<span class="badge">${esc(ch)}</span>`).join('')}
-          ${c.cta_keyword ? `<span class="badge b-cta">CTA ${esc(c.cta_keyword)}</span>` : ''}
-        </div>
-        ${c.key_message ? `<div class="review-key">${esc(c.key_message)}</div>` : ''}
-        <div class="meta">
-          <span>${esc(ownerNames(c.owner_ids))}</span>
-          <span>게시예정 ${c.publish_date || '미정'}</span>
-        </div>
-      </div>
-      <div class="review-side">
-        <button class="btn sm" data-pub="${c.id}">게시 승인</button>
-        <button class="btn sm ghost" data-done="${c.id}">게시 완료</button>
-      </div>
-    </div>`;
-  }).join('') : '<div class="empty">검수·승인 칸에 있는 카드가 없습니다.<br>생산 라인에서 카드를 검수·승인으로 옮기면 여기에 나타납니다.</div>';
-
-  $$('#approve-list [data-open]').forEach(el =>
-    el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
-  $$('#approve-list [data-pub]').forEach(b => b.onclick = () => moveStage(b.dataset.pub, PLANNED));
-  $$('#approve-list [data-done]').forEach(b => b.onclick = () => moveStage(b.dataset.done, DONE));
-}
-
 /* ---------------- 게시 일정 (캘린더 + 게시판) ---------------- */
 let scView = 'calendar', scCat = 'all';
 let calBase = new Date();
@@ -856,7 +866,6 @@ function renderCalendar(pool){
 
 function scheduleTableHTML(rows){
   const today = new Date().toISOString().slice(0,10);
-  const n = v => (v === null || v === undefined) ? '—' : Number(v).toLocaleString();
   return `<table>
     <tr><th>게시일</th><th>분류</th><th>콘텐츠</th><th>채널</th><th>담당</th><th>조회</th><th>저장</th><th></th></tr>
     ${rows.map(c => {
@@ -872,8 +881,8 @@ function scheduleTableHTML(rows){
           <br><span style="font-size:12px;color:var(--muted)">${esc(c.moat || '차별점 미정')}</span></td>
         <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
         <td>${esc(ownerNames(c.owner_ids))}</td>
-        <td style="font-variant-numeric:tabular-nums">${n(c.views)}</td>
-        <td style="font-variant-numeric:tabular-nums">${n(c.saves)}</td>
+        <td style="font-variant-numeric:tabular-nums">${fmtN(c.views)}</td>
+        <td style="font-variant-numeric:tabular-nums">${fmtN(c.saves)}</td>
         <td style="white-space:nowrap">
           ${c.stage === PLANNED
             ? `<button class="btn sm" data-sdone="${c.id}">게시 완료</button>`
@@ -917,158 +926,310 @@ $('#cal-next').onclick  = () => { calBase = new Date(calBase.getFullYear(), calB
 $('#cal-today').onclick = () => { calBase = new Date(); renderSchedule(); };
 
 
-/* ---------------- 성과분석 ---------------- */
-let anDays = 0, anMetric = 'saveRate';
+/* ---------------- 할 일 ---------------- */
+let tdFilter = 'open';
 
-const num = v => (v === null || v === undefined || v === '') ? null : Number(v);
-const rate = (a, b) => (num(a) === null || !num(b)) ? null : num(a) / num(b);
-const fmtN = v => num(v) === null ? '—' : Number(v).toLocaleString();
-const fmtP = v => v === null ? '—' : (v * 100).toFixed(1) + '%';
-const avg = arr => arr.length ? arr.reduce((s,x) => s+x, 0) / arr.length : null;
-
-function metricOf(c, key){
-  if (key === 'saveRate')  return rate(c.saves, c.views);
-  if (key === 'shareRate') return rate(c.shares, c.views);
-  return num(c[key]);
-}
-const METRIC_KO = { saveRate:'저장률', shareRate:'공유율', views:'조회수', link_clicks:'링크 클릭' };
-
-function bar(v, max){
-  const w = (max && v) ? Math.max(2, Math.round(v / max * 100)) : 0;
-  return `<div class="barwrap"><div class="bar" style="width:${w}%"></div></div>`;
-}
-
-function renderAnalytics(){
-  let pool = cards.filter(c => c.stage === DONE);
-
-  if (anDays) {
-    const from = new Date(Date.now() - anDays * 864e5).toISOString().slice(0,10);
-    pool = pool.filter(c => (c.publish_date || '') >= from);
+function renderTodos(){
+  // 담당자 선택 칩
+  const box = $('#td-owners');
+  if (box && !box.dataset.built) {
+    box.innerHTML = team.filter(t => t.status === 'approved')
+      .map(t => `<label><input type="checkbox" value="${t.id}">${esc(t.name || t.email)}</label>`).join('');
+    box.dataset.built = '1';
   }
 
-  const scored = pool.filter(c => num(c.views) !== null);
-  const missing = pool.filter(c => num(c.views) === null);
-
-  if (!pool.length) {
-    $('#analytics-body').innerHTML = `<div class="empty">이 기간에 게시완료된 콘텐츠가 없습니다.</div>`;
-    return;
-  }
-
-  /* ---- 요약 ---- */
-  const summary = [
-    ['분석 대상',  `${scored.length}편`, missing.length ? `숫자 미입력 ${missing.length}편 제외` : '전부 입력 완료'],
-    ['평균 조회',  fmtN(Math.round(avg(scored.map(c => num(c.views))) || 0)), ''],
-    ['평균 저장률', fmtP(avg(scored.map(c => rate(c.saves, c.views)).filter(v => v !== null))), '저장 ÷ 조회'],
-    ['평균 공유율', fmtP(avg(scored.map(c => rate(c.shares, c.views)).filter(v => v !== null))), '공유 ÷ 조회'],
-    ['링크 클릭 합', fmtN(scored.reduce((s,c) => s + (num(c.link_clicks) || 0), 0)), '퍼널 유입량']
-  ];
-
-  /* ---- 그룹 비교 ---- */
-  function groupRows(getKeys){
-    const map = new Map();
-    scored.forEach(c => getKeys(c).forEach(k => {
-      if (!map.has(k)) map.set(k, []);
-      map.get(k).push(c);
-    }));
-    return [...map.entries()].map(([k, list]) => ({
-      key: k, n: list.length,
-      views: avg(list.map(c => num(c.views))),
-      saveRate: avg(list.map(c => rate(c.saves, c.views)).filter(v => v !== null)),
-      shareRate: avg(list.map(c => rate(c.shares, c.views)).filter(v => v !== null)),
-      clicks: list.reduce((s,c) => s + (num(c.link_clicks) || 0), 0)
-    })).sort((a,b) => (b.saveRate || 0) - (a.saveRate || 0));
-  }
-
-  const byChannel = groupRows(c => (c.channels || []).length ? c.channels : ['(채널 미지정)']);
-  const byMoat    = groupRows(c => [c.moat || '(차별점 미정)']);
-  const maxChSave = Math.max(...byChannel.map(r => r.saveRate || 0), 0.0001);
-  const maxMoSave = Math.max(...byMoat.map(r => r.saveRate || 0), 0.0001);
-
-  const groupTable = (rows, max, label) => `<table>
-    <tr><th>${label}</th><th>편수</th><th>평균 조회</th><th>저장률</th><th></th><th>공유율</th><th>링크클릭</th></tr>
-    ${rows.map(r => `<tr>
-      <td><b>${esc(r.key)}</b></td>
-      <td style="color:var(--muted)">${r.n}</td>
-      <td style="font-variant-numeric:tabular-nums">${fmtN(Math.round(r.views || 0))}</td>
-      <td style="font-variant-numeric:tabular-nums"><b>${fmtP(r.saveRate)}</b></td>
-      <td style="width:110px">${bar(r.saveRate, max)}</td>
-      <td style="font-variant-numeric:tabular-nums">${fmtP(r.shareRate)}</td>
-      <td style="font-variant-numeric:tabular-nums">${fmtN(r.clicks)}</td>
-    </tr>`).join('')}
-  </table>`;
-
-  /* ---- 순위 ---- */
-  const ranked = scored
-    .map(c => ({ c, v: metricOf(c, anMetric) }))
-    .filter(x => x.v !== null)
-    .sort((a,b) => b.v - a.v);
-  const isRate = anMetric === 'saveRate' || anMetric === 'shareRate';
-  const show = x => isRate ? fmtP(x.v) : fmtN(x.v);
-
-  const rankTable = (list, title, note) => `<table>
-    <tr><th>${title}</th><th>${esc(METRIC_KO[anMetric])}</th><th>조회</th><th>채널</th><th>CTA</th></tr>
-    ${list.map(x => `<tr data-open="${x.c.id}" style="cursor:pointer">
-      <td><b>${esc(x.c.title)}</b><br><span style="font-size:12px;color:var(--muted)">${esc(x.c.moat || '차별점 미정')} · ${x.c.publish_date || '게시일 미입력'}</span></td>
-      <td style="font-variant-numeric:tabular-nums"><b>${show(x)}</b></td>
-      <td style="font-variant-numeric:tabular-nums">${fmtN(x.c.views)}</td>
-      <td style="font-size:12px;color:var(--muted)">${esc((x.c.channels || []).join(', ') || '—')}</td>
-      <td style="font-size:12px;color:var(--muted)">${esc(x.c.cta_keyword || '—')}</td>
-    </tr>`).join('')}
-  </table>${note ? `<p class="note">${note}</p>` : ''}`;
-
-  /* ---- 자동 3줄 ---- */
-  const topCh = byChannel[0], topMo = byMoat[0];
-  const thin = scored.length < 5;
-  const readout = `
-    <div class="msg ok" style="margin-bottom:22px">
-      <b>무엇이 통했는가</b><br>
-      ① 저장률이 가장 높은 채널은 ${topCh ? `<b>${esc(topCh.key)}</b> (${fmtP(topCh.saveRate)}, ${topCh.n}편)` : '데이터 없음'}<br>
-      ② 저장률이 가장 높은 차별점은 ${topMo ? `<b>${esc(topMo.key)}</b> (${fmtP(topMo.saveRate)}, ${topMo.n}편)` : '데이터 없음'}<br>
-      ③ ${ranked[0] ? `${esc(METRIC_KO[anMetric])} 1위는 <b>${esc(ranked[0].c.title)}</b> (${show(ranked[0])})` : '순위를 낼 데이터가 없습니다'}
-      ${thin ? '<br><br>표본이 5편 미만입니다. 방향을 정하는 근거로 쓰기엔 이릅니다.' : ''}
-    </div>`;
-
-  /* ---- 미입력 알림 ---- */
   const today = new Date().toISOString().slice(0,10);
-  const overdue = missing.filter(c => c.publish_date && c.publish_date <= new Date(Date.now() - 7*864e5).toISOString().slice(0,10));
-  const alertBox = overdue.length ? `<div class="msg err" style="margin-bottom:22px">
-      <b>숫자 입력이 밀린 콘텐츠 ${overdue.length}편</b> — 게시한 지 7일이 지났는데 조회수가 비어 있습니다.<br>
-      ${overdue.slice(0,5).map(c => esc(c.title)).join(' · ')}${overdue.length > 5 ? ` 외 ${overdue.length-5}편` : ''}
-    </div>` : '';
+  let rows = todos.filter(t => {
+    if (tdFilter === 'open') return !t.done;
+    if (tdFilter === 'done') return t.done;
+    if (tdFilter === 'mine') return !t.done && (t.owner_ids || []).includes(me.id);
+    return true;
+  });
 
-  $('#analytics-body').innerHTML = `
-    ${alertBox}${readout}
-    <div class="stats">${summary.map(([k,v,s]) => `<div class="stat">
-      <div class="stat-k">${k}</div><div class="stat-v">${v}</div>
-      <div class="stat-s">${s}</div></div>`).join('')}</div>
+  const rank = { '높음':0, '보통':1, '낮음':2 };
+  rows.sort((a,b) =>
+    (a.done - b.done) ||
+    (a.due_date || '9999').localeCompare(b.due_date || '9999') ||
+    (rank[a.priority] - rank[b.priority]));
 
-    <div class="sect" style="margin-top:30px">채널별</div>
-    ${groupTable(byChannel, maxChSave, '채널')}
-    <p class="note">한 콘텐츠에 채널이 여러 개면 각 채널에 모두 집계됩니다. 편수 합이 전체보다 클 수 있습니다.</p>
+  const open = todos.filter(t => !t.done);
+  const late = open.filter(t => t.due_date && t.due_date < today).length;
+  $('#todo-count').textContent =
+    `진행 중 ${open.length}개 · 완료 ${todos.length - open.length}개` + (late ? ` · 기한 지남 ${late}개` : '');
 
-    <div class="sect" style="margin-top:30px">차별점별</div>
-    ${groupTable(byMoat, maxMoSave, '차별점')}
+  $('#todo-list').innerHTML = rows.length ? rows.map(t => {
+    const overdue = !t.done && t.due_date && t.due_date < today;
+    return `<div class="todo ${t.done?'is-done':''}">
+      <input type="checkbox" class="tdchk" data-toggle="${t.id}" ${t.done?'checked':''}>
+      <div class="todo-body">
+        <div class="todo-t">${esc(t.title)}</div>
+        <div class="todo-m">
+          <span class="pri p-${t.priority}">${t.priority}</span>
+          <span>${esc(ownerNames(t.owner_ids))}</span>
+          ${t.due_date ? `<span class="${overdue?'od':''}">${t.due_date}${overdue?' 지남':''}</span>` : ''}
+          ${t.meeting_id ? '<span style="color:var(--blue)">회의록에서</span>' : ''}
+        </div>
+      </div>
+      <button class="btn sm danger" data-tddel="${t.id}">삭제</button>
+    </div>`;
+  }).join('') : `<div class="empty">${tdFilter==='done' ? '완료한 할 일이 없습니다.' : '할 일이 없습니다.<br>위에 입력하고 추가를 누르세요.'}</div>`;
 
-    <div class="sect" style="margin-top:30px">상위 5편</div>
-    ${ranked.length ? rankTable(ranked.slice(0,5), '콘텐츠', '') : '<div class="empty">순위를 낼 데이터가 없습니다.</div>'}
-
-    <div class="sect" style="margin-top:30px">하위 3편</div>
-    ${ranked.length > 3 ? rankTable(ranked.slice(-3).reverse(), '콘텐츠',
-      '왜 안 됐는지는 숫자가 알려주지 않습니다. 훅과 커버 문구를 상위 5편과 나란히 놓고 비교하세요.')
-      : '<div class="empty">비교할 만큼 쌓이지 않았습니다.</div>'}
-  `;
-
-  $$('#analytics-body [data-open]').forEach(tr =>
-    tr.onclick = () => openCard(cards.find(c => c.id === tr.dataset.open)));
+  $$('#todo-list [data-toggle]').forEach(el => el.onchange = async () => {
+    const { error } = await sb.from('todos').update({ done: el.checked }).eq('id', el.dataset.toggle);
+    if (error) alert(cleanErr(error.message));
+    await refresh();
+  });
+  $$('#todo-list [data-tddel]').forEach(b => b.onclick = async () => {
+    if (!confirm('이 할 일을 삭제합니다.')) return;
+    const { error } = await sb.from('todos').delete().eq('id', b.dataset.tddel);
+    if (error) return alert(cleanErr(error.message));
+    await refresh();
+  });
 }
 
-$$('.an-period').forEach(b => b.onclick = () => {
-  $$('.an-period').forEach(x => x.classList.remove('on'));
-  b.classList.add('on');
-  anDays = Number(b.dataset.days);
-  renderAnalytics();
+async function addTodo(){
+  const title = $('#td-title').value.trim();
+  if (!title) return $('#td-title').focus();
+  const owners = [...document.querySelectorAll('#td-owners input:checked')].map(i => i.value);
+  const { error } = await sb.from('todos').insert({
+    title, owner_ids: owners, priority: $('#td-pri').value,
+    due_date: $('#td-due').value || null, created_by: me.id
+  });
+  if (error) return alert(cleanErr(error.message));
+  $('#td-title').value = ''; $('#td-due').value = '';
+  await refresh();
+  $('#td-title').focus();
+}
+
+$('#td-add').onclick = addTodo;
+$('#td-title').onkeydown = e => { if (e.key === 'Enter') addTodo(); };
+$$('.td-f').forEach(b => b.onclick = () => {
+  $$('.td-f').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); tdFilter = b.dataset.f; renderTodos();
 });
-$('#an-metric').onchange = e => { anMetric = e.target.value; renderAnalytics(); };
+
+/* ---------------- 회의록 ---------------- */
+function renderMeetings(){
+  $('#meeting-list').innerHTML = meetings.length ? meetings.map(m => `
+    <div class="mtcard" data-mt="${m.id}">
+      <div class="mt-head">
+        <div>
+          <b>${esc(m.title)}</b>
+          <span style="font-size:12px;color:var(--muted);margin-left:9px">${m.met_on || '날짜 미정'}</span>
+        </div>
+        <span style="font-size:12px;color:var(--muted)">
+          ${(m.files || []).length ? `첨부 ${(m.files||[]).length}개 · ` : ''}${esc(ownerNames(m.attendee_ids))}</span>
+      </div>
+      ${m.summary ? `<div class="mt-sum">${esc(m.summary).replace(/\n/g,'<br>')}</div>`
+                  : '<div class="mt-sum" style="color:var(--muted)">아직 정리하지 않았습니다. 눌러서 열어보세요.</div>'}
+    </div>`).join('')
+    : '<div class="empty">회의록이 없습니다.<br>위 버튼으로 첫 회의록을 만드세요.</div>';
+
+  $$('#meeting-list [data-mt]').forEach(el =>
+    el.onclick = () => openMeeting(meetings.find(m => m.id === el.dataset.mt)));
+}
+
+$('#mt-new').onclick = () => openMeeting(null);
+
+function openMeeting(m){
+  const isNew = !m;
+  const d = m || { title:'', met_on:new Date().toISOString().slice(0,10),
+                   attendee_ids:[], raw_text:'', summary:'', actions:'', files:[] };
+
+  $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" tabindex="-1" style="position:relative">
+    <button class="close" id="mt-close">닫기</button>
+    <div class="hint" id="mt-hint">바깥을 눌러도 닫히지 않습니다. 오른쪽 위 <b>닫기</b> 를 눌러주세요.</div>
+    <h2>${isNew ? '새 회의록' : esc(d.title)}</h2>
+    <div class="sub">회의 대본을 붙여넣고 AI 정리를 누르면 결론과 다음 액션이 나옵니다.</div>
+    <div id="mt-msg"></div>
+
+    <div class="field"><label>회의 제목</label><input id="m-title" value="${esc(d.title)}"></div>
+    <div class="field"><label>회의 날짜</label><input type="date" id="m-date" value="${d.met_on || ''}"></div>
+    <div class="field"><label>참석자</label><div class="chgroup" id="m-att">
+      ${team.filter(t => t.status === 'approved').map(t =>
+        `<label><input type="checkbox" value="${t.id}" ${(d.attendee_ids||[]).includes(t.id)?'checked':''}>${esc(t.name || t.email)}</label>`).join('')}
+    </div></div>
+
+    <div class="sect">첨부 파일</div>
+    <div id="m-files">${filesHTML(d.files || [])}</div>
+    <input type="file" id="m-file-input" multiple style="margin-top:9px;font-size:13px">
+    <p class="note">파일 하나당 50MB까지 올릴 수 있습니다. 올린 파일은 승인된 팀원만 열람할 수 있습니다.</p>
+
+    <div class="sect">회의 대본</div>
+    <div class="field"><textarea id="m-raw" style="min-height:220px" placeholder="회의 내용을 그대로 붙여넣으세요. 녹취록이어도 됩니다.">${esc(d.raw_text)}</textarea></div>
+    <button class="btn" id="m-ai">AI로 정리하기</button>
+    <span id="m-ai-state" style="margin-left:11px;font-size:13px;color:var(--muted)"></span>
+
+    <div class="sect">핵심 결론</div>
+    <div class="field"><textarea id="m-sum" style="min-height:130px">${esc(d.summary)}</textarea></div>
+
+    <div class="sect">다음 액션</div>
+    <div class="field"><textarea id="m-act" style="min-height:130px">${esc(d.actions)}</textarea></div>
+    <button class="btn ghost sm" id="m-to-todo">액션을 할 일로 보내기</button>
+    <p class="note">"- [담당자] 내용" 형태의 줄만 할 일로 옮깁니다. 담당자 이름이 팀 명단과 같으면 자동 배정됩니다.</p>
+
+    <div class="drawer-actions">
+      <button class="btn" id="m-save">저장</button>
+      <button class="btn ghost" id="m-cancel">저장 안 함</button>
+      ${(!isNew && isAdmin()) ? '<button class="btn danger" id="m-del" style="margin-left:auto">삭제</button>' : ''}
+    </div>
+  </div></div>`;
+
+  let files = [...(d.files || [])];
+
+  const collect = () => ({
+    title: $('#m-title').value.trim(),
+    met_on: $('#m-date').value || null,
+    attendee_ids: [...document.querySelectorAll('#m-att input:checked')].map(i => i.value),
+    raw_text: $('#m-raw').value || null,
+    summary: $('#m-sum').value || null,
+    actions: $('#m-act').value || null,
+    files
+  });
+  const snap = o => JSON.stringify({ ...o, attendee_ids: [...o.attendee_ids].sort() });
+  const initial = snap(collect());
+  const dirty = () => snap(collect()) !== initial;
+
+  const forceClose = () => { window.onbeforeunload = null; $('#drawer-root').innerHTML = ''; };
+  window.onbeforeunload = () => dirty() ? '' : undefined;
+
+  const mtMsg = (t, k='err') => $('#mt-msg').innerHTML = `<div class="msg ${k}">${esc(t)}</div>`;
+
+  const save = async () => {
+    const payload = collect();
+    if (!payload.title) { mtMsg('회의 제목을 입력해 주세요.'); $('#m-title').focus(); return false; }
+    const res = isNew
+      ? await sb.from('meetings').insert({ ...payload, created_by: me.id })
+      : await sb.from('meetings').update(payload).eq('id', m.id);
+    if (res.error) { mtMsg(cleanErr(res.error.message)); return false; }
+    forceClose(); await refresh(); return true;
+  };
+
+  $('#mt-close').onclick = async () => {
+    if (!dirty()) return forceClose();
+    if (confirm('저장하지 않은 내용이 있습니다.\n\n[확인] 저장하고 닫기\n[취소] 계속 편집')) await save();
+  };
+  $('#m-cancel').onclick = () => {
+    if (dirty() && !confirm('작성하던 내용을 버리고 닫습니다.\n계속할까요?')) return;
+    forceClose();
+  };
+  $('.scrim').onclick = e => {
+    if (!e.target.classList.contains('scrim')) return;
+    const box = $('.drawer');
+    box.classList.remove('nudge'); void box.offsetWidth; box.classList.add('nudge');
+    const h = $('#mt-hint'); h.classList.add('show');
+    clearTimeout(window.__hintT);
+    window.__hintT = setTimeout(() => h && h.classList.remove('show'), 2600);
+  };
+  $('#m-save').onclick = save;
+
+  // 파일 업로드
+  $('#m-file-input').onchange = async e => {
+    const list = [...e.target.files];
+    for (const f of list) {
+      if (f.size > 50 * 1024 * 1024) { mtMsg(`${f.name} 은 50MB를 넘습니다.`); continue; }
+      const path = `${Date.now()}_${Math.random().toString(36).slice(2,8)}_${f.name}`;
+      mtMsg(`${f.name} 올리는 중…`, 'ok');
+      const { error } = await sb.storage.from('meeting-files').upload(path, f);
+      if (error) { mtMsg(`${f.name} 업로드 실패: ${cleanErr(error.message)}`); continue; }
+      files.push({ name: f.name, path, size: f.size });
+    }
+    $('#m-files').innerHTML = filesHTML(files);
+    wireFiles();
+    $('#m-file-input').value = '';
+    mtMsg('올렸습니다. 저장을 눌러야 회의록에 남습니다.', 'ok');
+  };
+
+  function wireFiles(){
+    $$('#m-files [data-dl]').forEach(b => b.onclick = async () => {
+      const { data, error } = await sb.storage.from('meeting-files')
+        .createSignedUrl(b.dataset.dl, 60);
+      if (error) return alert(cleanErr(error.message));
+      window.open(data.signedUrl, '_blank');
+    });
+    $$('#m-files [data-rm]').forEach(b => b.onclick = async () => {
+      if (!confirm('이 파일을 지웁니다.')) return;
+      await sb.storage.from('meeting-files').remove([b.dataset.rm]);
+      files = files.filter(f => f.path !== b.dataset.rm);
+      $('#m-files').innerHTML = filesHTML(files); wireFiles();
+    });
+  }
+  wireFiles();
+
+  // AI 정리
+  $('#m-ai').onclick = async () => {
+    const text = $('#m-raw').value.trim();
+    if (text.length < 30) return mtMsg('대본이 너무 짧습니다. 회의 내용을 붙여넣어 주세요.');
+    $('#m-ai').disabled = true;
+    $('#m-ai-state').textContent = '정리하는 중… 30초쯤 걸립니다';
+    try {
+      const { data, error } = await sb.functions.invoke('meeting-summary', { body: { text } });
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+      $('#m-sum').value = data.summary || '';
+      $('#m-act').value = data.actions || '';
+      mtMsg('정리했습니다. 내용을 확인하고 저장하세요. AI가 잘못 옮긴 부분이 있을 수 있습니다.', 'ok');
+    } catch (err) {
+      mtMsg('AI 정리에 실패했습니다. 설정이 아직 안 됐을 수 있습니다.\n' + (err.message || err));
+    } finally {
+      $('#m-ai').disabled = false;
+      $('#m-ai-state').textContent = '';
+    }
+  };
+
+  // 액션 → 할 일
+  $('#m-to-todo').onclick = async () => {
+    const all = ($('#m-act').value || '').split('\n');
+    // "## 다음 액션" 아래부터, 다음 "##" 을 만나기 전까지만 읽는다
+    let started = all.findIndex(l => l.trim().startsWith('##')) === -1;
+    const lines = [];
+    for (const raw of all) {
+      const l = raw.trim();
+      if (l.startsWith('##')) { started = l.includes('다음 액션'); continue; }
+      if (!started) continue;
+      if (l.startsWith('-') || l.startsWith('•')) lines.push(l);
+    }
+    if (!lines.length) return mtMsg('옮길 액션 줄을 찾지 못했습니다.');
+
+    const rows = lines.map(l => {
+      const body = l.replace(/^[-•]\s*/, '');
+      const hit = body.match(/^\[([^\]]+)\]\s*(.*)$/);
+      let owners = [], title = body;
+      if (hit) {
+        title = (hit[2] || '').trim() || body;
+        const who = hit[1].trim();
+        const p = team.find(t => t.status === 'approved' && (t.name || '') === who);
+        if (p) owners = [p.id];
+      }
+      return { title, owner_ids: owners, priority: '보통',
+               meeting_id: isNew ? null : m.id, created_by: me.id };
+    }).filter(r => r.title && r.title !== '없음');
+
+    if (!rows.length) return mtMsg('옮길 액션이 없습니다.');
+    if (!confirm(`${rows.length}개를 할 일로 보냅니다.`)) return;
+    const { error } = await sb.from('todos').insert(rows);
+    if (error) return mtMsg(cleanErr(error.message));
+    mtMsg(`${rows.length}개를 할 일 탭으로 보냈습니다.`, 'ok');
+    await refresh();
+  };
+
+  if ($('#m-del')) $('#m-del').onclick = async () => {
+    if (!confirm('이 회의록을 삭제합니다. 되돌릴 수 없습니다.')) return;
+    const { error } = await sb.from('meetings').delete().eq('id', m.id);
+    if (error) return alert(cleanErr(error.message));
+    forceClose(); await refresh();
+  };
+}
+
+function filesHTML(files){
+  if (!files.length) return '<div style="font-size:12.5px;color:var(--muted)">첨부된 파일이 없습니다.</div>';
+  return files.map(f => `<div class="filerow">
+    <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</span>
+    <span style="font-size:11.5px;color:var(--muted)">${Math.round((f.size||0)/1024).toLocaleString()}KB</span>
+    <button class="btn sm ghost" data-dl="${esc(f.path)}">열기</button>
+    <button class="btn sm danger" data-rm="${esc(f.path)}">삭제</button>
+  </div>`).join('');
+}
 
 /* ---------------- 드랍 게시판 ---------------- */
 function renderDrops(){
@@ -1130,17 +1291,43 @@ function renderTeam(){
         ${(t.status !== 'approved' && !locked) ? `<button class="btn sm" data-approve="${t.id}">승인</button>` : ''}
         ${(t.status === 'approved' && !locked) ? `<button class="btn sm danger" data-suspend="${t.id}">중지</button>` : ''}
         ${(t.status === 'pending' && !locked) ? `<button class="btn sm ghost" data-reject="${t.id}">거절</button>` : ''}
+        ${(!locked && t.role !== 'master') ? `<button class="btn sm danger" data-remove="${t.id}">삭제</button>` : ''}
       </td></tr>`;
     }).join('')}
   </table>
-  <p class="note">부관리자는 관리자와 같은 기능을 모두 씁니다. 마스터 계정의 권한과 상태는 마스터 본인만 바꿀 수 있습니다.</p>`;
+  <p class="note">
+    <b>중지</b> 는 접근만 막습니다. 나중에 다시 승인하면 그대로 돌아옵니다. 잠깐 쉬는 사람은 중지를 쓰세요.<br>
+    <b>삭제</b> 는 명단에서 완전히 빼는 것입니다. 담당하던 카드는 사라지지 않고 담당자 자리만 비게 됩니다.<br>
+    부관리자는 관리자와 같은 기능을 모두 씁니다. 마스터 계정은 마스터 본인만 바꿀 수 있고 삭제할 수 없습니다.</p>`;
 
-  $$('[data-approve]').forEach(b => b.onclick = () => setStatus(b.dataset.approve, 'approved'));
-  $$('[data-suspend]').forEach(b => b.onclick = () => setStatus(b.dataset.suspend, 'suspended'));
-  $$('[data-reject]').forEach(b => b.onclick = () => setStatus(b.dataset.reject, 'rejected'));
-  $$('[data-role]').forEach(s => s.onchange = async () => {
+  $$('#team-list [data-approve]').forEach(b => b.onclick = () => setStatus(b.dataset.approve, 'approved'));
+  $$('#team-list [data-suspend]').forEach(b => b.onclick = () => setStatus(b.dataset.suspend, 'suspended'));
+  $$('#team-list [data-reject]').forEach(b => b.onclick = () => setStatus(b.dataset.reject, 'rejected'));
+  $$('#team-list [data-role]').forEach(s => s.onchange = async () => {
     const { error } = await sb.from('profiles').update({ role: s.value }).eq('id', s.dataset.role);
     if (error) alert(cleanErr(error.message));
+    await refresh();
+  });
+
+  $$('#team-list [data-remove]').forEach(b => b.onclick = async () => {
+    const t = team.find(x => x.id === b.dataset.remove);
+    const who = t.name || t.email;
+    const nCards = cards.filter(c => (c.owner_ids || []).includes(t.id)).length;
+    const nTodos = todos.filter(x => (x.owner_ids || []).includes(t.id)).length;
+
+    const detail = [];
+    if (nCards) detail.push(`담당 콘텐츠 ${nCards}개`);
+    if (nTodos) detail.push(`담당 할 일 ${nTodos}개`);
+
+    if (!confirm(
+      `${who} 님을 팀 명단에서 삭제합니다.\n` +
+      (detail.length ? `\n${detail.join(' · ')} 에서 담당자만 빠지고, 내용은 그대로 남습니다.\n` : '') +
+      `\n잠시 쉬는 것뿐이라면 삭제 대신 [중지] 를 쓰세요.\n계속할까요?`
+    )) return;
+
+    const { error } = await sb.from('profiles').delete().eq('id', t.id);
+    if (error) return alert(cleanErr(error.message));
+    alert(`${who} 님을 삭제했습니다.\n\n로그인 계정까지 완전히 없애려면 Supabase → Authentication → Users 에서 해당 이메일도 지워주세요.`);
     await refresh();
   });
 }
