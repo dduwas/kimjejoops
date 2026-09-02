@@ -142,6 +142,10 @@ nav button:hover{color:#fff}
 .dotmark{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
 .dotmark.plan{background:#fff;border:1.5px solid var(--blue)}
 .dotmark.done{background:var(--navy)}
+.dotmark.k-shoot{background:#E08A2E}
+.dotmark.k-edit{background:#2EA88A}
+.dotmark.k-plan{background:#fff;border:1.5px solid var(--blue)}
+.dotmark.k-done{background:var(--navy)}
 .callegend{display:flex;gap:16px;margin-top:12px;font-size:12px;align-items:center;flex-wrap:wrap}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px}
 .stat{border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;background:#fff}
@@ -151,13 +155,11 @@ nav button:hover{color:#fff}
 .barwrap{background:var(--wash);border-radius:3px;height:7px;overflow:hidden}
 .bar{background:var(--blue);height:100%;border-radius:3px}
 /* 할 일 */
-.todo-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:11px}
-.todo-add input[type=text],.todo-add input:not([type]){padding:9px 12px;border:1px solid var(--line);border-radius:8px}
-#td-owners-box{display:flex;gap:9px;align-items:flex-start;flex-wrap:wrap}
 .todo{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:var(--r);
   padding:12px 14px;margin-bottom:8px;background:#fff}
-.todo.is-done{opacity:.55}
-.todo.is-done .todo-t{text-decoration:line-through}
+tr.is-done{opacity:.55}
+tr.is-done .todo-t{text-decoration:line-through}
+td.od,.od{color:var(--warn);font-weight:700}
 .tdchk{width:18px;height:18px;accent-color:var(--navy);flex:0 0 18px}
 .todo-body{flex:1;min-width:0}
 .todo-t{font-size:14.5px;font-weight:600;line-height:1.45}
@@ -190,9 +192,6 @@ nav button:hover{color:#fff}
 .hint{position:absolute;top:52px;right:22px;background:var(--navy);color:#fff;font-size:12px;
   padding:7px 11px;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:270px;line-height:1.5}
 .hint.show{opacity:1}
-@keyframes nudge{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-.drawer.nudge{animation:nudge .22s ease}
-@media (prefers-reduced-motion:reduce){.drawer.nudge{animation:none}}
 .sect{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--blue);margin:26px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .checks{display:grid;grid-template-columns:1fr 1fr;gap:9px}
@@ -334,6 +333,8 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <div class="sep"></div>
       <span class="filterlabel">분류</span>
       <button class="chip sc-cat on" data-cat="all">전체</button>
+      <button class="chip sc-cat" data-cat="shoot">촬영</button>
+      <button class="chip sc-cat" data-cat="edit">편집</button>
       <button class="chip sc-cat" data-cat="planned">게시 예정</button>
       <button class="chip sc-cat" data-cat="done">게시 완료</button>
       <span class="count" id="schedule-count"></span>
@@ -362,22 +363,10 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 
   <section id="view-todo" class="hide wrap">
     <h3>할 일</h3>
-    <p class="lede">콘텐츠 카드로 만들기엔 작은 일들을 여기에 적습니다. 담당자와 기한을 정해두면 놓치지 않습니다.</p>
+    <p class="lede">콘텐츠 카드로 만들기엔 작은 일들을 여기에 적습니다. 제목을 누르면 열려서 내용을 채울 수 있습니다.</p>
+    <button class="btn sm" id="td-new">+ 할 일 작성</button>
 
-    <div class="todo-add">
-      <input id="td-title" placeholder="할 일을 입력하고 Enter" style="flex:1;min-width:180px">
-      <select id="td-pri" class="mini" style="padding:9px 10px">
-        <option>높음</option><option selected>보통</option><option>낮음</option>
-      </select>
-      <input type="date" id="td-due" class="mini" style="padding:9px 10px">
-      <button class="btn sm" id="td-add">추가</button>
-    </div>
-    <div id="td-owners-box">
-      <span class="filterlabel">담당자 지정</span>
-      <div id="td-owners" class="chgroup"></div>
-    </div>
-
-    <div style="display:flex;gap:9px;align-items:center;margin:20px 0 14px;flex-wrap:wrap">
+    <div style="display:flex;gap:9px;align-items:center;margin:18px 0 14px;flex-wrap:wrap">
       <span class="filterlabel">보기</span>
       <button class="chip td-f on" data-f="open">진행 중</button>
       <button class="chip td-f" data-f="mine">내 할 일</button>
@@ -646,7 +635,8 @@ function buildOwnerChips(){
 }
 
 function buildScheduleChips(){
-  const pool = cards.filter(c => c.stage === PLANNED || c.stage === DONE);
+  const pool = cards.filter(c =>
+    c.stage === '촬영' || c.stage === '편집' || c.stage === PLANNED || c.stage === DONE);
   buildChips('#sc-owner-chips', '#sc-owner-clear', ownerItems(pool), scOwnerFilter, renderSchedule);
   const chs = channels.filter(c => c.active).map(c => ({ key: c.label, label: c.label }));
   buildChips('#sc-channel-chips', '#sc-channel-clear', chs, scChannelFilter, renderSchedule);
@@ -790,35 +780,58 @@ async function moveStage(id, stage){
 let scView = 'calendar', scCat = 'all';
 let calBase = new Date();
 
-function schedulePool(){
-  return cards.filter(c => {
-    if (c.stage !== PLANNED && c.stage !== DONE) return false;
-    if (scCat === 'planned' && c.stage !== PLANNED) return false;
-    if (scCat === 'done' && c.stage !== DONE) return false;
-    if (!matchOwner(c, scOwnerFilter)) return false;
-    if (!matchChannel(c, scChannelFilter)) return false;
-    return true;
+// 일정 종류 — 촬영은 촬영일, 나머지는 게시예정일 기준으로 달력에 찍는다
+const SC_KINDS = {
+  shoot:   { label: '촬영',      dateKey: 'shoot_date',   cls: 'k-shoot' },
+  edit:    { label: '편집',      dateKey: 'publish_date', cls: 'k-edit'  },
+  planned: { label: '게시 예정', dateKey: 'publish_date', cls: 'k-plan'  },
+  done:    { label: '게시 완료', dateKey: 'publish_date', cls: 'k-done'  }
+};
+
+// 카드 하나가 여러 일정을 만들 수 있다 (촬영일과 게시일이 각각 찍힌다)
+function scheduleEvents(){
+  const out = [];
+  cards.forEach(c => {
+    if (!matchOwner(c, scOwnerFilter)) return;
+    if (!matchChannel(c, scChannelFilter)) return;
+
+    const push = kind => {
+      const d = c[SC_KINDS[kind].dateKey] || null;
+      out.push({ card: c, kind, date: d });
+    };
+
+    if (c.stage === '촬영') push('shoot');
+    else if (c.stage === '편집') push('edit');
+    else if (c.stage === PLANNED) {
+      push('planned');
+      // 게시 예정이어도 촬영일이 따로 있으면 촬영 일정도 남긴다
+      if (c.shoot_date && c.shoot_date !== c.publish_date)
+        out.push({ card: c, kind: 'shoot', date: c.shoot_date });
+    }
+    else if (c.stage === DONE) push('done');
   });
+
+  return out.filter(e => scCat === 'all' || e.kind === scCat);
 }
 
 function renderSchedule(){
-  const pool = schedulePool();
-  const planned = pool.filter(c => c.stage === PLANNED).length;
+  const evs = scheduleEvents();
+  const n = k => evs.filter(e => e.kind === k).length;
   const filtered = scOwnerFilter.size || scChannelFilter.size;
+
+  const parts = [];
+  ['shoot','edit','planned','done'].forEach(k => {
+    if (n(k)) parts.push(`${SC_KINDS[k].label} ${n(k)}개`);
+  });
   $('#schedule-count').textContent =
-    `게시 예정 ${planned}개 · 게시 완료 ${pool.length - planned}개` + (filtered ? ' (필터 적용 중)' : '');
+    (parts.join(' · ') || '표시할 일정 없음') + (filtered ? ' (필터 적용 중)' : '');
+
   $('#cal-controls').classList.toggle('hide', scView !== 'calendar');
-  scView === 'calendar' ? renderCalendar(pool) : renderScheduleTable(pool);
+  scView === 'calendar' ? renderCalendar(evs) : renderScheduleTable(evs);
   wireScheduleButtons();
 }
 
-function stageDot(c){
-  return c.stage === DONE
-    ? '<span class="dotmark done"></span>'
-    : '<span class="dotmark plan"></span>';
-}
-
-function renderCalendar(pool){
+function renderCalendar(evs){
   const y = calBase.getFullYear(), mo = calBase.getMonth();
   $('#cal-title').textContent = `${y}년 ${mo+1}월`;
 
@@ -828,7 +841,10 @@ function renderCalendar(pool){
   const today = new Date().toISOString().slice(0,10);
 
   const byDay = {};
-  pool.forEach(c => { if (c.publish_date) (byDay[c.publish_date] ||= []).push(c); });
+  evs.forEach(e => { if (e.date) (byDay[e.date] ||= []).push(e); });
+
+  const order = { shoot:0, edit:1, planned:2, done:3 };
+  Object.values(byDay).forEach(list => list.sort((a,b) => order[a.kind] - order[b.kind]));
 
   const cells = [];
   for (let i = 0; i < startPad; i++) cells.push('<div class="cell out"></div>');
@@ -838,16 +854,18 @@ function renderCalendar(pool){
     const dow = (startPad + d - 1) % 7;
     cells.push(`<div class="cell ${key===today?'today':''}">
       <div class="cell-d ${dow===0?'sun':''} ${dow===6?'sat':''}">${d}</div>
-      ${items.map(c => {
-        const m = moatOf(c.moat); const color = m ? m.color : '#E2A08A';
-        return `<div class="ev" data-open="${c.id}" style="border-left-color:${color}" title="${esc(c.title)}">
-          ${stageDot(c)}${esc(c.title)}</div>`;
+      ${items.map(e => {
+        const m = moatOf(e.card.moat); const color = m ? m.color : '#E2A08A';
+        const k = SC_KINDS[e.kind];
+        return `<div class="ev" data-open="${e.card.id}" style="border-left-color:${color}"
+          title="${esc(k.label)} · ${esc(e.card.title)}">
+          <span class="dotmark ${k.cls}"></span>${esc(e.card.title)}</div>`;
       }).join('')}
     </div>`);
   }
   while (cells.length % 7) cells.push('<div class="cell out"></div>');
 
-  const noDate = pool.filter(c => !c.publish_date);
+  const noDate = evs.filter(e => !e.date);
 
   $('#schedule-body').innerHTML = `
     <div class="calgrid">
@@ -856,26 +874,30 @@ function renderCalendar(pool){
       ${cells.join('')}
     </div>
     <div class="callegend">
-      <span><span class="dotmark plan"></span>게시 예정</span>
-      <span><span class="dotmark done"></span>게시 완료</span>
-      <span style="color:var(--muted)">항목을 누르면 상세가 열립니다</span>
+      <span><span class="dotmark k-shoot"></span>촬영</span>
+      <span><span class="dotmark k-edit"></span>편집</span>
+      <span><span class="dotmark k-plan"></span>게시 예정</span>
+      <span><span class="dotmark k-done"></span>게시 완료</span>
+      <span style="color:var(--muted)">촬영은 촬영일, 나머지는 게시예정일에 표시됩니다</span>
     </div>
     ${noDate.length ? `<div class="sect" style="margin-top:26px">날짜 미정 ${noDate.length}개</div>
       ${scheduleTableHTML(noDate)}` : ''}`;
 }
 
-function scheduleTableHTML(rows){
+function scheduleTableHTML(evs){
   const today = new Date().toISOString().slice(0,10);
   return `<table>
-    <tr><th>게시일</th><th>분류</th><th>콘텐츠</th><th>채널</th><th>담당</th><th>조회</th><th>저장</th><th></th></tr>
-    ${rows.map(c => {
-      const late = c.stage === PLANNED && c.publish_date && c.publish_date < today;
+    <tr><th>날짜</th><th>분류</th><th>콘텐츠</th><th>채널</th><th>담당</th><th>조회</th><th>저장</th><th></th></tr>
+    ${evs.map(e => {
+      const c = e.card, k = SC_KINDS[e.kind];
+      const late = e.date && e.date < today && e.kind !== 'done';
+      const pill = { shoot:'pill pending', edit:'pill pending',
+                     planned:'pill pending', done:'pill approved' }[e.kind];
       return `<tr>
-        <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${c.publish_date || '미정'}
-          ${late ? '<br><span class="pill rejected">지연</span>' : ''}</td>
-        <td>${c.stage === DONE
-          ? '<span class="pill approved">게시 완료</span>'
-          : '<span class="pill pending">게시 예정</span>'}</td>
+        <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${e.date || '미정'}
+          ${late ? '<br><span class="pill rejected">지남</span>' : ''}
+          <br><span style="font-size:11px;color:var(--muted)">${e.kind === 'shoot' ? '촬영일' : '게시예정일'}</span></td>
+        <td><span class="${pill}">${k.label}</span></td>
         <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
           ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">링크</a>` : ''}
           <br><span style="font-size:12px;color:var(--muted)">${esc(c.moat || '차별점 미정')}</span></td>
@@ -884,21 +906,20 @@ function scheduleTableHTML(rows){
         <td style="font-variant-numeric:tabular-nums">${fmtN(c.views)}</td>
         <td style="font-variant-numeric:tabular-nums">${fmtN(c.saves)}</td>
         <td style="white-space:nowrap">
-          ${c.stage === PLANNED
-            ? `<button class="btn sm" data-sdone="${c.id}">게시 완료</button>`
-            : `<button class="btn sm ghost" data-splan="${c.id}">예정으로</button>`}
-          <button class="btn sm danger" data-cancel="${c.id}">게시취소</button>
+          ${e.kind === 'planned' ? `<button class="btn sm" data-sdone="${c.id}">게시 완료</button>` : ''}
+          ${e.kind === 'done' ? `<button class="btn sm ghost" data-splan="${c.id}">예정으로</button>` : ''}
+          ${(e.kind === 'planned' || e.kind === 'done')
+            ? `<button class="btn sm danger" data-cancel="${c.id}">게시취소</button>` : ''}
         </td></tr>`;
     }).join('')}
   </table>`;
 }
 
-function renderScheduleTable(pool){
-  const rows = [...pool].sort((a,b) =>
-    (a.publish_date || '9999').localeCompare(b.publish_date || '9999'));
+function renderScheduleTable(evs){
+  const rows = [...evs].sort((a,b) => (a.date || '9999').localeCompare(b.date || '9999'));
   $('#schedule-body').innerHTML = rows.length
-    ? scheduleTableHTML(rows) + '<p class="note">게시취소를 누르면 아이디어 단계로 돌아갑니다. 입력한 내용과 성과는 그대로 남습니다.</p>'
-    : '<div class="empty">해당하는 콘텐츠가 없습니다.</div>';
+    ? scheduleTableHTML(rows) + '<p class="note">촬영·편집 카드는 생산 라인에서 관리합니다. 여기서는 일정만 봅니다.<br>게시취소를 누르면 아이디어 단계로 돌아갑니다. 입력한 내용과 성과는 그대로 남습니다.</p>'
+    : '<div class="empty">해당하는 일정이 없습니다.</div>';
 }
 
 function wireScheduleButtons(){
@@ -926,18 +947,91 @@ $('#cal-next').onclick  = () => { calBase = new Date(calBase.getFullYear(), calB
 $('#cal-today').onclick = () => { calBase = new Date(); renderSchedule(); };
 
 
-/* ---------------- 할 일 ---------------- */
+/* ---------------- 공용 서랍 (열림/닫힘·저장 확인) ----------------
+   여러 화면이 같은 규칙을 쓰도록 한곳에 모았다.
+   · Esc → 닫기 (변경사항 있으면 물어봄)
+   · 바깥 클릭 → 변경 없으면 그냥 닫고, 그 자리에 다른 카드가 있으면 그 카드를 연다
+   · 변경 있으면 저장할지 물어본다
+------------------------------------------------------------------ */
+function mountDrawer({ body, collect, save }){
+  $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" tabindex="-1" style="position:relative">
+    <button class="close" id="dw-close">닫기</button>
+    <div class="hint" id="dw-hint"></div>
+    ${body}
+  </div></div>`;
+
+  const snap = o => JSON.stringify({
+    ...o,
+    owner_ids: [...(o.owner_ids || [])].sort(),
+    attendee_ids: [...(o.attendee_ids || [])].sort(),
+    channels: [...(o.channels || [])].sort()
+  });
+  const initial = snap(collect());
+  const dirty = () => snap(collect()) !== initial;
+
+  const forceClose = () => { window.onbeforeunload = null; $('#drawer-root').innerHTML = ''; };
+  window.onbeforeunload = () => dirty() ? '' : undefined;
+
+  const saveAndClose = async () => {
+    const ok = await save();
+    if (!ok) return false;
+    forceClose(); await refresh(); return true;
+  };
+
+  const discard = () => {
+    if (dirty() && !confirm('작성하던 내용을 버리고 닫습니다.\n계속할까요?')) return;
+    forceClose();
+  };
+
+  // 닫기 시도 — 변경사항이 있으면 물어본다. next 는 닫힌 뒤 실행할 동작.
+  const tryClose = async (next) => {
+    if (!dirty()) { forceClose(); if (next) next(); return; }
+    const yes = confirm(
+      '저장하지 않은 내용이 있습니다.\n\n' +
+      '[확인] 저장하고 닫기\n' +
+      '[취소] 계속 편집하기'
+    );
+    if (!yes) return;
+    if (await saveAndClose()) { if (next) next(); }
+  };
+
+  $('#dw-close').onclick = () => tryClose();
+
+  // 바깥 클릭 — 그 자리에 있던 카드를 찾아 이어서 연다
+  $('.scrim').onclick = async e => {
+    if (!e.target.classList.contains('scrim')) return;
+    const x = e.clientX, y = e.clientY;
+    const scrim = $('.scrim');
+    scrim.style.pointerEvents = 'none';
+    const under = document.elementFromPoint(x, y);
+    scrim.style.pointerEvents = '';
+
+    const hitCard  = under && under.closest && under.closest('.card[data-id]');
+    const hitOpen  = under && under.closest && under.closest('[data-open]');
+    const nextId   = hitCard ? hitCard.dataset.id : (hitOpen ? hitOpen.dataset.open : null);
+
+    await tryClose(nextId ? () => {
+      const c = cards.find(x2 => x2.id === nextId);
+      if (c) openCard(c);
+    } : null);
+  };
+
+  // Esc 로 닫기, Ctrl+S 로 저장
+  const onKey = async e => {
+    if (e.key === 'Escape') { e.preventDefault(); await tryClose(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); await saveAndClose(); }
+  };
+  $('.drawer').onkeydown = onKey;
+  document.onkeydown = e => { if ($('.drawer')) onKey(e); };
+  setTimeout(() => { const d = $('.drawer'); if (d) d.focus(); }, 0);
+
+  return { dirty, forceClose, saveAndClose, discard, tryClose };
+}
+
+/* ---------------- 할 일 (게시판) ---------------- */
 let tdFilter = 'open';
 
 function renderTodos(){
-  // 담당자 선택 칩
-  const box = $('#td-owners');
-  if (box && !box.dataset.built) {
-    box.innerHTML = team.filter(t => t.status === 'approved')
-      .map(t => `<label><input type="checkbox" value="${t.id}">${esc(t.name || t.email)}</label>`).join('');
-    box.dataset.built = '1';
-  }
-
   const today = new Date().toISOString().slice(0,10);
   let rows = todos.filter(t => {
     if (tdFilter === 'open') return !t.done;
@@ -957,56 +1051,106 @@ function renderTodos(){
   $('#todo-count').textContent =
     `진행 중 ${open.length}개 · 완료 ${todos.length - open.length}개` + (late ? ` · 기한 지남 ${late}개` : '');
 
-  $('#todo-list').innerHTML = rows.length ? rows.map(t => {
-    const overdue = !t.done && t.due_date && t.due_date < today;
-    return `<div class="todo ${t.done?'is-done':''}">
-      <input type="checkbox" class="tdchk" data-toggle="${t.id}" ${t.done?'checked':''}>
-      <div class="todo-body">
-        <div class="todo-t">${esc(t.title)}</div>
-        <div class="todo-m">
-          <span class="pri p-${t.priority}">${t.priority}</span>
-          <span>${esc(ownerNames(t.owner_ids))}</span>
-          ${t.due_date ? `<span class="${overdue?'od':''}">${t.due_date}${overdue?' 지남':''}</span>` : ''}
-          ${t.meeting_id ? '<span style="color:var(--blue)">회의록에서</span>' : ''}
-        </div>
-      </div>
-      <button class="btn sm danger" data-tddel="${t.id}">삭제</button>
-    </div>`;
-  }).join('') : `<div class="empty">${tdFilter==='done' ? '완료한 할 일이 없습니다.' : '할 일이 없습니다.<br>위에 입력하고 추가를 누르세요.'}</div>`;
+  $('#todo-list').innerHTML = rows.length ? `<table>
+    <tr><th style="width:44px">완료</th><th>할 일</th><th>담당</th><th>기한</th><th>우선순위</th><th>작성</th></tr>
+    ${rows.map(t => {
+      const overdue = !t.done && t.due_date && t.due_date < today;
+      return `<tr class="${t.done?'is-done':''}">
+        <td><input type="checkbox" class="tdchk" data-toggle="${t.id}" ${t.done?'checked':''}></td>
+        <td data-tdopen="${t.id}" style="cursor:pointer">
+          <b class="todo-t">${esc(t.title)}</b>
+          ${t.memo ? `<br><span style="font-size:12px;color:var(--muted)">${esc(t.memo.split('\n')[0]).slice(0,60)}${t.memo.length>60?'…':''}</span>` : ''}
+          ${t.meeting_id ? '<br><span style="font-size:11.5px;color:var(--blue)">회의록에서 옮김</span>' : ''}
+        </td>
+        <td style="font-size:12.5px">${esc(ownerNames(t.owner_ids))}</td>
+        <td style="font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px"
+            class="${overdue?'od':''}">${t.due_date || '—'}${overdue?'<br><span class="pill rejected">지남</span>':''}</td>
+        <td><span class="pri p-${t.priority}">${t.priority}</span></td>
+        <td style="font-size:11.5px;color:var(--muted);white-space:nowrap">${(t.created_at||'').slice(0,10)}</td>
+      </tr>`;
+    }).join('')}
+  </table>
+  <p class="note">제목을 누르면 열려서 내용을 고칠 수 있습니다. 왼쪽 체크로 바로 완료 처리됩니다.</p>`
+  : `<div class="empty">${tdFilter==='done' ? '완료한 할 일이 없습니다.' : '할 일이 없습니다.<br>위 버튼으로 하나 만들어 보세요.'}</div>`;
 
-  $$('#todo-list [data-toggle]').forEach(el => el.onchange = async () => {
+  $$('#todo-list [data-toggle]').forEach(el => el.onchange = async e => {
+    e.stopPropagation();
     const { error } = await sb.from('todos').update({ done: el.checked }).eq('id', el.dataset.toggle);
     if (error) alert(cleanErr(error.message));
     await refresh();
   });
-  $$('#todo-list [data-tddel]').forEach(b => b.onclick = async () => {
-    if (!confirm('이 할 일을 삭제합니다.')) return;
-    const { error } = await sb.from('todos').delete().eq('id', b.dataset.tddel);
-    if (error) return alert(cleanErr(error.message));
-    await refresh();
-  });
+  $$('#todo-list [data-tdopen]').forEach(el =>
+    el.onclick = () => openTodo(todos.find(t => t.id === el.dataset.tdopen)));
 }
 
-async function addTodo(){
-  const title = $('#td-title').value.trim();
-  if (!title) return $('#td-title').focus();
-  const owners = [...document.querySelectorAll('#td-owners input:checked')].map(i => i.value);
-  const { error } = await sb.from('todos').insert({
-    title, owner_ids: owners, priority: $('#td-pri').value,
-    due_date: $('#td-due').value || null, created_by: me.id
-  });
-  if (error) return alert(cleanErr(error.message));
-  $('#td-title').value = ''; $('#td-due').value = '';
-  await refresh();
-  $('#td-title').focus();
-}
-
-$('#td-add').onclick = addTodo;
-$('#td-title').onkeydown = e => { if (e.key === 'Enter') addTodo(); };
+$('#td-new').onclick = () => openTodo(null);
 $$('.td-f').forEach(b => b.onclick = () => {
   $$('.td-f').forEach(x => x.classList.remove('on'));
   b.classList.add('on'); tdFilter = b.dataset.f; renderTodos();
 });
+
+function openTodo(t){
+  const isNew = !t;
+  const d = t || { title:'', owner_ids:[], due_date:'', priority:'보통', memo:'', done:false };
+
+  const body = `
+    <h2>${isNew ? '새 할 일' : esc(d.title)}</h2>
+    <div class="sub">${isNew ? '제목만 있어도 저장됩니다.' : (d.done ? '완료됨' : '진행 중')}</div>
+    <div id="dr-msg"></div>
+
+    <div class="field"><label>할 일</label><input id="t-title" value="${esc(d.title)}"></div>
+    <div class="grid2">
+      <div class="field"><label>기한</label><input type="date" id="t-due" value="${d.due_date || ''}"></div>
+      <div class="field"><label>우선순위</label><select id="t-pri">
+        ${['높음','보통','낮음'].map(p => `<option ${d.priority===p?'selected':''}>${p}</option>`).join('')}
+      </select></div>
+    </div>
+    <div class="field"><label>담당자 — 여러 명 선택 가능</label><div class="chgroup" id="t-owners">
+      ${team.filter(x => x.status === 'approved')
+        .map(x => `<label><input type="checkbox" value="${x.id}" ${(d.owner_ids||[]).includes(x.id)?'checked':''}>${esc(x.name || x.email)}</label>`).join('')}
+    </div></div>
+    <div class="field"><label>내용 · 메모</label><textarea id="t-memo" style="min-height:170px">${esc(d.memo)}</textarea></div>
+    <label class="check" style="max-width:180px"><input type="checkbox" id="t-done" ${d.done?'checked':''}>완료 처리</label>
+
+    <div class="drawer-actions">
+      <button class="btn" id="t-save">저장</button>
+      <button class="btn ghost" id="t-cancel">저장 안 함</button>
+      ${!isNew ? '<button class="btn danger" id="t-del" style="margin-left:auto">삭제</button>' : ''}
+    </div>`;
+
+  const collect = () => ({
+    title: $('#t-title').value.trim(),
+    due_date: $('#t-due').value || null,
+    priority: $('#t-pri').value,
+    owner_ids: [...document.querySelectorAll('#t-owners input:checked')].map(i => i.value),
+    memo: $('#t-memo').value || null,
+    done: $('#t-done').checked
+  });
+
+  const save = async () => {
+    const payload = collect();
+    if (!payload.title) {
+      $('#dr-msg').innerHTML = '<div class="msg err">할 일 내용을 입력해 주세요.</div>';
+      $('#t-title').focus(); return false;
+    }
+    const res = isNew
+      ? await sb.from('todos').insert({ ...payload, created_by: me.id })
+      : await sb.from('todos').update(payload).eq('id', t.id);
+    if (res.error) { $('#dr-msg').innerHTML = `<div class="msg err">${esc(cleanErr(res.error.message))}</div>`; return false; }
+    return true;
+  };
+
+  const ctl = mountDrawer({ body, collect, save });
+
+  $('#t-save').onclick = () => ctl.saveAndClose();
+  $('#t-cancel').onclick = () => ctl.discard();
+  if ($('#t-del')) $('#t-del').onclick = async () => {
+    if (!confirm('이 할 일을 삭제합니다.')) return;
+    const { error } = await sb.from('todos').delete().eq('id', t.id);
+    if (error) return alert(cleanErr(error.message));
+    ctl.forceClose(); await refresh();
+  };
+}
 
 /* ---------------- 회의록 ---------------- */
 function renderMeetings(){
@@ -1036,12 +1180,10 @@ function openMeeting(m){
   const d = m || { title:'', met_on:new Date().toISOString().slice(0,10),
                    attendee_ids:[], raw_text:'', summary:'', actions:'', files:[] };
 
-  $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" tabindex="-1" style="position:relative">
-    <button class="close" id="mt-close">닫기</button>
-    <div class="hint" id="mt-hint">바깥을 눌러도 닫히지 않습니다. 오른쪽 위 <b>닫기</b> 를 눌러주세요.</div>
+  const body = `
     <h2>${isNew ? '새 회의록' : esc(d.title)}</h2>
     <div class="sub">회의 대본을 붙여넣고 AI 정리를 누르면 결론과 다음 액션이 나옵니다.</div>
-    <div id="mt-msg"></div>
+    <div id="dr-msg"></div>
 
     <div class="field"><label>회의 제목</label><input id="m-title" value="${esc(d.title)}"></div>
     <div class="field"><label>회의 날짜</label><input type="date" id="m-date" value="${d.met_on || ''}"></div>
@@ -1072,8 +1214,7 @@ function openMeeting(m){
       <button class="btn" id="m-save">저장</button>
       <button class="btn ghost" id="m-cancel">저장 안 함</button>
       ${(!isNew && isAdmin()) ? '<button class="btn danger" id="m-del" style="margin-left:auto">삭제</button>' : ''}
-    </div>
-  </div></div>`;
+    </div>`;
 
   let files = [...(d.files || [])];
 
@@ -1086,14 +1227,7 @@ function openMeeting(m){
     actions: $('#m-act').value || null,
     files
   });
-  const snap = o => JSON.stringify({ ...o, attendee_ids: [...o.attendee_ids].sort() });
-  const initial = snap(collect());
-  const dirty = () => snap(collect()) !== initial;
-
-  const forceClose = () => { window.onbeforeunload = null; $('#drawer-root').innerHTML = ''; };
-  window.onbeforeunload = () => dirty() ? '' : undefined;
-
-  const mtMsg = (t, k='err') => $('#mt-msg').innerHTML = `<div class="msg ${k}">${esc(t)}</div>`;
+  const mtMsg = (t2, k='err') => $('#dr-msg').innerHTML = `<div class="msg ${k}">${esc(t2)}</div>`;
 
   const save = async () => {
     const payload = collect();
@@ -1102,26 +1236,14 @@ function openMeeting(m){
       ? await sb.from('meetings').insert({ ...payload, created_by: me.id })
       : await sb.from('meetings').update(payload).eq('id', m.id);
     if (res.error) { mtMsg(cleanErr(res.error.message)); return false; }
-    forceClose(); await refresh(); return true;
+    return true;
   };
 
-  $('#mt-close').onclick = async () => {
-    if (!dirty()) return forceClose();
-    if (confirm('저장하지 않은 내용이 있습니다.\n\n[확인] 저장하고 닫기\n[취소] 계속 편집')) await save();
-  };
-  $('#m-cancel').onclick = () => {
-    if (dirty() && !confirm('작성하던 내용을 버리고 닫습니다.\n계속할까요?')) return;
-    forceClose();
-  };
-  $('.scrim').onclick = e => {
-    if (!e.target.classList.contains('scrim')) return;
-    const box = $('.drawer');
-    box.classList.remove('nudge'); void box.offsetWidth; box.classList.add('nudge');
-    const h = $('#mt-hint'); h.classList.add('show');
-    clearTimeout(window.__hintT);
-    window.__hintT = setTimeout(() => h && h.classList.remove('show'), 2600);
-  };
-  $('#m-save').onclick = save;
+  const ctl = mountDrawer({ body, collect, save });
+  const forceClose = ctl.forceClose;
+
+  $('#m-save').onclick = () => ctl.saveAndClose();
+  $('#m-cancel').onclick = () => ctl.discard();
 
   // 파일 업로드
   $('#m-file-input').onchange = async e => {
@@ -1485,9 +1607,7 @@ function openCard(c){
     .filter(m => m.active || m.label === d.moat)
     .map(m => `<option ${d.moat===m.label?'selected':''}>${esc(m.label)}</option>`).join('');
 
-  $('#drawer-root').innerHTML = `<div class="scrim"><div class="drawer" tabindex="-1" style="position:relative">
-    <button class="close" id="dr-close">닫기</button>
-    <div class="hint" id="dr-hint">바깥을 눌러도 닫히지 않습니다. 오른쪽 위 <b>닫기</b> 를 눌러주세요.</div>
+  const body = `
     <h2>${isNew ? '새 콘텐츠' : esc(d.title)}</h2>
     <div class="sub">${isNew ? '제목과 차별점만 먼저 채워도 됩니다.' : '단계 ' + esc(d.stage)}</div>
     <div id="dr-msg"></div>
@@ -1543,8 +1663,7 @@ function openCard(c){
       ${(!isNew && d.stage !== DROP) ? '<button class="btn danger" id="dr-drop" style="margin-left:auto">드랍</button>' : ''}
       ${(!isNew && d.stage === DROP) ? '<button class="btn" id="dr-restore" style="margin-left:auto">아이디어 단계로 복구</button>' : ''}
       ${(!isNew && admin) ? '<button class="btn danger" id="dr-del">완전 삭제</button>' : ''}
-    </div>
-  </div></div>`;
+    </div>`;
 
   // 현재 입력값을 한 덩어리로 읽는다 — 저장과 변경 감지에 함께 쓴다
   const collect = () => {
@@ -1566,36 +1685,7 @@ function openCard(c){
     };
   };
 
-  const snapshot = p => JSON.stringify({
-    ...p,
-    channels: [...(p.channels || [])].sort(),
-    owner_ids: [...(p.owner_ids || [])].sort()
-  });
-
-  const initial = snapshot(collect());
-  const dirty = () => snapshot(collect()) !== initial;
-
-  const forceClose = () => {
-    window.onbeforeunload = null;
-    $('#drawer-root').innerHTML = '';
-  };
-
-  // 저장하지 않은 내용이 있으면 물어본다
-  const close = async () => {
-    if (!dirty()) return forceClose();
-    const answer = confirm(
-      '저장하지 않은 내용이 있습니다.\n\n' +
-      '[확인] 을 누르면 저장하고 닫습니다.\n' +
-      '[취소] 를 누르면 편집 화면에 그대로 머무릅니다.'
-    );
-    if (!answer) return;          // 계속 편집
-    await save({ silent: true });
-  };
-
-  // 브라우저 새로고침·탭 닫기도 막는다
-  window.onbeforeunload = () => dirty() ? '' : undefined;
-
-  const save = async (opt = {}) => {
+  const save = async () => {
     const payload = collect();
     if (!payload.title) {
       $('#dr-msg').innerHTML = '<div class="msg err">제목을 입력해 주세요.</div>';
@@ -1609,33 +1699,14 @@ function openCard(c){
       $('#dr-msg').innerHTML = `<div class="msg err">${esc(cleanErr(res.error.message))}</div>`;
       return false;
     }
-    forceClose();
-    await refresh();
     return true;
   };
 
-  $('#dr-close').onclick = close;
-  $('#dr-cancel').onclick = () => {
-    if (dirty() && !confirm('작성하던 내용을 버리고 닫습니다.\n계속할까요?')) return;
-    forceClose();
-  };
-  // 바깥을 눌러도 닫히지 않는다. 닫기 버튼으로만 닫는다.
-  $('.scrim').onclick = e => {
-    if (!e.target.classList.contains('scrim')) return;
-    const box = $('.drawer');
-    box.classList.remove('nudge'); void box.offsetWidth; box.classList.add('nudge');
-    const hint = $('#dr-hint');
-    hint.classList.add('show');
-    clearTimeout(window.__hintT);
-    window.__hintT = setTimeout(() => hint && hint.classList.remove('show'), 2600);
-  };
+  const ctl = mountDrawer({ body, collect, save });
+  const forceClose = ctl.forceClose;
 
-  // Ctrl+S 로 저장 (Esc 로는 닫지 않는다)
-  $('.drawer').onkeydown = e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); save(); }
-  };
-
-  $('#dr-save').onclick = () => save();
+  $('#dr-save').onclick = () => ctl.saveAndClose();
+  $('#dr-cancel').onclick = () => ctl.discard();
 
   if ($('#dr-drop')) $('#dr-drop').onclick = async () => {
     if (!confirm(`"${c.title}" 을(를) 드랍합니다.\n지워지지 않고 드랍 게시판에 보관되며, 언제든 아이디어 단계로 복구할 수 있습니다.`)) return;
