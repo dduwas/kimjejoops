@@ -422,6 +422,11 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       순서 숫자가 작을수록 위에 옵니다.</p>
     <div id="moat-list"></div>
 
+    <h3 style="margin-top:38px">연동 — 성과 자동수집</h3>
+    <p class="lede">유튜브와 인스타그램에서 조회수·좋아요·댓글을 자동으로 가져옵니다.
+      설정 방법은 안내문의 「성과 자동수집 설정」을 보세요.</p>
+    <div id="sync-box"></div>
+
     <h3 style="margin-top:38px">채널 설정</h3>
     <p class="lede">콘텐츠 카드와 생산 라인 필터에 쓰이는 채널 목록입니다.
       순서 숫자가 작을수록 앞에 옵니다.</p>
@@ -577,6 +582,7 @@ async function refresh(){
   ]);
   cards = c.data || []; team = p.data || []; moats = m.data || []; channels = ch.data || [];
   todos = td.data || []; meetings = mt.data || [];
+  await loadSettings();
   render();
 }
 
@@ -1816,7 +1822,79 @@ async function setStatus(id, status){
 }
 
 /* ---------------- 설정: 차별점 + 채널 ---------------- */
-function renderSettings(){ renderMoats(); renderChannels(); }
+function renderSettings(){ renderMoats(); renderChannels(); renderSync(); }
+
+let appSettings = {};
+
+async function loadSettings(){
+  if (!isAdmin()) return;
+  const { data } = await sb.from('app_settings').select('key, value');
+  appSettings = {};
+  (data || []).forEach(r => appSettings[r.key] = r.value || '');
+}
+
+function renderSync(){
+  if (!isAdmin()) return;
+  const yk = appSettings.youtube_api_key || '';
+  const it = appSettings.instagram_token || '';
+  const at = appSettings.instagram_token_at || '';
+  const mask = v => v ? v.slice(0,6) + '…' + v.slice(-4) + ` (${v.length}자)` : '';
+  const days = at ? Math.floor((Date.now() - new Date(at).getTime()) / 864e5) : null;
+
+  $('#sync-box').innerHTML = `
+    <div class="field"><label>유튜브 API 키
+      ${yk ? `<span style="color:var(--blue);font-weight:700">· 저장됨 ${mask(yk)}</span>` : ''}</label>
+      <input id="cfg-yt" type="text" placeholder="${yk ? '바꾸려면 새 키를 넣으세요' : 'AIza... 로 시작하는 키'}"></div>
+
+    <div class="field"><label>인스타그램 액세스 토큰
+      ${it ? `<span style="color:var(--blue);font-weight:700">· 저장됨 ${mask(it)}</span>` : ''}
+      ${days !== null ? `<span style="color:${days > 50 ? 'var(--warn)' : 'var(--muted)'}"> · 발급 ${days}일 전${days > 50 ? ' — 곧 만료됩니다' : ''}</span>` : ''}</label>
+      <input id="cfg-ig" type="text" placeholder="${it ? '바꾸려면 새 토큰을 넣으세요' : 'IGAA... 로 시작하는 긴 문자열'}"></div>
+
+    <button class="btn sm" id="cfg-save">연동 정보 저장</button>
+    <button class="btn ghost sm" id="cfg-run">지금 전체 수집</button>
+    <div id="cfg-msg" style="margin-top:12px"></div>
+    <p class="note">
+      인스타 토큰은 60일마다 만료됩니다. 수집할 때 자동으로 연장되니 30일 안에 한 번씩만 수집을 돌리면 됩니다.<br>
+      <b>저장·공유·링크클릭은 자동으로 못 가져옵니다.</b> 계정 소유자만 볼 수 있는 값이라 인스타 인사이트에서 직접 옮겨 적으셔야 합니다.</p>`;
+
+  $('#cfg-save').onclick = async () => {
+    const rows = [];
+    const yv = $('#cfg-yt').value.trim();
+    const iv = $('#cfg-ig').value.trim();
+    const now = new Date().toISOString();
+    if (yv) rows.push({ key:'youtube_api_key', value: yv, updated_at: now });
+    if (iv) {
+      rows.push({ key:'instagram_token', value: iv, updated_at: now });
+      rows.push({ key:'instagram_token_at', value: now, updated_at: now });
+    }
+    if (!rows.length) return syncMsg('바꿀 내용을 입력해 주세요.');
+    const { error } = await sb.from('app_settings').upsert(rows);
+    if (error) return syncMsg(cleanErr(error.message));
+    await loadSettings(); renderSync();
+    syncMsg('저장했습니다.', 'ok');
+  };
+
+  $('#cfg-run').onclick = () => runSync(null, '#cfg-msg');
+}
+
+function syncMsg(t, k='err', sel='#cfg-msg'){
+  const el = $(sel); if (el) el.innerHTML = `<div class="msg ${k}">${esc(t)}</div>`;
+}
+
+// 성과 수집 실행 — ids 가 null 이면 전체
+async function runSync(ids, msgSel='#cfg-msg'){
+  syncMsg('가져오는 중… 건수가 많으면 1분쯤 걸립니다.', 'ok', msgSel);
+  try {
+    const { data, error } = await sb.functions.invoke('fetch-stats', { body: ids ? { ids } : {} });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    syncMsg((data.log || []).join('\n'), 'ok', msgSel);
+    await refresh();
+  } catch (e) {
+    syncMsg('가져오지 못했습니다. 성과수집 기능이 아직 설정되지 않았을 수 있습니다.\n' + (e.message || e), 'err', msgSel);
+  }
+}
 
 function renderMoats(){
   if (!isAdmin()) return;
@@ -2006,14 +2084,30 @@ function openCard(c){
       <input id="f-url" value="${esc(d.publish_url)}" placeholder="https://"></div>
     <div class="field"><label>레퍼런스 링크 — 참고 자료·벤치마크</label>
       <input id="f-ref" value="${esc(d.reference_url)}" placeholder="https://"></div>
+    ${!isNew && d.publish_url ? `<button class="btn ghost sm" id="f-sync">게시 링크에서 불러오기</button>
+    <div id="f-sync-msg" style="margin-top:9px"></div>
+    <p class="note">유튜브·인스타 게시 링크가 있으면 조회수·좋아요·댓글을 자동으로 채웁니다.
+      ${d.stats_synced_at ? `마지막 수집 ${d.stats_synced_at.slice(0,16).replace('T',' ')}` : '아직 수집한 적이 없습니다.'}</p>` : ''}
     <div class="grid2">
-      <div class="field"><label>조회수</label><input type="number" id="f-v" value="${d.views ?? ''}"></div>
-      <div class="field"><label>저장</label><input type="number" id="f-s" value="${d.saves ?? ''}"></div>
+      <div class="field"><label>조회수 ${d.publish_url ? '<span style="color:var(--blue)">· 자동</span>' : ''}</label>
+        <input type="number" id="f-v" value="${d.views ?? ''}"></div>
+      <div class="field"><label>좋아요 ${d.publish_url ? '<span style="color:var(--blue)">· 자동</span>' : ''}</label>
+        <input type="number" id="f-lk" value="${d.likes ?? ''}"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>공유</label><input type="number" id="f-sh" value="${d.shares ?? ''}"></div>
-      <div class="field"><label>링크 클릭</label><input type="number" id="f-lc" value="${d.link_clicks ?? ''}"></div>
+      <div class="field"><label>댓글 ${d.publish_url ? '<span style="color:var(--blue)">· 자동</span>' : ''}</label>
+        <input type="number" id="f-cm" value="${d.comments ?? ''}"></div>
+      <div class="field"><label>저장 <span style="color:var(--muted)">· 직접 입력</span></label>
+        <input type="number" id="f-s" value="${d.saves ?? ''}"></div>
     </div>
+    <div class="grid2">
+      <div class="field"><label>공유 <span style="color:var(--muted)">· 직접 입력</span></label>
+        <input type="number" id="f-sh" value="${d.shares ?? ''}"></div>
+      <div class="field"><label>링크 클릭 <span style="color:var(--muted)">· 직접 입력</span></label>
+        <input type="number" id="f-lc" value="${d.link_clicks ?? ''}"></div>
+    </div>
+    <p class="note">저장·공유·링크클릭은 계정 소유자만 볼 수 있는 값이라 자동으로 못 가져옵니다.
+      인스타 인사이트에서 보고 직접 넣어주세요.</p>
 
     <div class="drawer-actions">
       <button class="btn" id="dr-save">저장</button>
@@ -2040,7 +2134,8 @@ function openCard(c){
       script: $('#f-script').value || null,
       publish_url: $('#f-url').value.trim() || null,
       reference_url: $('#f-ref').value.trim() || null,
-      views: num('#f-v'), saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
+      views: num('#f-v'), likes: num('#f-lk'), comments: num('#f-cm'),
+      saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
     };
   };
 
@@ -2066,6 +2161,16 @@ function openCard(c){
 
   $('#dr-save').onclick = () => ctl.saveAndClose();
   $('#dr-cancel').onclick = () => ctl.discard();
+
+  if ($('#f-sync')) $('#f-sync').onclick = async () => {
+    await runSync([c.id], '#f-sync-msg');
+    const fresh = cards.find(x => x.id === c.id);
+    if (fresh) {
+      if (fresh.views    != null) $('#f-v').value  = fresh.views;
+      if (fresh.likes    != null) $('#f-lk').value = fresh.likes;
+      if (fresh.comments != null) $('#f-cm').value = fresh.comments;
+    }
+  };
 
   if ($('#dr-drop')) $('#dr-drop').onclick = async () => {
     if (!confirm(`"${c.title}" 을(를) 드랍합니다.\n지워지지 않고 드랍 게시판에 보관되며, 언제든 아이디어 단계로 복구할 수 있습니다.`)) return;
