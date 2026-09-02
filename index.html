@@ -73,6 +73,8 @@ nav button:hover{color:#fff}
 .hright b{color:#fff;font-weight:600}
 .linkbtn{background:transparent;border:0;color:#A9C4EA;text-decoration:underline;font-size:13px;padding:0}
 .linkbtn:hover{color:#fff}
+#btn-me b{color:#fff}
+#btn-me:hover{opacity:.8}
 
 /* 도구 막대 — 내 담당 / 채널 분리 */
 .toolbar{display:flex;align-items:center;gap:10px;padding:13px 20px 0;flex-wrap:wrap}
@@ -258,7 +260,6 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       </div>
       <div class="field"><label>이메일</label><input type="email" id="su-email" required autocomplete="username"></div>
       <div class="field"><label>비밀번호 (8자 이상)</label><input type="password" id="su-pw" minlength="8" required autocomplete="new-password"></div>
-      <div class="field"><label>신청 사유 — 어떤 업무를 맡으시나요</label><textarea id="su-reason" required></textarea></div>
       <button class="btn" style="width:100%" type="submit">가입 신청 보내기</button>
     </form>
   </div>
@@ -295,7 +296,8 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
         <button data-view="settings" class="admin-only">설정</button>
       </nav>
       <div class="hright">
-        <span><b id="me-name"></b> · <span id="me-role"></span></span>
+        <button class="linkbtn" id="btn-me" style="text-decoration:none">
+          <b id="me-name"></b> · <span id="me-role"></span></button>
         <button class="linkbtn" id="btn-logout">로그아웃</button>
       </div>
     </div>
@@ -508,12 +510,14 @@ $('#form-signup').onsubmit = async e => {
     email: $('#su-email').value.trim(), password: $('#su-pw').value,
     options: { data: {
       name: $('#su-name').value.trim(), company: $('#su-company').value.trim(),
-      role_title: $('#su-title').value.trim(), apply_reason: $('#su-reason').value.trim() }}
+      role_title: $('#su-title').value.trim() }}
   });
   if (error) return authMsg(authHint(error.message));
   authMsg('신청을 보냈습니다. 관리자 승인을 기다려 주세요.', 'ok');
   $('#form-signup').reset();
 };
+
+$('#btn-me').onclick = () => openMyAccount();
 
 $('#btn-logout').onclick = $('#pending-logout').onclick = async () => {
   await sb.auth.signOut(); location.reload();
@@ -1397,13 +1401,15 @@ function renderTeam(){
     (order[a.status]-order[b.status]) || a.created_at.localeCompare(b.created_at));
 
   $('#team-list').innerHTML = `<table>
-    <tr><th>이름</th><th>회사 · 직책</th><th>신청 사유</th><th>권한</th><th>상태</th><th></th></tr>
+    <tr><th>이름 · 아이디</th><th>회사 · 직책</th><th>권한</th><th>상태</th><th></th></tr>
     ${rows.map(t => {
       const locked = (t.role === 'master' && !isMaster()) || t.id === me.id;
       return `<tr>
-      <td><b>${esc(t.name || '(이름 없음)')}</b><br><span style="color:var(--muted);font-size:12px">${esc(t.email)}</span></td>
-      <td>${esc(t.company || '—')}<br><span style="color:var(--muted);font-size:12px">${esc(t.role_title || '')}</span></td>
-      <td style="max-width:230px;font-size:12.5px;color:var(--muted)">${esc(t.apply_reason || '—')}</td>
+      <td data-edit="${t.id}" style="cursor:pointer">
+        <b>${esc(t.name || '(이름 없음)')}</b>
+        <br><span style="color:var(--muted);font-size:12px">${esc(t.email)}</span></td>
+      <td data-edit="${t.id}" style="cursor:pointer">${esc(t.company || '—')}
+        <br><span style="color:var(--muted);font-size:12px">${esc(t.role_title || '')}</span></td>
       <td><select class="mini" data-role="${t.id}" ${locked?'disabled':''}>
         ${Object.entries(ROLES).filter(([k]) => k !== 'master' || isMaster())
           .map(([k,v]) => `<option value="${k}" ${t.role===k?'selected':''}>${v}</option>`).join('')}
@@ -1411,47 +1417,216 @@ function renderTeam(){
       <td><span class="pill ${t.status}">${STATUS_KO[t.status]}</span></td>
       <td style="white-space:nowrap">
         ${(t.status !== 'approved' && !locked) ? `<button class="btn sm" data-approve="${t.id}">승인</button>` : ''}
+        <button class="btn sm ghost" data-edit2="${t.id}">정보 수정</button>
         ${(t.status === 'approved' && !locked) ? `<button class="btn sm danger" data-suspend="${t.id}">중지</button>` : ''}
-        ${(t.status === 'pending' && !locked) ? `<button class="btn sm ghost" data-reject="${t.id}">거절</button>` : ''}
-        ${(!locked && t.role !== 'master') ? `<button class="btn sm danger" data-remove="${t.id}">삭제</button>` : ''}
       </td></tr>`;
     }).join('')}
   </table>
   <p class="note">
+    이름이나 회사를 누르면 <b>정보 수정</b> 창이 열립니다. 비밀번호 재설정과 계정 삭제도 그 안에 있습니다.<br>
     <b>중지</b> 는 접근만 막습니다. 나중에 다시 승인하면 그대로 돌아옵니다. 잠깐 쉬는 사람은 중지를 쓰세요.<br>
-    <b>삭제</b> 는 명단에서 완전히 빼는 것입니다. 담당하던 카드는 사라지지 않고 담당자 자리만 비게 됩니다.<br>
-    부관리자는 관리자와 같은 기능을 모두 씁니다. 마스터 계정은 마스터 본인만 바꿀 수 있고 삭제할 수 없습니다.</p>`;
+    부관리자는 관리자와 같은 기능을 모두 씁니다. 마스터 계정은 마스터 본인만 바꿀 수 있습니다.</p>`;
 
   $$('#team-list [data-approve]').forEach(b => b.onclick = () => setStatus(b.dataset.approve, 'approved'));
   $$('#team-list [data-suspend]').forEach(b => b.onclick = () => setStatus(b.dataset.suspend, 'suspended'));
-  $$('#team-list [data-reject]').forEach(b => b.onclick = () => setStatus(b.dataset.reject, 'rejected'));
-  $$('#team-list [data-role]').forEach(s => s.onchange = async () => {
-    const { error } = await sb.from('profiles').update({ role: s.value }).eq('id', s.dataset.role);
+  $$('#team-list [data-role]').forEach(sel => sel.onchange = async () => {
+    const { error } = await sb.from('profiles').update({ role: sel.value }).eq('id', sel.dataset.role);
     if (error) alert(cleanErr(error.message));
     await refresh();
   });
+  $$('#team-list [data-edit], #team-list [data-edit2]').forEach(el =>
+    el.onclick = () => openMember(team.find(t => t.id === (el.dataset.edit || el.dataset.edit2))));
+}
 
-  $$('#team-list [data-remove]').forEach(b => b.onclick = async () => {
-    const t = team.find(x => x.id === b.dataset.remove);
+/* ---------------- 팀원 정보 수정 ---------------- */
+function openMember(t){
+  if (!t) return;
+  const locked   = (t.role === 'master' && !isMaster());
+  const isSelf   = t.id === me.id;
+  const canTouch = !locked;
+
+  const body = `
+    <h2>${esc(t.name || t.email)}</h2>
+    <div class="sub">${esc(t.email)} · ${ROLES[t.role] || t.role} · ${STATUS_KO[t.status]}</div>
+    <div id="dr-msg"></div>
+
+    <div class="field"><label>이름</label><input id="p-name" value="${esc(t.name)}"></div>
+    <div class="grid2">
+      <div class="field"><label>회사</label><input id="p-company" value="${esc(t.company)}"></div>
+      <div class="field"><label>직책</label><input id="p-title" value="${esc(t.role_title)}"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>권한</label><select id="p-role" ${canTouch?'':'disabled'}>
+        ${Object.entries(ROLES).filter(([k]) => k !== 'master' || isMaster())
+          .map(([k,v]) => `<option value="${k}" ${t.role===k?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+      <div class="field"><label>접근 상태</label><select id="p-status" ${(canTouch && !isSelf)?'':'disabled'}>
+        ${Object.entries(STATUS_KO).map(([k,v]) => `<option value="${k}" ${t.status===k?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+    </div>
+
+    <div class="sect">아이디 (이메일)</div>
+    <div class="field"><label>로그인에 쓰는 이메일</label><input id="p-email" value="${esc(t.email)}"></div>
+    <button class="btn ghost sm" id="p-email-btn" ${canTouch?'':'disabled'}>이메일 바꾸기</button>
+    <p class="note">바꾸면 이 사람은 <b>새 이메일로 로그인</b>해야 합니다. 반드시 알려주세요.</p>
+
+    <div class="sect">비밀번호</div>
+    <div class="msg ok" style="margin-bottom:12px">
+      비밀번호는 암호화되어 저장되므로 <b>보여드릴 수 없습니다.</b> 대표님도, 시스템 관리자도 볼 수 없습니다.<br>
+      팀원이 비밀번호를 잊었으면 아래에서 새로 지정해 알려주세요.
+    </div>
+    <div class="field"><label>새 비밀번호 (8자 이상)</label>
+      <input id="p-pw" type="text" placeholder="예: kimjejo2026!" autocomplete="off"></div>
+    <button class="btn ghost sm" id="p-pw-btn" ${canTouch?'':'disabled'}>비밀번호 새로 지정</button>
+    <button class="btn ghost sm" id="p-pw-gen">임시 비밀번호 만들기</button>
+    <p class="note">지정한 비밀번호를 카톡 등으로 전달하고, 받은 사람이 바로 바꾸도록 안내하세요.</p>
+
+    ${(!isSelf && t.role !== 'master') ? `
+    <div class="sect">계정 삭제</div>
+    <button class="btn danger sm" id="p-del">이 사람 완전히 삭제</button>
+    <p class="note">명단과 로그인 계정을 함께 지웁니다. 담당하던 카드는 사라지지 않고 담당자 자리만 비웁니다.</p>` : ''}
+
+    <div class="drawer-actions">
+      <button class="btn" id="p-save">저장</button>
+      <button class="btn ghost" id="p-cancel">저장 안 함</button>
+    </div>`;
+
+  const collect = () => ({
+    name: $('#p-name').value.trim(),
+    company: $('#p-company').value.trim(),
+    role_title: $('#p-title').value.trim(),
+    role: $('#p-role').value,
+    status: $('#p-status').value
+  });
+
+  const msg = (x, k='err') => $('#dr-msg').innerHTML = `<div class="msg ${k}">${esc(x)}</div>`;
+
+  const save = async () => {
+    const { error } = await sb.from('profiles').update(collect()).eq('id', t.id);
+    if (error) { msg(cleanErr(error.message)); return false; }
+    return true;
+  };
+
+  const ctl = mountDrawer({ body, collect, save });
+  $('#p-save').onclick = () => ctl.saveAndClose();
+  $('#p-cancel').onclick = () => ctl.discard();
+
+  // 계정 기능은 서버 함수를 거친다
+  const callAdmin = async (payload) => {
+    const { data, error } = await sb.functions.invoke('admin-user',
+      { body: { ...payload, userId: t.id } });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
+  const adminFail = e => msg(
+    '처리하지 못했습니다. 계정 관리 기능이 아직 설정되지 않았을 수 있습니다.\n' + (e.message || e));
+
+  $('#p-pw-gen').onclick = () => {
+    const pool = 'abcdefghijkmnpqrstuvwxyz23456789';
+    let pw = 'kim';
+    for (let i = 0; i < 7; i++) pw += pool[Math.floor(Math.random() * pool.length)];
+    $('#p-pw').value = pw + '!';
+  };
+
+  $('#p-pw-btn').onclick = async () => {
+    const pw = $('#p-pw').value.trim();
+    if (pw.length < 8) return msg('비밀번호는 8자 이상이어야 합니다.');
+    if (!confirm(`${t.name || t.email} 님의 비밀번호를 아래로 바꿉니다.\n\n${pw}\n\n이 값을 본인에게 전달하세요.`)) return;
+    try {
+      await callAdmin({ action: 'password', password: pw });
+      msg(`비밀번호를 바꿨습니다.\n새 비밀번호: ${pw}\n본인에게 전달하고 바로 변경하도록 안내하세요.`, 'ok');
+    } catch (e) { adminFail(e); }
+  };
+
+  $('#p-email-btn').onclick = async () => {
+    const em = $('#p-email').value.trim();
+    if (!em.includes('@')) return msg('이메일 형식이 올바르지 않습니다.');
+    if (em === t.email) return msg('기존과 같은 이메일입니다.');
+    if (!confirm(`로그인 아이디를 ${em} 으로 바꿉니다.\n이 사람은 앞으로 새 이메일로 로그인해야 합니다.`)) return;
+    try {
+      await callAdmin({ action: 'email', email: em });
+      msg('이메일을 바꿨습니다. 본인에게 알려주세요.', 'ok');
+      await refresh();
+    } catch (e) { adminFail(e); }
+  };
+
+  if ($('#p-del')) $('#p-del').onclick = async () => {
     const who = t.name || t.email;
     const nCards = cards.filter(c => (c.owner_ids || []).includes(t.id)).length;
     const nTodos = todos.filter(x => (x.owner_ids || []).includes(t.id)).length;
-
     const detail = [];
     if (nCards) detail.push(`담당 콘텐츠 ${nCards}개`);
     if (nTodos) detail.push(`담당 할 일 ${nTodos}개`);
 
     if (!confirm(
-      `${who} 님을 팀 명단에서 삭제합니다.\n` +
-      (detail.length ? `\n${detail.join(' · ')} 에서 담당자만 빠지고, 내용은 그대로 남습니다.\n` : '') +
-      `\n잠시 쉬는 것뿐이라면 삭제 대신 [중지] 를 쓰세요.\n계속할까요?`
+      `${who} 님을 완전히 삭제합니다.\n` +
+      (detail.length ? `\n${detail.join(' · ')} 에서 담당자만 빠지고 내용은 남습니다.\n` : '') +
+      `\n잠시 쉬는 것뿐이라면 삭제 대신 접근 상태를 [중지] 로 바꾸세요.\n계속할까요?`
     )) return;
 
     const { error } = await sb.from('profiles').delete().eq('id', t.id);
-    if (error) return alert(cleanErr(error.message));
-    alert(`${who} 님을 삭제했습니다.\n\n로그인 계정까지 완전히 없애려면 Supabase → Authentication → Users 에서 해당 이메일도 지워주세요.`);
-    await refresh();
+    if (error) return msg(cleanErr(error.message));
+    try { await callAdmin({ action: 'delete' }); }
+    catch { /* 로그인 계정은 남을 수 있음 */ }
+    ctl.forceClose(); await refresh();
+  };
+}
+
+/* ---------------- 내 계정 ---------------- */
+function openMyAccount(){
+  const body = `
+    <h2>내 계정</h2>
+    <div class="sub">${esc(profile.email)} · ${ROLES[profile.role] || profile.role}</div>
+    <div id="dr-msg"></div>
+
+    <div class="field"><label>이름</label><input id="me-n" value="${esc(profile.name)}"></div>
+    <div class="grid2">
+      <div class="field"><label>회사</label><input id="me-c" value="${esc(profile.company)}"></div>
+      <div class="field"><label>직책</label><input id="me-t" value="${esc(profile.role_title)}"></div>
+    </div>
+
+    <div class="sect">비밀번호 바꾸기</div>
+    <div class="field"><label>새 비밀번호 (8자 이상)</label>
+      <input id="me-pw" type="password" autocomplete="new-password"></div>
+    <div class="field"><label>한 번 더 입력</label>
+      <input id="me-pw2" type="password" autocomplete="new-password"></div>
+    <button class="btn ghost sm" id="me-pw-btn">비밀번호 바꾸기</button>
+    <p class="note">본인 비밀번호는 언제든 여기서 바꿀 수 있습니다.</p>
+
+    <div class="drawer-actions">
+      <button class="btn" id="me-save">저장</button>
+      <button class="btn ghost" id="me-cancel">저장 안 함</button>
+    </div>`;
+
+  const collect = () => ({
+    name: $('#me-n').value.trim(),
+    company: $('#me-c').value.trim(),
+    role_title: $('#me-t').value.trim()
   });
+  const msg = (x, k='err') => $('#dr-msg').innerHTML = `<div class="msg ${k}">${esc(x)}</div>`;
+
+  const save = async () => {
+    const { error } = await sb.from('profiles').update(collect()).eq('id', me.id);
+    if (error) { msg(cleanErr(error.message)); return false; }
+    profile = { ...profile, ...collect() };
+    $('#me-name').textContent = profile.name || profile.email;
+    return true;
+  };
+
+  const ctl = mountDrawer({ body, collect, save });
+  $('#me-save').onclick = () => ctl.saveAndClose();
+  $('#me-cancel').onclick = () => ctl.discard();
+
+  $('#me-pw-btn').onclick = async () => {
+    const a = $('#me-pw').value, b = $('#me-pw2').value;
+    if (a.length < 8) return msg('비밀번호는 8자 이상이어야 합니다.');
+    if (a !== b) return msg('두 번 입력한 비밀번호가 다릅니다.');
+    const { error } = await sb.auth.updateUser({ password: a });
+    if (error) return msg(cleanErr(error.message));
+    $('#me-pw').value = ''; $('#me-pw2').value = '';
+    msg('비밀번호를 바꿨습니다.', 'ok');
+  };
 }
 
 async function setStatus(id, status){
