@@ -110,6 +110,10 @@ nav button:hover{color:#fff}
 .badge.b-cta{background:#fff;border:1px dashed var(--line);color:var(--muted)}
 .card .next{font-size:12px;color:var(--muted);line-height:1.5}
 .card .meta{display:flex;gap:9px;margin-top:8px;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cardlinks{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.cardlinks a{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;
+  background:var(--blue-50);color:var(--navy-2);text-decoration:none;border:1px solid var(--blue-100)}
+.cardlinks a:hover{background:var(--blue-100)}
 .cardbtns{display:flex;gap:5px;margin-top:9px}
 .cardbtn{flex:1;padding:7px 4px;border-radius:7px;border:1px solid var(--navy);
   background:var(--navy);color:#fff;font-size:12px;font-weight:700}
@@ -141,6 +145,9 @@ nav button:hover{color:#fff}
   background:var(--wash);border-left:3px solid var(--line);cursor:pointer;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ev:hover{background:var(--blue-50)}
+.ev[draggable=true]{cursor:grab}
+.ev.dragging{opacity:.4}
+.cell.drop{background:var(--blue-100);outline:2px dashed var(--blue);outline-offset:-2px}
 .dotmark{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
 .dotmark.plan{background:#fff;border:1.5px solid var(--blue)}
 .dotmark.done{background:var(--navy)}
@@ -180,6 +187,14 @@ td.od,.od{color:var(--warn);font-weight:700}
 .mt-head b{font-size:15.5px;letter-spacing:-.01em}
 .mt-sum{margin-top:9px;font-size:13px;line-height:1.6;color:var(--ink);
   max-height:80px;overflow:hidden;position:relative}
+.rich{border:1px solid var(--line);border-radius:8px;padding:12px 13px;min-height:130px;
+  font-size:14px;line-height:1.65;background:#fff;overflow-y:auto;max-height:420px}
+.rich:focus{outline:2px solid var(--blue);outline-offset:-1px;border-color:var(--blue)}
+.rich.dragging{background:var(--blue-50);border-color:var(--blue)}
+.rich:empty:before{content:attr(data-ph);color:var(--muted)}
+.rich img{max-width:100%;height:auto;border-radius:7px;border:1px solid var(--line);margin:7px 0;display:block}
+.richbar{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.richhint{font-size:12px;color:var(--muted)}
 .filerow{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);
   border-radius:8px;margin-bottom:6px;font-size:13px}
 
@@ -717,6 +732,10 @@ function cardHTML(c){
     ${c.next_action ? `<div class="next">${esc(c.next_action)}</div>` : ''}
     <div class="meta"><span>${esc(ownerNames(c.owner_ids))}</span>
       ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}</div>
+    ${(c.publish_url || c.reference_url) ? `<div class="cardlinks">
+      ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" data-nolink="1">게시 링크</a>` : ''}
+      ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1">레퍼런스</a>` : ''}
+    </div>` : ''}
     ${doneBtn}</div>`;
 }
 
@@ -743,8 +762,12 @@ function renderBoard(){
     </div>`;
   }).join('');
 
+  $$('#line [data-nolink]').forEach(a => a.onclick = e => e.stopPropagation());
   $$('#line .card').forEach(el => {
-    el.onclick = () => openCard(cards.find(c => c.id === el.dataset.id));
+    el.onclick = e => {
+      if (e.target.closest('[data-nolink]')) return;
+      openCard(cards.find(c => c.id === el.dataset.id));
+    };
     el.ondragstart = e => e.dataTransfer.setData('text/plain', el.dataset.id);
   });
 
@@ -856,13 +879,14 @@ function renderCalendar(evs){
     const key = `${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const items = byDay[key] || [];
     const dow = (startPad + d - 1) % 7;
-    cells.push(`<div class="cell ${key===today?'today':''}">
+    cells.push(`<div class="cell ${key===today?'today':''}" data-day="${key}">
       <div class="cell-d ${dow===0?'sun':''} ${dow===6?'sat':''}">${d}</div>
       ${items.map(e => {
         const m = moatOf(e.card.moat); const color = m ? m.color : '#E2A08A';
         const k = SC_KINDS[e.kind];
-        return `<div class="ev" data-open="${e.card.id}" style="border-left-color:${color}"
-          title="${esc(k.label)} · ${esc(e.card.title)}">
+        return `<div class="ev" draggable="true" data-open="${e.card.id}"
+          data-ev="${e.card.id}|${e.kind}" style="border-left-color:${color}"
+          title="${esc(k.label)} · ${esc(e.card.title)} — 끌어서 날짜를 옮길 수 있습니다">
           <span class="dotmark ${k.cls}"></span>${esc(e.card.title)}</div>`;
       }).join('')}
     </div>`);
@@ -882,7 +906,7 @@ function renderCalendar(evs){
       <span><span class="dotmark k-edit"></span>편집</span>
       <span><span class="dotmark k-plan"></span>게시 예정</span>
       <span><span class="dotmark k-done"></span>게시 완료</span>
-      <span style="color:var(--muted)">촬영은 촬영일, 나머지는 게시예정일에 표시됩니다</span>
+      <span style="color:var(--muted)">촬영은 촬영일, 나머지는 게시예정일에 표시됩니다 · 끌어서 날짜를 옮길 수 있습니다</span>
     </div>
     ${noDate.length ? `<div class="sect" style="margin-top:26px">날짜 미정 ${noDate.length}개</div>
       ${scheduleTableHTML(noDate)}` : ''}`;
@@ -903,7 +927,8 @@ function scheduleTableHTML(evs){
           <br><span style="font-size:11px;color:var(--muted)">${e.kind === 'shoot' ? '촬영일' : '게시예정일'}</span></td>
         <td><span class="${pill}">${k.label}</span></td>
         <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
-          ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">링크</a>` : ''}
+          ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시 링크</a>` : ''}
+          ${c.reference_url ? ` <a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px">레퍼런스</a>` : ''}
           <br><span style="font-size:12px;color:var(--muted)">${esc(c.moat || '차별점 미정')}</span></td>
         <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
         <td>${esc(ownerNames(c.owner_ids))}</td>
@@ -929,6 +954,38 @@ function renderScheduleTable(evs){
 function wireScheduleButtons(){
   $$('#schedule-body [data-open]').forEach(el =>
     el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
+
+  // 캘린더에서 일정을 끌어 다른 날짜로 옮긴다
+  $$('#schedule-body .ev[data-ev]').forEach(el => {
+    el.ondragstart = ev => {
+      ev.dataTransfer.setData('text/plain', el.dataset.ev);
+      ev.dataTransfer.effectAllowed = 'move';
+      el.classList.add('dragging');
+    };
+    el.ondragend = () => el.classList.remove('dragging');
+  });
+
+  $$('#schedule-body .cell[data-day]').forEach(cell => {
+    cell.ondragover = ev => { ev.preventDefault(); cell.classList.add('drop'); };
+    cell.ondragleave = () => cell.classList.remove('drop');
+    cell.ondrop = async ev => {
+      ev.preventDefault(); cell.classList.remove('drop');
+      const raw = ev.dataTransfer.getData('text/plain');
+      if (!raw || !raw.includes('|')) return;
+      const [id, kind] = raw.split('|');
+      const card = cards.find(c => c.id === id);
+      if (!card) return;
+
+      const field = SC_KINDS[kind].dateKey;      // 촬영이면 촬영일, 아니면 게시예정일
+      const newDate = cell.dataset.day;
+      if (card[field] === newDate) return;
+
+      const patch = {}; patch[field] = newDate;
+      const { error } = await sb.from('contents').update(patch).eq('id', id);
+      if (error) return alert(cleanErr(error.message));
+      await refresh();
+    };
+  });
   $$('#schedule-body [data-sdone]').forEach(b => b.onclick = () => moveStage(b.dataset.sdone, DONE));
   $$('#schedule-body [data-splan]').forEach(b => b.onclick = () => moveStage(b.dataset.splan, PLANNED));
   $$('#schedule-body [data-cancel]').forEach(b => b.onclick = async () => {
@@ -970,8 +1027,10 @@ function mountDrawer({ body, collect, save }){
     attendee_ids: [...(o.attendee_ids || [])].sort(),
     channels: [...(o.channels || [])].sort()
   });
-  const initial = snap(collect());
+  let initial = snap(collect());
   const dirty = () => snap(collect()) !== initial;
+  // 내용을 나중에 채우는 화면(이미지 편집 등)에서 기준을 다시 잡을 때 쓴다
+  const resetBaseline = () => { initial = snap(collect()); };
 
   const forceClose = () => { window.onbeforeunload = null; $('#drawer-root').innerHTML = ''; };
   window.onbeforeunload = () => dirty() ? '' : undefined;
@@ -1029,7 +1088,7 @@ function mountDrawer({ body, collect, save }){
   document.onkeydown = e => { if ($('.drawer')) onKey(e); };
   setTimeout(() => { const d = $('.drawer'); if (d) d.focus(); }, 0);
 
-  return { dirty, forceClose, saveAndClose, discard, tryClose };
+  return { dirty, forceClose, saveAndClose, discard, tryClose, resetBaseline };
 }
 
 /* ---------------- 할 일 (게시판) ---------------- */
@@ -1168,7 +1227,7 @@ function renderMeetings(){
         <span style="font-size:12px;color:var(--muted)">
           ${(m.files || []).length ? `첨부 ${(m.files||[]).length}개 · ` : ''}${esc(ownerNames(m.attendee_ids))}</span>
       </div>
-      ${m.summary ? `<div class="mt-sum">${esc(m.summary).replace(/\n/g,'<br>')}</div>`
+      ${m.summary ? `<div class="mt-sum">${summaryPreview(m.summary)}</div>`
                   : '<div class="mt-sum" style="color:var(--muted)">아직 정리하지 않았습니다. 눌러서 열어보세요.</div>'}
     </div>`).join('')
     : '<div class="empty">회의록이 없습니다.<br>위 버튼으로 첫 회의록을 만드세요.</div>';
@@ -1179,6 +1238,18 @@ function renderMeetings(){
 
 $('#mt-new').onclick = () => openMeeting(null);
 
+// 목록에서는 글자만 보여준다 (이미지는 열어야 보인다)
+function summaryPreview(html){
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html || '';
+  const nImg = tmp.querySelectorAll('img').length;
+  tmp.querySelectorAll('img').forEach(i => i.remove());
+  const text = (tmp.innerText || '').trim();
+  const head = esc(text.slice(0, 180)).replace(/\n/g, '<br>') + (text.length > 180 ? '…' : '');
+  const tag = nImg ? `<span style="color:var(--blue);font-size:12px">이미지 ${nImg}개</span>` : '';
+  return (head || '<span style="color:var(--muted)">내용 없음</span>') + (tag ? '<br>' + tag : '');
+}
+
 function openMeeting(m){
   const isNew = !m;
   const d = m || { title:'', met_on:new Date().toISOString().slice(0,10),
@@ -1186,7 +1257,7 @@ function openMeeting(m){
 
   const body = `
     <h2>${isNew ? '새 회의록' : esc(d.title)}</h2>
-    <div class="sub">회의 대본을 붙여넣고 AI 정리를 누르면 결론과 다음 액션이 나옵니다.</div>
+    <div class="sub">결론과 액션 칸에는 이미지도 넣을 수 있습니다. 캡처한 뒤 Ctrl+V 로 붙여넣으세요.</div>
     <div id="dr-msg"></div>
 
     <div class="field"><label>회의 제목</label><input id="m-title" value="${esc(d.title)}"></div>
@@ -1202,17 +1273,23 @@ function openMeeting(m){
     <p class="note">파일 하나당 50MB까지 올릴 수 있습니다. 올린 파일은 승인된 팀원만 열람할 수 있습니다.</p>
 
     <div class="sect">회의 대본</div>
-    <div class="field"><textarea id="m-raw" style="min-height:220px" placeholder="회의 내용을 그대로 붙여넣으세요. 녹취록이어도 됩니다.">${esc(d.raw_text)}</textarea></div>
-    <button class="btn" id="m-ai">AI로 정리하기</button>
-    <span id="m-ai-state" style="margin-left:11px;font-size:13px;color:var(--muted)"></span>
+    <div class="field"><textarea id="m-raw" style="min-height:200px" placeholder="회의 내용을 그대로 붙여넣으세요. 녹취록이어도 됩니다.">${esc(d.raw_text)}</textarea></div>
 
     <div class="sect">핵심 결론</div>
-    <div class="field"><textarea id="m-sum" style="min-height:130px">${esc(d.summary)}</textarea></div>
+    <div class="rich" id="m-sum" contenteditable="true" data-ph="결정된 내용을 적으세요. 이미지는 Ctrl+V 로 붙여넣습니다."></div>
+    <div class="richbar">
+      <button class="btn ghost sm" data-pick="m-sum">이미지 넣기</button>
+      <span class="richhint">캡처 후 Ctrl+V 로도 들어갑니다</span>
+    </div>
 
     <div class="sect">다음 액션</div>
-    <div class="field"><textarea id="m-act" style="min-height:130px">${esc(d.actions)}</textarea></div>
-    <button class="btn ghost sm" id="m-to-todo">액션을 할 일로 보내기</button>
-    <p class="note">"- [담당자] 내용" 형태의 줄만 할 일로 옮깁니다. 담당자 이름이 팀 명단과 같으면 자동 배정됩니다.</p>
+    <div class="rich" id="m-act" contenteditable="true" data-ph="- [담당자] 할 일 내용"></div>
+    <div class="richbar">
+      <button class="btn ghost sm" data-pick="m-act">이미지 넣기</button>
+      <button class="btn ghost sm" id="m-to-todo">액션을 할 일로 보내기</button>
+    </div>
+    <p class="note">"- [담당자] 내용" 형태의 줄만 할 일로 옮깁니다. 담당자 이름이 팀 명단과 같으면 자동 배정됩니다.<br>
+      이미지는 승인된 팀원만 볼 수 있습니다.</p>
 
     <div class="drawer-actions">
       <button class="btn" id="m-save">저장</button>
@@ -1227,8 +1304,8 @@ function openMeeting(m){
     met_on: $('#m-date').value || null,
     attendee_ids: [...document.querySelectorAll('#m-att input:checked')].map(i => i.value),
     raw_text: $('#m-raw').value || null,
-    summary: $('#m-sum').value || null,
-    actions: $('#m-act').value || null,
+    summary: richOut('#m-sum'),
+    actions: richOut('#m-act'),
     files
   });
   const mtMsg = (t2, k='err') => $('#dr-msg').innerHTML = `<div class="msg ${k}">${esc(t2)}</div>`;
@@ -1248,6 +1325,24 @@ function openMeeting(m){
 
   $('#m-save').onclick = () => ctl.saveAndClose();
   $('#m-cancel').onclick = () => ctl.discard();
+
+  // 이미지가 들어가는 두 칸을 준비한다
+  const pickers = {};
+  ['#m-sum', '#m-act'].forEach(sel => { pickers[sel] = wireRich(sel, mtMsg); });
+
+  $$('[data-pick]').forEach(b => b.onclick = () => {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => { const f = inp.files[0]; if (f) pickers['#' + b.dataset.pick](f); };
+    inp.click();
+  });
+
+  // 저장된 내용을 채운다. 이때 dirty 기준도 다시 잡는다.
+  (async () => {
+    await richIn('#m-sum', d.summary);
+    await richIn('#m-act', d.actions);
+    ctl.resetBaseline();
+  })();
 
   // 파일 업로드
   $('#m-file-input').onchange = async e => {
@@ -1282,30 +1377,9 @@ function openMeeting(m){
   }
   wireFiles();
 
-  // AI 정리
-  $('#m-ai').onclick = async () => {
-    const text = $('#m-raw').value.trim();
-    if (text.length < 30) return mtMsg('대본이 너무 짧습니다. 회의 내용을 붙여넣어 주세요.');
-    $('#m-ai').disabled = true;
-    $('#m-ai-state').textContent = '정리하는 중… 30초쯤 걸립니다';
-    try {
-      const { data, error } = await sb.functions.invoke('meeting-summary', { body: { text } });
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
-      $('#m-sum').value = data.summary || '';
-      $('#m-act').value = data.actions || '';
-      mtMsg('정리했습니다. 내용을 확인하고 저장하세요. AI가 잘못 옮긴 부분이 있을 수 있습니다.', 'ok');
-    } catch (err) {
-      mtMsg('AI 정리에 실패했습니다. 설정이 아직 안 됐을 수 있습니다.\n' + (err.message || err));
-    } finally {
-      $('#m-ai').disabled = false;
-      $('#m-ai-state').textContent = '';
-    }
-  };
-
   // 액션 → 할 일
   $('#m-to-todo').onclick = async () => {
-    const all = ($('#m-act').value || '').split('\n');
+    const all = ($('#m-act').innerText || '').split('\n');
     // "## 다음 액션" 아래부터, 다음 "##" 을 만나기 전까지만 읽는다
     let started = all.findIndex(l => l.trim().startsWith('##')) === -1;
     const lines = [];
@@ -1345,6 +1419,112 @@ function openMeeting(m){
     if (error) return alert(cleanErr(error.message));
     forceClose(); await refresh();
   };
+}
+
+/* ---------------- 이미지가 들어가는 편집 영역 ----------------
+   저장할 때는 주소 대신 파일 위치만 남긴다. 주소는 시간이 지나면 만료되기 때문이다.
+   화면에 보여줄 때마다 새 주소를 받아 붙인다.
+------------------------------------------------------------------ */
+
+// 저장된 내용 → 편집 영역에 채우기 (이미지 주소를 새로 발급)
+async function richIn(sel, stored){
+  const box = $(sel);
+  if (!box) return;
+  const raw = stored || '';
+  // 예전에 저장된 일반 텍스트는 줄바꿈만 살려서 보여준다
+  box.innerHTML = raw.includes('<') ? raw : esc(raw).replace(/\n/g, '<br>');
+
+  const imgs = [...box.querySelectorAll('img[data-path]')];
+  for (const img of imgs) {
+    try {
+      const { data } = await sb.storage.from('meeting-files')
+        .createSignedUrl(img.dataset.path, 60 * 60 * 24 * 7);
+      if (data?.signedUrl) img.src = data.signedUrl;
+    } catch { img.alt = '이미지를 불러오지 못했습니다'; }
+  }
+}
+
+// 편집 영역 → 저장할 내용 (주소를 지우고 위치만 남김)
+function richOut(sel){
+  const box = $(sel);
+  if (!box) return null;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = box.innerHTML;
+  tmp.querySelectorAll('img').forEach(img => {
+    if (img.dataset.path) img.removeAttribute('src');
+    else img.remove();               // 위치를 모르는 이미지는 버린다
+  });
+  tmp.querySelectorAll('script,style,iframe,object,embed').forEach(el => el.remove());
+  const html = tmp.innerHTML.trim();
+  return html || null;
+}
+
+// 편집 영역에 붙여넣기·이미지 넣기 연결
+function wireRich(sel, onMsg){
+  const box = $(sel);
+  if (!box) return;
+
+  const insertImage = async (file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) return;
+    if (file.size > 10 * 1024 * 1024) { onMsg('이미지는 10MB까지 넣을 수 있습니다.'); return; }
+
+    const ext = (file.type.split('/')[1] || 'png').replace('jpeg','jpg');
+    const path = `img_${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+    onMsg('이미지 올리는 중…', 'ok');
+
+    const { error } = await sb.storage.from('meeting-files')
+      .upload(path, file, { contentType: file.type });
+    if (error) { onMsg('이미지 업로드 실패: ' + cleanErr(error.message)); return; }
+
+    const { data } = await sb.storage.from('meeting-files')
+      .createSignedUrl(path, 60 * 60 * 24 * 7);
+
+    const img = document.createElement('img');
+    img.dataset.path = path;
+    img.src = data?.signedUrl || '';
+    img.alt = '';
+
+    // 커서 위치에 넣는다. 위치를 모르면 맨 뒤에 붙인다.
+    const selNow = window.getSelection();
+    if (selNow && selNow.rangeCount && box.contains(selNow.anchorNode)) {
+      const r = selNow.getRangeAt(0);
+      r.deleteContents();
+      r.insertNode(img);
+      r.setStartAfter(img); r.collapse(true);
+      selNow.removeAllRanges(); selNow.addRange(r);
+    } else {
+      box.appendChild(img);
+    }
+    box.appendChild(document.createElement('br'));
+    onMsg('이미지를 넣었습니다. 저장을 눌러야 남습니다.', 'ok');
+  };
+
+  // Ctrl+V 로 클립보드 이미지 붙여넣기
+  box.onpaste = async e => {
+    const items = [...(e.clipboardData?.items || [])];
+    const imgItem = items.find(i => i.type.startsWith('image/'));
+    if (imgItem) {
+      e.preventDefault();
+      await insertImage(imgItem.getAsFile());
+      return;
+    }
+    // 글자는 서식을 떼고 넣는다
+    e.preventDefault();
+    const text = e.clipboardData.getData('text/plain');
+    document.execCommand('insertText', false, text);
+  };
+
+  // 파일을 끌어다 놓아도 들어간다
+  box.ondragover = e => { e.preventDefault(); box.classList.add('dragging'); };
+  box.ondragleave = () => box.classList.remove('dragging');
+  box.ondrop = async e => {
+    e.preventDefault(); box.classList.remove('dragging');
+    const f = [...(e.dataTransfer?.files || [])].find(x => x.type.startsWith('image/'));
+    if (f) await insertImage(f);
+  };
+
+  return insertImage;
 }
 
 function filesHTML(files){
@@ -1822,7 +2002,10 @@ function openCard(c){
 
     <div class="sect">대본과 결과</div>
     <div class="field"><label>대본 · 메모</label><textarea id="f-script" style="min-height:150px">${esc(d.script)}</textarea></div>
-    <div class="field"><label>게시 링크</label><input id="f-url" value="${esc(d.publish_url)}" placeholder="https://"></div>
+    <div class="field"><label>게시 링크 — 실제 올라간 곳</label>
+      <input id="f-url" value="${esc(d.publish_url)}" placeholder="https://"></div>
+    <div class="field"><label>레퍼런스 링크 — 참고 자료·벤치마크</label>
+      <input id="f-ref" value="${esc(d.reference_url)}" placeholder="https://"></div>
     <div class="grid2">
       <div class="field"><label>조회수</label><input type="number" id="f-v" value="${d.views ?? ''}"></div>
       <div class="field"><label>저장</label><input type="number" id="f-s" value="${d.saves ?? ''}"></div>
@@ -1856,6 +2039,7 @@ function openCard(c){
       next_action: $('#f-next').value.trim() || null,
       script: $('#f-script').value || null,
       publish_url: $('#f-url').value.trim() || null,
+      reference_url: $('#f-ref').value.trim() || null,
       views: num('#f-v'), saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
     };
   };
