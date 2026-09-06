@@ -325,8 +325,17 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
     <div class="toolbar">
       <button class="btn sm" id="btn-new">+ 콘텐츠 추가</button>
       <div class="sep"></div>
+      <span class="filterlabel">보기</span>
+      <button class="chip bd-view on" data-bv="kanban">칸반</button>
+      <button class="chip bd-view" data-bv="table">게시판</button>
+      <div class="sep"></div>
       <button class="chip" id="chip-mine">내 담당만</button>
       <span class="count" id="board-count"></span>
+    </div>
+    <div class="toolbar mid hide" id="stage-bar">
+      <span class="filterlabel">단계</span>
+      <div id="stage-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      <button class="chip reset hide" id="stage-clear">단계 전체</button>
     </div>
     <div class="toolbar mid">
       <span class="filterlabel">담당자</span>
@@ -339,6 +348,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <button class="chip reset hide" id="chip-clear">채널 전체</button>
     </div>
     <div class="line" id="line"></div>
+    <div class="wrap hide" id="board-table" style="padding-top:4px"></div>
   </section>
 
   <section id="view-schedule" class="hide wrap">
@@ -482,6 +492,8 @@ const sb = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
 
 let me = null, profile = null, cards = [], team = [], moats = [], channels = [], todos = [], meetings = [];
 let onlyMine = false;
+let bdView = 'kanban';
+let stageFilter = new Set();
 let channelFilter = new Set();
 let ownerFilter = new Set();          // 생산 라인 담당자 필터
 let scOwnerFilter = new Set();        // 게시 일정 담당자 필터
@@ -600,6 +612,11 @@ $$('nav button').forEach(b => b.onclick = () => {
 });
 
 /* ---------------- 필터 ---------------- */
+$$('.bd-view').forEach(b => b.onclick = () => {
+  $$('.bd-view').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); bdView = b.dataset.bv; renderBoard();
+});
+
 $('#chip-mine').onclick = () => {
   onlyMine = !onlyMine;
   $('#chip-mine').classList.toggle('on', onlyMine);
@@ -703,6 +720,7 @@ function visible(){
     if (onlyMine && !(c.owner_ids || []).includes(me.id)) return false;
     if (!matchOwner(c, ownerFilter)) return false;
     if (!matchChannel(c, channelFilter)) return false;
+    if (stageFilter.size && !stageFilter.has(colNameOf(c.stage))) return false;
     return true;
   });
 }
@@ -750,16 +768,40 @@ function cardHTML(c){
     ${doneBtn}</div>`;
 }
 
+// 단계가 어느 칼럼에 속하는지
+function colNameOf(stage){
+  const col = BOARD_COLS.find(c => c.stages.includes(stage));
+  return col ? col.name : stage;
+}
+
+function buildStageChips(){
+  const pool = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP);
+  const items = BOARD_COLS.map(col => ({
+    key: col.name,
+    label: `${col.name} ${pool.filter(c => col.stages.includes(c.stage)).length}`
+  }));
+  buildChips('#stage-chips', '#stage-clear', items, stageFilter, renderBoard);
+}
+
 function renderBoard(){
   const list = visible();
-  const live = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE).length;
+  const live = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP).length;
   const bits = [`제작 중 ${live}개`];
-  if (onlyMine || channelFilter.size || ownerFilter.size) bits.push(`보이는 카드 ${list.length}개`);
+  if (onlyMine || channelFilter.size || ownerFilter.size || stageFilter.size)
+    bits.push(`보이는 카드 ${list.length}개`);
   bits.push(`게시 예정 ${cards.filter(c => c.stage === PLANNED).length}개`);
   bits.push(`게시 완료 ${cards.filter(c => c.stage === DONE).length}개`);
   const dropped = cards.filter(c => c.stage === DROP).length;
   if (dropped) bits.push(`드랍 ${dropped}개`);
   $('#board-count').textContent = bits.join(' · ');
+
+  // 보기 전환 — 게시판일 때만 단계 필터를 보여준다
+  $('#line').classList.toggle('hide', bdView !== 'kanban');
+  $('#board-table').classList.toggle('hide', bdView !== 'table');
+  $('#stage-bar').classList.toggle('hide', bdView !== 'table');
+  buildStageChips();
+
+  if (bdView === 'table') return renderBoardTable(list);
 
   $('#line').innerHTML = BOARD_COLS.map((col, i) => {
     const items = list.filter(c => col.stages.includes(c.stage));
@@ -804,6 +846,58 @@ function renderBoard(){
       await moveStage(id, col.dataset.drop);
     };
   });
+}
+
+// 생산 라인 — 게시판 보기
+function renderBoardTable(list){
+  const stageIdx = st => BOARD_COLS.findIndex(c => c.stages.includes(st));
+  const rows = [...list].sort((a,b) =>
+    (stageIdx(a.stage) - stageIdx(b.stage)) ||
+    (a.publish_date || '9999').localeCompare(b.publish_date || '9999') ||
+    (b.updated_at || '').localeCompare(a.updated_at || ''));
+
+  if (!rows.length) {
+    $('#board-table').innerHTML = '<div class="empty">해당하는 콘텐츠가 없습니다.</div>';
+    return;
+  }
+
+  // 단계별로 소제목을 넣어 구분한다
+  let html = '', lastCol = null;
+  rows.forEach(c => {
+    const colName = colNameOf(c.stage);
+    if (colName !== lastCol) {
+      if (lastCol !== null) html += '</table>';
+      const n = rows.filter(x => colNameOf(x.stage) === colName).length;
+      html += `<div class="sect" style="margin-top:${lastCol===null?0:28}px">${esc(colName)} <span style="color:var(--muted);font-weight:600">${n}개</span></div>
+        <table>
+        <tr><th>콘텐츠</th><th>단계</th><th>차별점</th><th>채널</th><th>담당</th><th>다음 액션</th><th>게시예정</th><th></th></tr>`;
+      lastCol = colName;
+    }
+    const m = moatOf(c.moat);
+    const color = m ? m.color : '#E2A08A';
+    html += `<tr>
+      <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
+        ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
+      <td style="font-size:12.5px;white-space:nowrap">${esc(c.stage)}</td>
+      <td style="font-size:12.5px;white-space:nowrap">${c.moat
+        ? `<span class="swatch" style="background:${color}"></span>${esc(c.moat)}`
+        : '<span style="color:var(--warn)">미정</span>'}</td>
+      <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
+      <td style="font-size:12.5px">${esc(ownerNames(c.owner_ids))}</td>
+      <td style="font-size:12.5px;color:var(--muted);max-width:200px">${esc(c.next_action || '—')}</td>
+      <td style="font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px">${c.publish_date || '—'}</td>
+      <td style="white-space:nowrap">
+        ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시</a> ` : ''}
+        ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px">참고</a> ` : ''}
+        ${c.stage === REVIEW ? `<button class="btn sm" data-tpub="${c.id}">게시 승인</button>` : ''}
+      </td></tr>`;
+  });
+  html += '</table><p class="note">제목을 누르면 카드가 열립니다. 단계를 옮기려면 칸반 보기에서 끌거나, 카드를 열어 단계를 바꾸세요.</p>';
+
+  $('#board-table').innerHTML = html;
+  $$('#board-table [data-open]').forEach(el =>
+    el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
+  $$('#board-table [data-tpub]').forEach(b => b.onclick = () => moveStage(b.dataset.tpub, PLANNED));
 }
 
 async function moveStage(id, stage){
