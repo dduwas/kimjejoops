@@ -294,7 +294,7 @@ td.od,.od{color:var(--warn);font-weight:700}
 .empty{padding:44px 20px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7}
 
 .scrim{position:fixed;inset:0;background:rgba(8,32,74,.42);display:flex;justify-content:flex-end;z-index:50}
-.drawer{width:min(560px,100%);background:#fff;height:100%;overflow-y:auto;padding:26px 28px 60px}
+.drawer{width:min(67vw,100%);min-width:min(560px,100%);background:#fff;height:100%;overflow-y:auto;padding:30px 40px 70px}
 .drawer h2{margin:0 0 4px;font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--navy)}
 .drawer .sub{font-size:12.5px;color:var(--muted);margin-bottom:22px}
 .drawer .close{position:absolute;top:18px;right:22px;background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 11px;font-size:13px}
@@ -329,10 +329,13 @@ select.mini,input.mini{padding:5px 8px;border:1px solid var(--line);border-radiu
 input[type=color].mini{padding:2px;width:44px;height:30px}
 .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
 
+@media (max-width:1100px){
+  .drawer{width:100%;min-width:0;padding:26px 24px 60px}
+}
 @media (max-width:720px){
+  .drawer{padding:22px 18px 60px}
   .grid2,.checks{grid-template-columns:1fr}
   .hrow{height:auto;padding:12px 0;flex-wrap:wrap}
-  .drawer{padding:22px 18px 60px}
   .col.wide{flex:0 0 250px}
   .col.wide .colbody{grid-template-columns:1fr}
   .cell{min-height:74px}
@@ -1346,12 +1349,21 @@ function cleanHTML(html){
   return box.innerHTML;
 }
 
-function slugify(t){
-  const base = (t || '').trim().toLowerCase()
-    .replace(/[^\w가-힣\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .slice(0, 50);
-  return (base || 'post') + '-' + Math.random().toString(36).slice(2, 7);
+// 짧은 주소를 만든다 — 헷갈리는 글자(0,O,1,l,I)는 뺀다
+function slugify(){
+  const pool = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let out = '';
+  for (let i = 0; i < 7; i++) out += pool[Math.floor(Math.random() * pool.length)];
+  return out;
+}
+
+// 사람이 직접 넣은 주소를 정리한다
+function cleanSlug(v){
+  return (v || '').trim().toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40);
 }
 
 function postUrl(slug){
@@ -1438,10 +1450,14 @@ function openPost(p){
       <div class="field"><label>대표 이미지 주소</label>
         <input id="po-cover" value="${esc(d.cover_url)}" placeholder="본문 이미지를 우클릭해 주소 복사"></div>
     </div>
-    <div class="field"><label>공개 여부</label><select id="po-status">
-      <option value="draft" ${d.status==='draft'?'selected':''}>초안 — 팀만 볼 수 있음</option>
-      <option value="published" ${d.status==='published'?'selected':''}>발행 — 누구나 볼 수 있음</option>
-    </select></div>
+    <div class="grid2">
+      <div class="field"><label>공개 여부</label><select id="po-status">
+        <option value="draft" ${d.status==='draft'?'selected':''}>초안 — 팀만 볼 수 있음</option>
+        <option value="published" ${d.status==='published'?'selected':''}>발행 — 누구나 볼 수 있음</option>
+      </select></div>
+      <div class="field"><label>주소 — 비워두면 짧은 주소가 자동으로 생깁니다</label>
+        <input id="po-slug" value="${esc(d.slug)}" placeholder="예: berberine"></div>
+    </div>
     <div id="po-link"></div>
 
     <div class="drawer-actions">
@@ -1456,7 +1472,8 @@ function openPost(p){
     excerpt: $('#po-ex').value.trim() || null,
     cover_url: $('#po-cover').value.trim() || null,
     tags: $('#po-tags').value.split(',').map(x => x.trim()).filter(Boolean),
-    status: $('#po-status').value
+    status: $('#po-status').value,
+    slug: cleanSlug($('#po-slug').value) || null
   });
 
   const msg = (t, k='err') => $('#dr-msg').innerHTML = `<div class="msg ${k}">${esc(t)}</div>`;
@@ -1464,11 +1481,20 @@ function openPost(p){
   const save = async () => {
     const payload = collect();
     if (!payload.title) { msg('제목을 입력해 주세요.'); $('#po-title').focus(); return false; }
-    if (payload.status === 'published' && !d.slug && !payload.slug) payload.slug = slugify(payload.title);
+    if (!payload.slug) payload.slug = slugify();
+
     const res = isNew
-      ? await sb.from('posts').insert({ ...payload, author_id: me.id, created_by: me.id })
-      : await sb.from('posts').update(payload).eq('id', p.id);
-    if (res.error) { msg(cleanErr(res.error.message)); return false; }
+      ? await sb.from('posts').insert({ ...payload, author_id: me.id, created_by: me.id }).select().maybeSingle()
+      : await sb.from('posts').update(payload).eq('id', p.id).select().maybeSingle();
+
+    if (res.error) {
+      if ((res.error.message || '').includes('duplicate') || res.error.code === '23505') {
+        msg('같은 주소를 쓰는 글이 이미 있습니다. 주소 칸을 비우면 자동으로 만들어집니다.');
+        $('#po-slug').focus();
+      } else msg(cleanErr(res.error.message));
+      return false;
+    }
+    if (res.data?.slug) d.slug = res.data.slug;
     return true;
   };
 
@@ -1489,7 +1515,10 @@ function openPost(p){
   // 발행 주소 표시
   const showLink = () => {
     const box = $('#po-link');
-    if ($('#po-status').value !== 'published') { box.innerHTML = ''; return; }
+    if ($('#po-status').value !== 'published') {
+      box.innerHTML = '<p class="note">발행으로 바꾸고 저장하면 누구나 볼 수 있는 짧은 주소가 생깁니다.</p>';
+      return;
+    }
     if (!d.slug) { box.innerHTML = '<p class="note">저장하면 공개 주소가 만들어집니다.</p>'; return; }
     const u = postUrl(d.slug);
     box.innerHTML = `<div class="msg ok">공개 주소<br>
