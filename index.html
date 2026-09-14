@@ -321,6 +321,40 @@ td.od,.od{color:var(--warn);font-weight:700}
 .dinner .sect{margin:38px 0 16px;padding-bottom:8px}
 .dinner .checks{gap:11px}
 .dinner .chgroup{gap:8px}
+
+/* 채널·담당자 선택 — 체크와 글자를 붙여서 한 덩어리로 */
+.chgroup{display:flex;flex-wrap:wrap;gap:8px}
+.chgroup label{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:9px 14px 9px 11px;
+  border:1px solid var(--line);border-radius:8px;background:#fff;
+  font-size:13.5px;font-weight:600;color:var(--ink);
+  cursor:pointer;user-select:none;line-height:1.2;
+  transition:border-color .12s,background .12s;
+}
+.chgroup label:hover{border-color:var(--blue);background:var(--wash)}
+.chgroup input[type=checkbox]{
+  width:17px;height:17px;flex:0 0 17px;margin:0;
+  accent-color:var(--navy);cursor:pointer;
+}
+.chgroup label:has(input:checked){
+  background:var(--blue-50);border-color:var(--blue);color:var(--navy-2);
+}
+.chgroup label:focus-within{outline:2px solid var(--blue);outline-offset:1px}
+
+/* 항목이 많을 때 스크롤 — 화면을 다 잡아먹지 않게 */
+.chgroup.tall{max-height:210px;overflow-y:auto;padding:4px;
+  border:1px solid var(--line);border-radius:9px;background:var(--wash)}
+.chgroup.tall label{background:#fff}
+
+/* 단독 체크 항목 (완료 처리 등) */
+.check{display:inline-flex;align-items:center;gap:9px;padding:11px 15px 11px 12px;
+  border:1px solid var(--line);border-radius:8px;font-size:13.5px;font-weight:600;
+  cursor:pointer;user-select:none;line-height:1.2;background:#fff}
+.check:hover{border-color:var(--blue)}
+.check input[type=checkbox]{width:17px;height:17px;flex:0 0 17px;margin:0;accent-color:var(--navy);cursor:pointer}
+.check:has(input:checked){background:var(--blue-50);border-color:var(--blue);color:var(--navy-2)}
+.check.locked,.check:has(input:disabled){background:var(--wash);color:var(--muted);cursor:default}
 .dinner .note{margin-top:8px}
 .dinner .msg{margin-bottom:18px}
 
@@ -430,7 +464,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v22</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v23</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -2037,7 +2071,7 @@ function openTodo(t){
         ${['높음','보통','낮음'].map(p => `<option ${d.priority===p?'selected':''}>${p}</option>`).join('')}
       </select></div>
     </div>
-    <div class="field"><label>담당자 — 여러 명 선택 가능</label><div class="chgroup" id="t-owners">
+    <div class="field"><label>담당자 — 여러 명 선택 가능</label><div class="chgroup tall" id="t-owners">
       ${team.filter(x => x.status === 'approved')
         .map(x => `<label><input type="checkbox" value="${x.id}" ${(d.owner_ids||[]).includes(x.id)?'checked':''}>${esc(x.name || x.email)}</label>`).join('')}
     </div></div>
@@ -2131,7 +2165,7 @@ function openMeeting(m){
 
     <div class="field"><label>회의 제목</label><input id="m-title" value="${esc(d.title)}"></div>
     <div class="field"><label>회의 날짜</label><input type="date" id="m-date" value="${d.met_on || ''}"></div>
-    <div class="field"><label>참석자</label><div class="chgroup" id="m-att">
+    <div class="field"><label>참석자</label><div class="chgroup tall" id="m-att">
       ${team.filter(t => t.status === 'approved').map(t =>
         `<label><input type="checkbox" value="${t.id}" ${(d.attendee_ids||[]).includes(t.id)?'checked':''}>${esc(t.name || t.email)}</label>`).join('')}
     </div></div>
@@ -2931,7 +2965,7 @@ function openCard(c, preset){
     </div></div>
 
     <div class="sect">담당과 일정</div>
-    <div class="field"><label>담당자 — 여러 명 선택 가능</label><div class="chgroup" id="f-owners">
+    <div class="field"><label>담당자 — 여러 명 선택 가능</label><div class="chgroup tall" id="f-owners">
       ${team.filter(t => t.status === 'approved')
         .map(t => `<label><input type="checkbox" value="${t.id}" ${(d.owner_ids||[]).includes(t.id)?'checked':''}>${esc(t.name || t.email)}</label>`).join('')}
     </div></div>
@@ -3076,4 +3110,3 @@ boot();
 </script>
 </body>
 </html>
-
