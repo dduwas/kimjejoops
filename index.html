@@ -464,7 +464,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v23</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v24</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -766,6 +766,7 @@ async function boot(){
   $$('.admin-only').forEach(el => el.classList.toggle('hide', !isAdmin()));
   show('app');
   await refresh();
+  openFromUrl();
 }
 
 let show = function(which){
@@ -1420,6 +1421,10 @@ function mountDrawer({ body, collect, save }){
     const hitOpen  = under && under.closest && under.closest('[data-open]');
     const nextId   = hitCard ? hitCard.dataset.id : (hitOpen ? hitOpen.dataset.open : null);
 
+    if (nextId && (e.ctrlKey || e.metaKey)) {   // Ctrl+클릭 — 지금 창은 그대로, 새 창으로
+      window.open(deepLink('card', nextId), '_blank');
+      return;
+    }
     await tryClose(nextId ? () => {
       const c = cards.find(x2 => x2.id === nextId);
       if (c) openCard(c);
@@ -3105,6 +3110,106 @@ function syncHeaderHeight(){
 window.addEventListener('resize', syncHeaderHeight);
 const _show = show;
 show = function(w){ _show(w); setTimeout(syncHeaderHeight, 0); };
+
+/* ---------------- Ctrl+클릭 새 창 열기 ----------------
+   · 카드·표의 줄·일정·글·회의록을 Ctrl(맥은 Cmd)+클릭 또는 휠 클릭 → 새 창에서 그 항목이 열린 채로 뜬다
+   · 카드 안의 링크는 어떤 클릭이든 링크만 열리고 카드는 열리지 않는다
+-------------------------------------------------------- */
+function deepLink(kind, id){
+  return `${location.origin}${location.pathname}?open=${kind}:${encodeURIComponent(id)}`;
+}
+
+// 눌린 자리에서 "무엇을 여는 요소인지" 찾는다
+function openTargetOf(el){
+  if (!el || !el.closest) return null;
+  const pick = (sel, kind, key) => {
+    const n = el.closest(sel);
+    return n ? { kind, id: n.dataset[key] } : null;
+  };
+  return pick('.card[data-id]', 'card', 'id')
+      || pick('[data-open]', 'card', 'open')
+      || pick('[data-tdopen]', 'todo', 'tdopen')
+      || pick('[data-mt]', 'meeting', 'mt')
+      || pick('[data-po]', 'post', 'po')
+      || pick('[data-edit]', 'member', 'edit')
+      || pick('[data-edit2]', 'member', 'edit2');
+}
+
+function isPlainLink(el){
+  const a = el && el.closest && el.closest('a[href]');
+  if (!a) return null;
+  if (a.closest('[contenteditable="true"]')) return null;   // 편집 중인 본문 속 링크는 제외
+  return a;
+}
+
+// 캡처 단계에서 먼저 가로챈다 — 카드의 원래 클릭 동작보다 앞선다
+document.addEventListener('click', e => {
+  // ① 링크는 링크로만 동작 — 카드가 같이 열리지 않게
+  const a = isPlainLink(e.target);
+  if (a) {
+    e.stopPropagation();
+    if (!a.target) a.target = '_blank';
+    a.rel = 'noopener';
+    return;                                // 기본 동작(새 탭 열기)은 그대로 둔다
+  }
+  // ② Ctrl/Cmd+클릭 — 새 창으로
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (e.target.closest && e.target.closest('input,select,textarea,button,[contenteditable="true"]')) return;
+  const t = openTargetOf(e.target);
+  if (!t || !t.id) return;
+  e.preventDefault();
+  e.stopPropagation();
+  window.open(deepLink(t.kind, t.id), '_blank');
+}, true);
+
+// 휠(가운데) 버튼 클릭도 새 창으로
+document.addEventListener('auxclick', e => {
+  if (e.button !== 1) return;
+  if (isPlainLink(e.target)) return;       // 링크는 브라우저가 알아서 새 탭으로 연다
+  const t = openTargetOf(e.target);
+  if (!t || !t.id) return;
+  e.preventDefault();
+  window.open(deepLink(t.kind, t.id), '_blank');
+}, true);
+document.addEventListener('mousedown', e => {
+  if (e.button === 1 && openTargetOf(e.target) && !isPlainLink(e.target)) e.preventDefault(); // 자동 스크롤 방지
+}, true);
+
+// 주소의 ?open=종류:ID 를 읽어 해당 화면으로 가서 연다
+function openFromUrl(){
+  const q = new URLSearchParams(location.search).get('open');
+  if (!q || !q.includes(':')) return;
+  const [kind, raw] = q.split(':');
+  const id = decodeURIComponent(raw || '');
+
+  const goTab = v => {
+    const b = document.querySelector(`nav button[data-view="${v}"]`);
+    if (b && !b.classList.contains('hide')) b.click();
+  };
+
+  if (kind === 'card') {
+    const c = cards.find(x => x.id === id);
+    if (!c) return alert('해당 카드를 찾지 못했습니다. 삭제됐거나 권한이 없을 수 있습니다.');
+    if (c.stage === PLANNED || c.stage === DONE) goTab('schedule');
+    else if (c.stage === DROP) goTab('drops');
+    setTimeout(() => openCard(c), 0);
+  } else if (kind === 'todo') {
+    const t = todos.find(x => x.id === id);
+    goTab('todo'); if (t) setTimeout(() => openTodo(t), 0);
+  } else if (kind === 'meeting') {
+    const m = meetings.find(x => x.id === id);
+    goTab('meetings'); if (m) setTimeout(() => openMeeting(m), 0);
+  } else if (kind === 'post') {
+    const p = posts.find(x => x.id === id);
+    goTab('posts'); if (p) setTimeout(() => openPost(p), 0);
+  } else if (kind === 'member' && isAdmin()) {
+    const t = team.find(x => x.id === id);
+    goTab('team'); if (t) setTimeout(() => openMember(t), 0);
+  }
+
+  // 새로고침해도 다시 열리지 않게 주소를 정리한다
+  history.replaceState(null, '', location.pathname);
+}
 
 boot();
 </script>
