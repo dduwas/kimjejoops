@@ -464,7 +464,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v24</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v25</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -609,10 +609,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
   </section>
 
   <section id="view-settings" class="hide wrap">
-    <h3>차별점 설정</h3>
-    <p class="lede">이 기획을 왜 우리가 해야 하는지를 정하는 칸입니다. 여기 없는 차별점은 콘텐츠 카드에서 고를 수 없습니다.
-      순서 숫자가 작을수록 위에 옵니다.</p>
-    <div id="moat-list"></div>
+
 
     <h3 style="margin-top:38px">연동</h3>
     <p class="lede">유튜브와 인스타그램에서 조회수·좋아요·댓글을 자동으로 가져옵니다.
@@ -933,13 +930,8 @@ function ownerNames(ids){
 }
 
 function cardHTML(c){
-  const m = moatOf(c.moat);
-  const color = m ? m.color : '#E2A08A';
   const badges = [];
-  badges.push(m
-    ? `<span class="badge" style="background:${color}1F;color:${color}">${esc(m.label)}</span>`
-    : '<span class="badge b-none">차별점 미정</span>');
-  (c.channels || []).slice(0,2).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
+  (c.channels || []).slice(0,3).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
   if (c.cta_keyword) badges.push(`<span class="badge b-cta">CTA ${esc(c.cta_keyword)}</span>`);
 
   const doneBtn = c.stage === REVIEW ? `<div class="cardbtns">
@@ -947,7 +939,7 @@ function cardHTML(c){
       <button class="cardbtn alt" data-done="${c.id}">게시 완료</button>
     </div>` : '';
 
-  return `<div class="card" draggable="true" data-id="${c.id}" style="border-left-color:${color}">
+  return `<div class="card" draggable="true" data-id="${c.id}">
     <h4>${esc(c.title)}</h4>
     <div class="badges">${badges.join('')}</div>
     ${c.next_action ? `<div class="next">${esc(c.next_action)}</div>` : ''}
@@ -1062,18 +1054,13 @@ function renderBoardTable(list){
       const n = rows.filter(x => colNameOf(x.stage) === colName).length;
       html += `<div class="sect" style="margin-top:${lastCol===null?0:28}px">${esc(colName)} <span style="color:var(--muted);font-weight:600">${n}개</span></div>
         <table>
-        <tr><th>콘텐츠</th><th>단계</th><th>차별점</th><th>채널</th><th>담당</th><th>다음 액션</th><th>게시예정</th><th></th></tr>`;
+        <tr><th>콘텐츠</th><th>단계</th><th>채널</th><th>담당</th><th>다음 액션</th><th>게시예정</th><th></th></tr>`;
       lastCol = colName;
     }
-    const m = moatOf(c.moat);
-    const color = m ? m.color : '#E2A08A';
     html += `<tr>
       <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
         ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
       <td style="font-size:12.5px;white-space:nowrap">${esc(c.stage)}</td>
-      <td style="font-size:12.5px;white-space:nowrap">${c.moat
-        ? `<span class="swatch" style="background:${color}"></span>${esc(c.moat)}`
-        : '<span style="color:var(--warn)">미정</span>'}</td>
       <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
       <td style="font-size:12.5px">${esc(ownerNames(c.owner_ids))}</td>
       <td style="font-size:12.5px;color:var(--muted);max-width:200px">${esc(c.next_action || '—')}</td>
@@ -1179,8 +1166,8 @@ function renderCalendar(evs){
     cells.push(`<div class="cell ${key===today?'today':''}" data-day="${key}">
       <div class="cell-d ${dow===0?'sun':''} ${dow===6?'sat':''}">${d}</div>
       ${items.map(e => {
-        const m = moatOf(e.card.moat); const color = m ? m.color : '#E2A08A';
         const k = SC_KINDS[e.kind];
+        const color = { shoot:'#E08A2E', edit:'#2EA88A', planned:'#2E7BE4', done:'#0B2A5B' }[e.kind] || '#DDE5F0';
         return `<div class="ev" draggable="true" data-open="${e.card.id}"
           data-ev="${e.card.id}|${e.kind}" style="border-left-color:${color}"
           title="${esc(k.label)} · ${esc(e.card.title)} — 끌어서 날짜를 옮길 수 있습니다">
@@ -1226,7 +1213,7 @@ function scheduleTableHTML(evs){
         <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
           ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시 링크</a>` : ''}
           ${c.reference_url ? ` <a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px">레퍼런스</a>` : ''}
-          <br><span style="font-size:12px;color:var(--muted)">${esc(c.moat || '차별점 미정')}</span></td>
+          ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
         <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
         <td>${esc(ownerNames(c.owner_ids))}</td>
         <td style="font-variant-numeric:tabular-nums">${fmtN(c.views)}</td>
@@ -2451,18 +2438,13 @@ function renderDrops(){
     .sort((a,b) => (b.dropped_at || b.updated_at || '').localeCompare(a.dropped_at || a.updated_at || ''));
 
   $('#drop-list').innerHTML = rows.length ? `<table>
-    <tr><th>드랍한 날</th><th>콘텐츠</th><th>차별점</th><th>채널</th><th>담당</th><th></th></tr>
+    <tr><th>드랍한 날</th><th>콘텐츠</th><th>채널</th><th>담당</th><th></th></tr>
     ${rows.map(c => {
-      const m = moatOf(c.moat);
-      const color = m ? m.color : '#E2A08A';
       const when = (c.dropped_at || c.updated_at || '').slice(0,10);
       return `<tr>
         <td style="font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)">${when || '—'}</td>
         <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
           ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
-        <td style="font-size:12.5px">${c.moat
-          ? `<span class="swatch" style="background:${color}"></span>${esc(c.moat)}`
-          : '<span style="color:var(--muted)">미정</span>'}</td>
         <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
         <td style="font-size:12.5px">${esc(ownerNames(c.owner_ids))}</td>
         <td style="white-space:nowrap"><button class="btn sm" data-restore="${c.id}">아이디어 단계로 복구</button></td>
@@ -2716,8 +2698,8 @@ async function setStatus(id, status){
   await refresh();
 }
 
-/* ---------------- 설정: 차별점 + 채널 ---------------- */
-function renderSettings(){ renderMoats(); renderChannels(); renderSync(); }
+/* ---------------- 설정: 채널 + 연동 ---------------- */
+function renderSettings(){ renderChannels(); renderSync(); }
 
 let appSettings = {};
 
@@ -2804,71 +2786,6 @@ async function runSync(ids, msgSel='#cfg-msg'){
   }
 }
 
-function renderMoats(){
-  if (!isAdmin()) return;
-  const used = label => cards.filter(c => c.moat === label).length;
-
-  $('#moat-list').innerHTML = `<table>
-    <tr><th>순서</th><th>차별점 이름</th><th>색</th><th>사용 중</th><th>노출</th><th></th></tr>
-    ${moats.map(m => `<tr>
-      <td><input class="mini" type="number" style="width:60px" value="${m.sort_order}" data-order="${m.id}"></td>
-      <td><input class="mini" style="width:100%" value="${esc(m.label)}" data-label="${m.id}"></td>
-      <td><input class="mini" type="color" value="${esc(m.color)}" data-color="${m.id}"></td>
-      <td style="color:var(--muted)">${used(m.label)}개</td>
-      <td><input type="checkbox" ${m.active?'checked':''} data-active="${m.id}"></td>
-      <td style="white-space:nowrap">
-        <button class="btn sm" data-save="${m.id}">저장</button>
-        <button class="btn sm danger" data-del="${m.id}">삭제</button>
-      </td></tr>`).join('')}
-    <tr>
-      <td><input class="mini" type="number" style="width:60px" id="new-order" value="${moats.length+1}"></td>
-      <td><input class="mini" style="width:100%" id="new-label" placeholder="새 차별점 이름"></td>
-      <td><input class="mini" type="color" id="new-color" value="#2E7BE4"></td>
-      <td colspan="2"></td>
-      <td><button class="btn sm" id="moat-add">추가</button></td>
-    </tr>
-  </table>
-  <p class="note">이름을 바꾸면 그 차별점을 쓰고 있는 콘텐츠 카드도 함께 따라갑니다.
-    사용 중인 차별점은 삭제할 수 없습니다. 더 안 쓸 거면 노출을 꺼두세요.</p>`;
-
-  $$('#moat-list [data-save]').forEach(b => b.onclick = async () => {
-    const id = b.dataset.save;
-    const old = moats.find(m => m.id === id);
-    const label = $(`#moat-list [data-label="${id}"]`).value.trim();
-    if (!label) return alert('차별점 이름을 비울 수 없습니다.');
-    const patch = {
-      label, color: $(`#moat-list [data-color="${id}"]`).value,
-      sort_order: Number($(`#moat-list [data-order="${id}"]`).value) || 0,
-      active: $(`#moat-list [data-active="${id}"]`).checked
-    };
-    const { error } = await sb.from('moats').update(patch).eq('id', id);
-    if (error) return alert(cleanErr(error.message));
-    if (old.label !== label) {
-      const r = await sb.from('contents').update({ moat: label }).eq('moat', old.label);
-      if (r.error) alert('차별점 이름은 바뀌었지만 카드 반영에 실패했습니다: ' + cleanErr(r.error.message));
-    }
-    await refresh();
-  });
-
-  $$('#moat-list [data-del]').forEach(b => b.onclick = async () => {
-    const m = moats.find(x => x.id === b.dataset.del);
-    if (used(m.label)) return alert(`이 차별점을 쓰는 카드가 ${used(m.label)}개 있습니다. 삭제 대신 노출을 꺼주세요.`);
-    if (!confirm(`"${m.label}" 차별점을 삭제합니다.`)) return;
-    const { error } = await sb.from('moats').delete().eq('id', m.id);
-    if (error) return alert(cleanErr(error.message));
-    await refresh();
-  });
-
-  $('#moat-add').onclick = async () => {
-    const label = $('#new-label').value.trim();
-    if (!label) return alert('차별점 이름을 입력해 주세요.');
-    const { error } = await sb.from('moats').insert({
-      label, color: $('#new-color').value, sort_order: Number($('#new-order').value) || 0 });
-    if (error) return alert(cleanErr(error.message));
-    await refresh();
-  };
-}
-
 function renderChannels(){
   if (!isAdmin()) return;
   const used = label => cards.filter(c => (c.channels || []).includes(label)).length;
@@ -2944,13 +2861,10 @@ function openCard(c, preset){
   const isNew = !c;
   const d = c || { title:'', stage:'아이디어', channels:[], ...(preset || {}) };
   const admin = isAdmin();
-  const moatOptions = moats
-    .filter(m => m.active || m.label === d.moat)
-    .map(m => `<option ${d.moat===m.label?'selected':''}>${esc(m.label)}</option>`).join('');
 
   const body = `
     <h2>${isNew ? '새 콘텐츠' : esc(d.title)}</h2>
-    <div class="sub">${isNew ? '제목과 차별점만 먼저 채워도 됩니다.' : '단계 ' + esc(d.stage)}</div>
+    <div class="sub">${isNew ? '제목만 먼저 채워도 됩니다.' : '단계 ' + esc(d.stage)}</div>
     <div id="dr-msg"></div>
 
     <div class="field"><label>콘텐츠 제목</label><input id="f-title" value="${esc(d.title)}"></div>
@@ -2958,8 +2872,7 @@ function openCard(c, preset){
       <div class="field"><label>단계</label><select id="f-stage">
         ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}
         ${d.stage===DROP ? '<option selected>드랍</option>' : ''}</select></div>
-      <div class="field"><label>차별점 — 없으면 기획 반려</label><select id="f-moat">
-        <option value="">— 미정 —</option>${moatOptions}</select></div>
+      <div class="field"></div>
     </div>
     <div class="field"><label>핵심 메시지 — 이 콘텐츠가 남길 한 줄</label>
       <input id="f-key" value="${esc(d.key_message)}"></div>
@@ -3031,7 +2944,6 @@ function openCard(c, preset){
     return {
       title: $('#f-title').value.trim(),
       stage: $('#f-stage').value,
-      moat: $('#f-moat').value || null,
       key_message: $('#f-key').value.trim() || null,
       channels: [...document.querySelectorAll('#f-channels input:checked')].map(i => i.value),
       owner_ids: [...document.querySelectorAll('#f-owners input:checked')].map(i => i.value),
