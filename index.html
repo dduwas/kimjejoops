@@ -464,7 +464,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v25</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v26</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -636,7 +636,7 @@ const STAGES = ['아이디어','자료조사','대본','촬영','편집','검수
 //  drop   : 이 칼럼에 카드를 떨어뜨렸을 때 지정될 단계
 //  wide   : 카드가 많은 칼럼은 2열로 넓게
 const BOARD_COLS = [
-  { name: '아이디어·자료조사', stages: ['아이디어','자료조사'], drop: '아이디어' },
+  { name: '아이디어·자료조사', stages: ['아이디어','자료조사'], drop: '아이디어', wide: true },
   { name: '대본',   stages: ['대본'],   drop: '대본',   wide: true },
   { name: '촬영',   stages: ['촬영'],   drop: '촬영',   wide: true },
   { name: '편집',   stages: ['편집'],   drop: '편집',   wide: true },
