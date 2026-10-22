@@ -110,6 +110,17 @@ nav button:hover{color:#fff}
 .badge.b-none{background:var(--warn-bg);color:var(--warn)}
 .badge.b-cta{background:#fff;border:1px dashed var(--line);color:var(--muted)}
 .badge.b-lead{background:#eef4ff;color:var(--blue)}
+.kjctx{position:fixed;z-index:10000;min-width:210px;max-width:280px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(11,42,91,.18);padding:6px;font-size:13px}
+.kjctx .h{font-size:11.5px;color:var(--muted);padding:5px 9px 4px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kjctx button.it{display:flex;width:100%;text-align:left;border:0;background:none;padding:7px 9px;border-radius:6px;cursor:pointer;font-size:13px;gap:8px;align-items:center}
+.kjctx button.it:hover{background:#eef4ff}
+.kjctx button.it.danger{color:#c0392b}
+.kjctx .sep{height:1px;background:var(--line);margin:4px 2px}
+.kjctx .stg{display:flex;flex-wrap:wrap;gap:4px;padding:4px 7px 6px}
+.kjctx .stg button{border:1px solid var(--line);background:#fff;border-radius:5px;font-size:11.5px;padding:2px 7px;cursor:pointer}
+.kjctx .stg button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.kjctx .stg button:hover{background:#eef4ff}
+.kjctx input[type=date]{margin:2px 9px 6px;font-size:12px;padding:3px 5px;width:calc(100% - 18px)}
 .ins{margin:10px 18px 4px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:900px){.ins{grid-template-columns:1fr}}
 .ins details{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:10px 14px}
@@ -480,7 +491,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v29</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v30</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -3201,6 +3212,69 @@ document.addEventListener('auxclick', e => {
 document.addEventListener('mousedown', e => {
   if (e.button === 1 && openTargetOf(e.target) && !isPlainLink(e.target)) e.preventDefault(); // 자동 스크롤 방지
 }, true);
+
+/* ---------------- 우클릭 메뉴 (v30) ----------------
+   카드·표의 줄·일정·글·할 일·회의록·팀원 위에서 우클릭 → 바로 쓰는 동작 메뉴
+   입력칸·본문 편집·일반 링크 위에서는 브라우저 기본 메뉴(복사·붙여넣기)를 그대로 쓴다
+-------------------------------------------------------- */
+function closeCtx(){ const m = document.querySelector('.kjctx'); if (m) m.remove(); }
+document.addEventListener('contextmenu', e => {
+  closeCtx();
+  if (e.shiftKey) return;                                   // Shift+우클릭 = 브라우저 기본 메뉴
+  if (e.target.closest && e.target.closest('input,select,textarea,[contenteditable="true"],.kjctx')) return;
+  if (isPlainLink(e.target)) return;
+  const t = openTargetOf(e.target);
+  if (!t || !t.id) return;
+  e.preventDefault();
+  const kindKo = { card:'콘텐츠', post:'글', todo:'할 일', meeting:'회의록', member:'팀원' }[t.kind] || '';
+  const obj = t.kind === 'card' ? cards.find(x => x.id === t.id)
+    : t.kind === 'post' ? posts.find(x => x.id === t.id)
+    : t.kind === 'todo' ? todos.find(x => x.id === t.id)
+    : t.kind === 'meeting' ? meetings.find(x => x.id === t.id)
+    : team.find(x => x.id === t.id);
+  if (!obj) return;
+  const opener = { card: () => openCard(obj), post: () => openPost(obj), todo: () => openTodo(obj), meeting: () => openMeeting(obj), member: () => openMember(obj) }[t.kind];
+  const items = [];   // [label, fn, cls]
+  items.push(['📂 열기', opener]);
+  if (t.kind !== 'member') {
+    items.push(['🗗 새 창에서 열기', () => window.open(deepLink(t.kind, t.id), '_blank')]);
+    items.push(['🔗 워크스페이스 링크 복사', async () => poToast(await copyText(deepLink(t.kind, t.id)) ? '링크를 복사했습니다.' : '복사하지 못했습니다: ' + deepLink(t.kind, t.id), 3500)]);
+  }
+  if (t.kind === 'post') items.push(['📨 보낼 링크 복사', () => copyPostLink(obj)]);
+  if (t.kind === 'card' && obj.publish_url) items.push(['▶ 게시물 열기', () => window.open(obj.publish_url, '_blank', 'noopener')]);
+  if (t.kind === 'todo') items.push([obj.done ? '↩ 완료 취소' : '✔ 완료로 표시', async () => {
+    const { error } = await sb.from('todos').update({ done: !obj.done, done_at: obj.done ? null : new Date().toISOString() }).eq('id', obj.id);
+    if (error) return alert(cleanErr(error.message)); await refresh();
+  }]);
+
+  const m = document.createElement('div'); m.className = 'kjctx';
+  m.innerHTML = `<div class="h">${esc(kindKo)} · ${esc((obj.title || obj.name || obj.email || '').slice(0, 40))}</div>`
+    + items.map((x, i) => `<button class="it ${x[2] || ''}" data-ci="${i}">${x[0]}</button>`).join('')
+    + (t.kind === 'card' ? `<div class="sep"></div><div class="h">단계 이동</div>
+        <div class="stg">${[...STAGES, DROP].map(s => `<button data-cs="${esc(s)}" class="${obj.stage === s ? 'on' : ''}">${esc(s)}</button>`).join('')}</div>
+        <div class="h">게시예정일</div><input type="date" data-cd value="${obj.publish_date || ''}">` : '');
+  document.body.appendChild(m);
+  const W = m.offsetWidth, H = m.offsetHeight;
+  m.style.left = Math.max(6, Math.min(e.clientX, innerWidth - W - 6)) + 'px';
+  m.style.top = Math.max(6, Math.min(e.clientY, innerHeight - H - 6)) + 'px';
+  m.querySelectorAll('[data-ci]').forEach(b => b.onclick = () => { closeCtx(); items[+b.dataset.ci][1](); });
+  m.querySelectorAll('[data-cs]').forEach(b => b.onclick = async () => {
+    const s = b.dataset.cs; closeCtx();
+    if (s === obj.stage) return;
+    if (s === DROP && !confirm(`"${obj.title}" 을(를) 드랍합니다. 드랍 게시판에 보관되며 복구할 수 있습니다.`)) return;
+    await moveStage(obj.id, s);
+  });
+  const di = m.querySelector('[data-cd]');
+  if (di) di.onchange = async () => {
+    const v = di.value || null; closeCtx();
+    const { error } = await sb.from('contents').update({ publish_date: v }).eq('id', obj.id);
+    if (error) return alert(cleanErr(error.message)); await refresh();
+  };
+}, true);
+document.addEventListener('mousedown', e => { if (!(e.target.closest && e.target.closest('.kjctx'))) closeCtx(); }, true);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCtx(); });
+window.addEventListener('scroll', closeCtx, true);
+window.addEventListener('resize', closeCtx);
 
 // 주소의 ?open=종류:ID 를 읽어 해당 화면으로 가서 연다
 function openFromUrl(){
