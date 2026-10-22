@@ -467,7 +467,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v27</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v28</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -1499,8 +1499,9 @@ function cleanPaste(html){
 async function copyText(t){
   try {
     if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(t);
-      return true;
+      // 권한 창 등으로 응답이 없으면 1.5초 뒤 아래 대체 방식으로 넘어간다
+      const r = await Promise.race([navigator.clipboard.writeText(t).then(() => true), new Promise(res => setTimeout(() => res(false), 1500))]);
+      if (r) return true;
     }
   } catch { /* 아래 방식으로 다시 시도한다 */ }
 
