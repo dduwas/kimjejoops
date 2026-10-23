@@ -105,6 +105,7 @@ nav button:hover{color:#fff}
   transition:border-color .12s, box-shadow .12s}
 .card:hover{box-shadow:0 2px 10px rgba(11,42,91,.09)}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
+.ttag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-right:6px;vertical-align:1px;line-height:18px}.ttag-w{background:#E6F4EA;color:#1E7B3A}.ttag-s{background:#E8F0FE;color:#1A56C4}.ttag-e{background:#F1F1EF;color:#787774}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
 .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--wash);color:var(--muted)}
 .badge.b-none{background:var(--warn-bg);color:var(--warn)}
@@ -492,7 +493,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v32</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v33</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -965,6 +966,17 @@ function ownerNames(ids){
   return list.length <= 2 ? list.join(', ') : `${list[0]} 외 ${list.length-1}명`;
 }
 
+// v33: 웰(웰니스박스 촬영, 김호준 담당) / 솔(김주성·채진병·강민형 담당) / 기타 — contents.team_tag, 비어 있으면 담당자로 추정
+const TEAM_TAGS = ['웰', '솔', '기타'];
+function teamTag(c){
+  if (c.team_tag) return c.team_tag;
+  const names = (c.owner_ids || []).map(nameOf).join(' ');
+  if (/김호준/.test(names) || /\[웰/.test(c.title || '')) return '웰';
+  if (/김주성|채진병|강민형/.test(names)) return '솔';
+  return '기타';
+}
+const tagHTML = c => { const t = teamTag(c); return `<span class="ttag ttag-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'}" title="구분: ${t}">${t}</span>`; };
+
 function cardHTML(c){
   const badges = [];
   (c.channels || []).slice(0,3).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
@@ -977,7 +989,7 @@ function cardHTML(c){
     </div>` : '';
 
   return `<div class="card" draggable="true" data-id="${c.id}">
-    <h4>${esc(c.title)}</h4>
+    <h4>${tagHTML(c)}${esc(c.title)}</h4>
     <div class="badges">${badges.join('')}</div>
     ${c.next_action ? `<div class="next">${esc(c.next_action)}</div>` : ''}
     <div class="meta"><span>${esc(ownerNames(c.owner_ids))}</span>
@@ -1151,7 +1163,7 @@ function renderBoardTable(list){
       lastCol = colName;
     }
     html += `<tr>
-      <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
+      <td data-open="${c.id}" style="cursor:pointer">${tagHTML(c)}<b>${esc(c.title)}</b>
         ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
       <td style="font-size:12.5px;white-space:nowrap">${esc(c.stage)}</td>
       <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
@@ -1303,7 +1315,7 @@ function scheduleTableHTML(evs){
           ${late ? '<br><span class="pill rejected">지남</span>' : ''}
           <br><span style="font-size:11px;color:var(--muted)">${e.kind === 'shoot' ? '촬영일' : '게시예정일'}</span></td>
         <td><span class="${pill}">${k.label}</span></td>
-        <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
+        <td data-open="${c.id}" style="cursor:pointer">${tagHTML(c)}<b>${esc(c.title)}</b>
           ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시 링크</a>` : ''}
           ${c.reference_url ? ` <a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px">레퍼런스</a>` : ''}
           ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
@@ -2569,7 +2581,7 @@ function renderDrops(){
       const when = (c.dropped_at || c.updated_at || '').slice(0,10);
       return `<tr>
         <td style="font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)">${when || '—'}</td>
-        <td data-open="${c.id}" style="cursor:pointer"><b>${esc(c.title)}</b>
+        <td data-open="${c.id}" style="cursor:pointer">${tagHTML(c)}<b>${esc(c.title)}</b>
           ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
         <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
         <td style="font-size:12.5px">${esc(ownerNames(c.owner_ids))}</td>
@@ -2998,7 +3010,8 @@ function openCard(c, preset){
       <div class="field"><label>단계</label><select id="f-stage">
         ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}
         ${d.stage===DROP ? '<option selected>드랍</option>' : ''}</select></div>
-      <div class="field"></div>
+      <div class="field"><label>구분 — 웰(웰니스박스) · 솔(솔루션즈) · 기타</label><select id="f-tag">
+        ${TEAM_TAGS.map(t => `<option ${teamTag(d)===t?'selected':''}>${t}</option>`).join('')}</select></div>
     </div>
     <div class="field"><label>핵심 메시지 — 이 콘텐츠가 남길 한 줄</label>
       <input id="f-key" value="${esc(d.key_message)}"></div>
@@ -3075,6 +3088,7 @@ function openCard(c, preset){
     return {
       title: $('#f-title').value.trim(),
       stage: $('#f-stage').value,
+      team_tag: $('#f-tag').value || null,
       key_message: $('#f-key').value.trim() || null,
       channels: [...document.querySelectorAll('#f-channels input:checked')].map(i => i.value),
       owner_ids: [...document.querySelectorAll('#f-owners input:checked')].map(i => i.value),
@@ -3273,6 +3287,7 @@ document.addEventListener('contextmenu', e => {
     + items.map((x, i) => `<button class="it ${x[2] || ''}" data-ci="${i}">${x[0]}</button>`).join('')
     + (t.kind === 'card' ? `<div class="sep"></div><div class="h">단계 이동</div>
         <div class="stg">${[...STAGES, DROP].map(s => `<button data-cs="${esc(s)}" class="${obj.stage === s ? 'on' : ''}">${esc(s)}</button>`).join('')}</div>
+        <div class="h">구분</div><div class="stg">${TEAM_TAGS.map(t => `<button data-ct="${t}" class="${teamTag(obj) === t ? 'on' : ''}">${t}</button>`).join('')}</div>
         <div class="h">게시예정일</div><input type="date" data-cd value="${obj.publish_date || ''}">` : '');
   document.body.appendChild(m);
   const W = m.offsetWidth, H = m.offsetHeight;
@@ -3284,6 +3299,10 @@ document.addEventListener('contextmenu', e => {
     if (s === obj.stage) return;
     if (s === DROP && !confirm(`"${obj.title}" 을(를) 드랍합니다. 드랍 게시판에 보관되며 복구할 수 있습니다.`)) return;
     await moveStage(obj.id, s);
+  });
+  m.querySelectorAll('[data-ct]').forEach(b => b.onclick = async () => {
+    closeCtx(); const { error } = await sb.from('contents').update({ team_tag: b.dataset.ct }).eq('id', obj.id);
+    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('구분: ' + b.dataset.ct, 2000);
   });
   const di = m.querySelector('[data-cd]');
   if (di) di.onchange = async () => {
