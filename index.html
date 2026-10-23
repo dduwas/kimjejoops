@@ -492,7 +492,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v31</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v32</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -1094,7 +1094,7 @@ function renderInsight(){
     .sort((a, b) => (a.updated_at || '').localeCompare(b.updated_at || ''));
   const groups = {};
   stale.forEach(c => { const k = (c.owner_ids || []).length ? ownerNames([c.owner_ids[0]]) : '담당 미정'; (groups[k] = groups[k] || []).push(c); });
-  const srow = c => `<tr><td class="ttl" data-insopen="${c.id}" title="${esc(c.title)}">${esc(c.title)}</td><td>${esc(c.stage)}</td>
+  const srow = c => `<tr data-insrow="${c.id}" title="우클릭: 게시완료·단계 이동·삭제"><td class="ttl" data-insopen="${c.id}" title="${esc(c.title)}">${esc(c.title)}</td><td>${esc(c.stage)}</td>
     <td class="num">${Math.floor((now - new Date(c.updated_at)) / DAY)}일</td>
     <td style="white-space:nowrap"><button class="mini-b" data-inskeep="${c.id}" title="계속 진행 — 오늘 날짜로 갱신">계속</button><input type="date" class="mini-b" data-insdate="${c.id}" title="게시예정일 지정" style="padding:1px 3px"><button class="mini-b" data-insdrop="${c.id}">드랍</button></td></tr>`;
   const clean = `<details data-ins="stale" ${open('stale') ? 'open' : ''}><summary>🧹 정리 필요 — 14일 넘게 안 움직인 카드 ${stale.length}개</summary>
@@ -3171,6 +3171,7 @@ function openTargetOf(el){
     return n ? { kind, id: n.dataset[key] } : null;
   };
   return pick('.card[data-id]', 'card', 'id')
+      || pick('[data-insrow]', 'card', 'insrow')
       || pick('[data-open]', 'card', 'open')
       || pick('[data-tdopen]', 'todo', 'tdopen')
       || pick('[data-mt]', 'meeting', 'mt')
@@ -3248,6 +3249,20 @@ document.addEventListener('contextmenu', e => {
   }
   if (t.kind === 'post') items.push(['📨 보낼 링크 복사', () => copyPostLink(obj)]);
   if (t.kind === 'card' && obj.publish_url) items.push(['▶ 게시물 열기', () => window.open(obj.publish_url, '_blank', 'noopener')]);
+  // v32: 정리 필요 등에서 바로 처리 — 게시완료·계속 진행·삭제
+  if (t.kind === 'card' && obj.stage !== DONE) items.push(['✅ 게시완료로', async () => {
+    const { error } = await sb.from('contents').update({ stage: DONE, publish_date: obj.publish_date || new Date().toISOString().slice(0, 10), updated_at: new Date().toISOString() }).eq('id', obj.id);
+    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('게시완료로 옮겼습니다.', 2500);
+  }]);
+  if (t.kind === 'card') items.push(['⏩ 계속 진행 (오늘로 갱신)', async () => {
+    const { error } = await sb.from('contents').update({ updated_at: new Date().toISOString() }).eq('id', obj.id);
+    if (error) return alert(cleanErr(error.message)); await refresh();
+  }]);
+  if (t.kind === 'card' && isAdmin()) items.push(['🗑 완전히 삭제', async () => {
+    if (!confirm(`"${obj.title}" 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 단계 이동의 '드랍'을 쓰세요.`)) return;
+    const { error } = await sb.from('contents').delete().eq('id', obj.id);
+    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('삭제했습니다.', 2500);
+  }, 'danger']);
   if (t.kind === 'todo') items.push([obj.done ? '↩ 완료 취소' : '✔ 완료로 표시', async () => {
     const { error } = await sb.from('todos').update({ done: !obj.done, done_at: obj.done ? null : new Date().toISOString() }).eq('id', obj.id);
     if (error) return alert(cleanErr(error.message)); await refresh();
