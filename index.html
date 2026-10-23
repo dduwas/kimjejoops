@@ -493,7 +493,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v35</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v36</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -531,6 +531,11 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <span class="filterlabel">담당자</span>
       <div id="owner-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
       <button class="chip reset hide" id="owner-clear">담당자 전체</button>
+    </div>
+    <div class="toolbar mid">
+      <span class="filterlabel">담당팀</span>
+      <div id="team-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+      <button class="chip reset hide" id="team-clear">담당팀 전체</button>
     </div>
     <div class="toolbar second">
       <span class="filterlabel">채널</span>
@@ -706,6 +711,7 @@ let bdView = 'kanban';
 let stageFilter = new Set();
 let channelFilter = new Set();
 let ownerFilter = new Set();          // 생산 라인 담당자 필터
+let teamFilter = new Set();           // 생산 라인 담당팀 필터(웰·솔·기타)
 let scOwnerFilter = new Set();        // 게시 일정 담당자 필터
 let scChannelFilter = new Set();      // 게시 일정 채널 필터
 
@@ -903,6 +909,7 @@ function matchChannel(c, set){
 function buildOwnerChips(){
   const pool = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP);
   buildChips('#owner-chips', '#owner-clear', ownerItems(pool), ownerFilter, renderBoard);
+  buildChips('#team-chips', '#team-clear', TEAM_TAGS.map(t => ({ key: t, label: `${TEAM_LABEL[t]} ${pool.filter(c => teamTag(c) === t).length}` })), teamFilter, renderBoard);
 }
 
 function buildScheduleChips(){
@@ -943,6 +950,7 @@ function visible(){
     if (c.stage === PLANNED || c.stage === DONE || c.stage === DROP) return false;
     if (onlyMine && !(c.owner_ids || []).includes(me.id)) return false;
     if (!matchOwner(c, ownerFilter)) return false;
+    if (teamFilter.size && !teamFilter.has(teamTag(c))) return false;
     if (!matchChannel(c, channelFilter)) return false;
     if (stageFilter.size && !stageFilter.has(colNameOf(c.stage))) return false;
     return true;
@@ -1021,7 +1029,7 @@ function renderBoard(){
   const list = visible();
   const live = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP).length;
   const bits = [`제작 중 ${live}개`];
-  if (onlyMine || channelFilter.size || ownerFilter.size || stageFilter.size)
+  if (onlyMine || channelFilter.size || ownerFilter.size || teamFilter.size || stageFilter.size)
     bits.push(`보이는 카드 ${list.length}개`);
   bits.push(`게시 예정 ${cards.filter(c => c.stage === PLANNED).length}개`);
   bits.push(`게시 완료 ${cards.filter(c => c.stage === DONE).length}개`);
