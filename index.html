@@ -493,7 +493,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v33</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v34</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -971,11 +971,14 @@ const TEAM_TAGS = ['웰', '솔', '기타'];
 function teamTag(c){
   if (c.team_tag) return c.team_tag;
   const names = (c.owner_ids || []).map(nameOf).join(' ');
-  if (/김호준/.test(names) || /\[웰/.test(c.title || '')) return '웰';
+  if (/김호준|유현일/.test(names) || /\[웰/.test(c.title || '')) return '웰';
   if (/김주성|채진병|강민형/.test(names)) return '솔';
   return '기타';
 }
-const tagHTML = c => { const t = teamTag(c); return `<span class="ttag ttag-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'}" title="구분: ${t}">${t}</span>`; };
+// v34: 화면 이름은 '담당팀' — 웰니스박스(웰) / 솔루션즈(솔) / 기타. 담당자를 고르면 자동으로 정해지고, 직접 바꿀 수 있다
+const TEAM_LABEL = { '웰': '웰니스박스', '솔': '솔루션즈', '기타': '기타' };
+const teamByOwners = ids => { const n = (ids || []).map(nameOf).join(' '); return /김호준|유현일/.test(n) ? '웰' : /김주성|채진병|강민형/.test(n) ? '솔' : null; };
+const tagHTML = c => { const t = teamTag(c); return `<span class="ttag ttag-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'}" title="담당팀: ${TEAM_LABEL[t]}">${t}</span>`; };
 
 function cardHTML(c){
   const badges = [];
@@ -3010,8 +3013,8 @@ function openCard(c, preset){
       <div class="field"><label>단계</label><select id="f-stage">
         ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}
         ${d.stage===DROP ? '<option selected>드랍</option>' : ''}</select></div>
-      <div class="field"><label>구분 — 웰(웰니스박스) · 솔(솔루션즈) · 기타</label><select id="f-tag">
-        ${TEAM_TAGS.map(t => `<option ${teamTag(d)===t?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="field"><label>담당팀 — 담당자를 고르면 자동, 직접 바꿀 수 있음</label><select id="f-tag">
+        ${TEAM_TAGS.map(t => `<option value="${t}" ${teamTag(d)===t?'selected':''}>${TEAM_LABEL[t]}</option>`).join('')}</select></div>
     </div>
     <div class="field"><label>핵심 메시지 — 이 콘텐츠가 남길 한 줄</label>
       <input id="f-key" value="${esc(d.key_message)}"></div>
@@ -3127,6 +3130,12 @@ function openCard(c, preset){
 
   $('#dr-save').onclick = () => ctl.saveAndClose();
   $('#dr-cancel').onclick = () => ctl.discard();
+
+  // 담당자 → 담당팀 자동(웰니스박스: 유현일·김호준 / 솔루션즈: 김주성·강민형·채진병). 담당팀을 직접 바꾸면 그 뒤로는 자동으로 안 바꿈
+  { let manual = !!d.team_tag && d.team_tag !== (teamByOwners(d.owner_ids) || d.team_tag);
+    if ($('#f-tag')) $('#f-tag').addEventListener('change', () => { manual = true; });
+    const box = $('#f-owners');
+    if (box) box.addEventListener('change', () => { if (manual) return; const t = teamByOwners([...box.querySelectorAll('input:checked')].map(i => i.value)); if (t && $('#f-tag')) $('#f-tag').value = t; }); }
 
   if ($('#f-sync')) $('#f-sync').onclick = async () => {
     await runSync([c.id], '#f-sync-msg');
@@ -3287,7 +3296,7 @@ document.addEventListener('contextmenu', e => {
     + items.map((x, i) => `<button class="it ${x[2] || ''}" data-ci="${i}">${x[0]}</button>`).join('')
     + (t.kind === 'card' ? `<div class="sep"></div><div class="h">단계 이동</div>
         <div class="stg">${[...STAGES, DROP].map(s => `<button data-cs="${esc(s)}" class="${obj.stage === s ? 'on' : ''}">${esc(s)}</button>`).join('')}</div>
-        <div class="h">구분</div><div class="stg">${TEAM_TAGS.map(t => `<button data-ct="${t}" class="${teamTag(obj) === t ? 'on' : ''}">${t}</button>`).join('')}</div>
+        <div class="h">담당팀</div><div class="stg">${TEAM_TAGS.map(t => `<button data-ct="${t}" class="${teamTag(obj) === t ? 'on' : ''}">${TEAM_LABEL[t]}</button>`).join('')}</div>
         <div class="h">게시예정일</div><input type="date" data-cd value="${obj.publish_date || ''}">` : '');
   document.body.appendChild(m);
   const W = m.offsetWidth, H = m.offsetHeight;
@@ -3302,7 +3311,7 @@ document.addEventListener('contextmenu', e => {
   });
   m.querySelectorAll('[data-ct]').forEach(b => b.onclick = async () => {
     closeCtx(); const { error } = await sb.from('contents').update({ team_tag: b.dataset.ct }).eq('id', obj.id);
-    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('구분: ' + b.dataset.ct, 2000);
+    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('담당팀: ' + TEAM_LABEL[b.dataset.ct], 2000);
   });
   const di = m.querySelector('[data-cd]');
   if (di) di.onchange = async () => {
