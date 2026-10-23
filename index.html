@@ -123,6 +123,7 @@ nav button:hover{color:#fff}
 .kjctx input[type=date]{margin:2px 9px 6px;font-size:12px;padding:3px 5px;width:calc(100% - 18px)}
 .ins{margin:10px 18px 4px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:900px){.ins{grid-template-columns:1fr}}
+#view-insight .ins{margin:14px 0 0}
 .ins details{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:10px 14px}
 .ins summary{cursor:pointer;font-weight:800;font-size:13.5px}
 .ins table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
@@ -491,10 +492,11 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v30</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v31</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
+        <button data-view="insight">성과·정리</button>
         <button data-view="posts">글쓰기</button>
         <button data-view="todo">할 일</button>
         <button data-view="meetings">회의록</button>
@@ -536,7 +538,6 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <div id="channel-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
       <button class="chip reset hide" id="chip-clear">채널 전체</button>
     </div>
-    <div class="ins" id="kj-ins"></div>
     <div class="line" id="line"></div>
     <div class="wrap hide" id="board-table" style="padding-top:4px"></div>
   </section>
@@ -620,6 +621,13 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       정리된 액션은 할 일로 바로 옮길 수 있습니다.</p>
     <button class="btn sm" id="mt-new">+ 회의록 작성</button>
     <div id="meeting-list" style="margin-top:18px"></div>
+  </section>
+
+  <section id="view-insight" class="hide wrap">
+    <h3>성과·정리</h3>
+    <p class="lede">최근 30일 게시물 성과와, 14일 넘게 움직이지 않은 카드를 모아 봅니다.
+      성과는 매일 아침 6:30 인스타·유튜브에서 자동으로 채워집니다.</p>
+    <div class="ins" id="kj-ins"></div>
   </section>
 
   <section id="view-drops" class="hide wrap">
@@ -823,7 +831,7 @@ $$('nav button').forEach(b => b.onclick = async () => {
   }
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','schedule','posts','todo','meetings','drops','team','settings'].forEach(v =>
+  ['board','schedule','insight','posts','todo','meetings','drops','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
@@ -943,7 +951,7 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
+function render(){ buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
 
 /* ---------------- 공용 숫자 도우미 ---------------- */
 const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
@@ -1016,7 +1024,6 @@ function renderBoard(){
 
   if (bdView === 'table') return renderBoardTable(list);
 
-  renderInsight();
   $('#line').innerHTML = BOARD_COLS.map((col, i) => {
     const items = list.filter(c => col.stages.includes(c.stage));
     return `<div class="col ${col.wide ? 'wide' : ''}" data-drop="${esc(col.drop)}" data-stages="${esc(col.stages.join('|'))}">
@@ -1065,7 +1072,6 @@ function renderBoard(){
 /* ---------- 성과 요약 + 정리 필요 카드 (v29) ---------- */
 function renderInsight(){
   const box = $('#kj-ins'); if (!box) return;
-  if (bdView !== 'kanban') { box.innerHTML = ''; return; }
   const now = Date.now(), DAY = 864e5;
   const open = (k) => { try { return localStorage.getItem('kjins:' + k) !== '0'; } catch (_) { return true; } };
   // 성과: 최근 30일 게시완료 + 조회수 있음
