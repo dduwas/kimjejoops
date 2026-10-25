@@ -542,6 +542,18 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 .ms-job.st-writing .ms-st,.ms-job.st-queued .ms-st{background:#fff3bf}.ms-job.st-error .ms-st{background:#ffe3e3}
 .ms-drafts details{border-top:1px solid var(--line);padding:6px 0}.ms-drafts details.chosen summary{color:#16794a}.ms-drafts table{width:100%;font-size:12.5px;margin:6px 0}
 .ms-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:60vh;overflow:auto}.ms-pick label{display:flex;gap:6px;align-items:center;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:5px}.ms-pick img{width:40px;height:50px;object-fit:cover;border-radius:4px}
+.cd-img[data-kjplay],.an-img[data-kjplay]{width:100%;border:0;padding:0;cursor:pointer;font:inherit}
+.kj-play-mark{position:absolute;inset:auto 10px 10px auto;background:rgba(15,23,42,.78);color:#fff;padding:7px 10px;border-radius:20px;font-size:12px;font-weight:700;pointer-events:none}
+.kj-ref-player{width:min(490px,calc(100vw - 20px));max-width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:14px;box-shadow:0 20px 80px #0006;overflow:auto;color:var(--text,#172033);background:#fff}
+.kj-ref-player::backdrop{background:rgba(11,20,40,.65)}
+.kj-ref-head{display:flex;align-items:center;gap:12px;padding:12px 14px;position:sticky;top:0;background:#fff;z-index:1}
+.kj-ref-head b{flex:1;min-width:0;overflow-wrap:anywhere;font-size:14px}.kj-ref-head button{flex-shrink:0}
+.kj-ref-screen{background:#f4f6fa;min-height:140px;overflow-wrap:anywhere}
+.kj-ref-screen iframe,.kj-ref-screen video{display:block;width:100%;height:min(650px,calc(100dvh - 175px));min-height:240px;border:0;object-fit:contain}
+.kj-ref-note{font-size:12px;line-height:1.6;color:#64748b;padding:10px 14px;margin:0}
+.ms-pick .kj-pick-play{position:relative;flex-shrink:0;border:0;padding:0;background:#eef2f8;cursor:pointer;border-radius:6px;overflow:hidden;width:64px;height:80px}
+.ms-pick .kj-pick-play img{width:100%;height:100%;object-fit:cover}.ms-pick .kj-pick-play span{position:absolute;bottom:3px;right:3px;background:#172033cc;color:#fff;border-radius:4px;padding:2px 4px;font-size:11px}
+
 </style>
 </head>
 <body>
@@ -598,7 +610,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v54</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v55</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -771,7 +783,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 
   <section id="view-cands" class="hide wrap">
     <h3>콘텐츠 후보</h3>
-    <p class="lede">인스타연구소(인스타 DM방)에 공유한 레퍼런스가 20분마다 자동으로 카드가 됩니다. 쓸 만하면 담당팀을 골라 <b>생산 라인</b>으로, 대본을 여러 개 뽑아 보려면 <b>🏭 대본 양산</b>, 아니면 드랍·삭제. 사진을 누르면 원본 릴스가 열립니다.</p>
+    <p class="lede">인스타연구소(인스타 DM방)에 공유한 레퍼런스가 20분마다 자동으로 카드가 됩니다. 쓸 만하면 담당팀을 골라 <b>생산 라인</b>으로, 대본을 여러 개 뽑아 보려면 <b>🏭 대본 양산</b>, 아니면 드랍·삭제. 사진을 누르면 이 화면에서 영상을 볼 수 있습니다.</p>
     <div class="fmt-top"><input id="cd-url" placeholder="릴스 링크로 직접 추가" style="max-width:340px"><button class="btn sm" id="cd-add">＋ 추가</button></div>
     <div class="chips" id="cd-chips" style="margin:8px 0 0"></div>
     <div id="cd-list"></div>
@@ -1477,6 +1489,70 @@ $$('[data-scsave]').forEach(b => b.onclick = () => {   // v41 칸(탭)별 저장
   scriptDownload(list, `${TEAM_LABEL[lineOf()]} 라인 ${st.length > 1 ? '전체' : nm + ' 칸'}`);
 });
 
+/* Reference video playback stays inside Works. No downloads or background jobs. */
+function kjReferenceSource(raw) {
+  let u;
+  try { u = new URL(raw); } catch { return null; }
+  if (u.protocol !== 'https:') return null;
+  const host = u.hostname.toLowerCase();
+  if (['instagram.com', 'www.instagram.com'].includes(host)) {
+    const m = u.pathname.match(/^\/(?:reel|reels|p|tv)\/([\w-]+)\/?$/);
+    return m ? { kind: 'iframe', src: `https://www.instagram.com/p/${m[1]}/embed/`, provider: 'Instagram' } : null;
+  }
+  let id;
+  if (host === 'youtu.be') id = u.pathname.slice(1);
+  if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'www.youtube-nocookie.com'].includes(host)) {
+    id = u.pathname === '/watch' ? u.searchParams.get('v') : (u.pathname.match(/^\/(?:shorts|embed|live)\/([\w-]+)\/?$/) || [])[1];
+  }
+  if (id && /^[\w-]{11}$/.test(id)) return { kind: 'iframe', src: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1`, provider: 'YouTube' };
+  if (/\.(?:mp4|webm|mov)$/i.test(u.pathname)) return { kind: 'video', src: u.href, provider: '영상' };
+  return null;
+}
+function kjOpenReference(raw, title = '레퍼런스 영상') {
+  const source = kjReferenceSource(raw);
+  const previous = document.activeElement;
+  document.querySelector('#kj-reference-player')?.close();
+  const dialog = document.createElement('dialog');
+  dialog.id = 'kj-reference-player'; dialog.className = 'kj-ref-player';
+  dialog.setAttribute('aria-labelledby', 'kj-ref-title');
+  dialog.innerHTML = `<div class="kj-ref-head"><b id="kj-ref-title">${esc(title || '레퍼런스 영상')}</b><button class="chip sm" data-ref-close autofocus aria-label="영상 닫기">닫기 ✕</button></div><div class="kj-ref-screen"></div><p class="kj-ref-note"></p>`;
+  const screen = dialog.querySelector('.kj-ref-screen'), note = dialog.querySelector('.kj-ref-note');
+  if (source) {
+    const media = document.createElement(source.kind);
+    media.src = source.src;
+    if (source.kind === 'video') {
+      media.controls = true; media.playsInline = true; media.autoplay = true;
+      media.addEventListener('error', () => { note.textContent = '영상을 불러오지 못했습니다. 원본 주소의 만료·접근 권한을 확인해 주세요.'; });
+    } else {
+      media.title = `${source.provider} 레퍼런스 영상`;
+      media.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
+      media.allowFullscreen = true;
+      media.referrerPolicy = 'strict-origin-when-cross-origin';
+      media.addEventListener('error', () => { note.textContent = '서비스에서 미리보기를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'; });
+    }
+    screen.appendChild(media);
+    note.textContent = source.provider === 'Instagram'
+      ? '영상 안의 ▶를 눌러 재생하세요. 비공개·삭제·임베드 제한·로그인 요구 영상은 Instagram 정책상 여기서 재생되지 않을 수 있습니다.'
+      : '이 화면에서 재생됩니다. 원본 제공자가 임베드를 제한한 영상은 재생되지 않을 수 있습니다.';
+  } else {
+    screen.textContent = '이 링크는 화면 안 재생을 지원하지 않습니다. Instagram 릴스·게시물, YouTube 또는 HTTPS 영상 파일 주소를 사용해 주세요.';
+  }
+  dialog.querySelector('[data-ref-close]').onclick = () => dialog.close();
+  dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
+  dialog.addEventListener('close', () => {
+    const video = dialog.querySelector('video'); if (video) { video.pause(); video.removeAttribute('src'); video.load(); }
+    dialog.querySelector('iframe')?.remove(); dialog.remove();
+    if (previous?.isConnected) previous.focus();
+  }, { once: true });
+  document.body.appendChild(dialog); dialog.showModal();
+}
+document.addEventListener('click', e => {
+  const trigger = e.target.closest('[data-kjplay]');
+  if (!trigger) return;
+  e.preventDefault(); e.stopPropagation();
+  kjOpenReference(trigger.dataset.kjplay, trigger.dataset.kjtitle);
+});
+
 /* ---------- v53 📥 콘텐츠 후보 (생산 라인 앞단, 10-25 대표 요청) ----------
    인스타연구소(메인 계정 인스타 그룹 DM, 인스타팀)에 공유한 레퍼런스 릴스 → n8n 45가 20분마다 kj_candidates에 카드로 저장(미리보기·썸네일 포함).
    여기서 담당팀(웰니스박스/솔루션즈/기타)을 골라 생산 라인(아이디어)으로 넘기거나, 🏭 대본 양산(운영관리)으로 보내거나, 드랍(되살리기 가능)·삭제(숨김, 다시 수집되지 않음). */
@@ -1496,7 +1572,7 @@ function cdCard(c){
     : c.status === 'moved' ? `<div class="cd-done">✅ 생산 라인(${esc(TEAM_LABEL[c.team_tag] || c.team_tag || '')})으로 넘김 · ${cdDate(c.decided_at)}</div>`
     : `<div class="cd-act"><button class="chip sm" data-cdback>되살리기</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`;
   return `<div class="cd-card" data-cdid="${c.id}">
-    <a class="cd-img" href="${esc(c.url)}" target="_blank" rel="noopener">${c.thumb ? `<img loading="lazy" src="${esc(c.thumb)}" alt="">` : '<span>▶ 열어 보기</span>'}</a>
+    <button type="button" class="cd-img" data-kjplay="${esc(c.url)}" data-kjtitle="${esc(t)}" aria-label="${esc(t)} 영상 보기">${c.thumb ? `<img loading="lazy" src="${esc(c.thumb)}" alt="">` : '<span>영상 보기</span>'}<span class="kj-play-mark">▶ 재생</span></button>
     <div class="cd-b"><div class="cd-acc">${esc(c.account || '인스타그램')}</div>
       <div class="cd-ti">${esc(t)}</div>
       ${c.caption ? `<div class="cd-cap">${esc(c.caption.slice(0, 220))}</div>` : ''}
@@ -1564,8 +1640,8 @@ const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10));
 function anCard(p, tg){
   const sel = anSel.has(p.id);
   return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
-    <a class="an-img" href="${esc(p.permalink || '#')}" target="_blank" rel="noopener">${p.thumb ? `<img loading="lazy" src="${esc(p.thumb)}" alt="">` : `<span>${esc((p.topic || p.handle || '').slice(0, 8))}</span>`}
-      <b class="an-v">▶ ${opsN(p.views)}</b>${p.ratio ? `<i class="an-r">평소의 ${p.ratio}배</i>` : ''}</a>
+    <button type="button" class="an-img" data-kjplay="${esc(p.permalink || '')}" data-kjtitle="${esc(p.topic || p.handle || '레퍼런스 영상')}" aria-label="${esc(p.topic || p.handle || '레퍼런스')} 영상 보기">${p.thumb ? `<img loading="lazy" src="${esc(p.thumb)}" alt="">` : `<span>${esc((p.topic || p.handle || '').slice(0, 8))}</span>`}
+      <b class="an-v">▶ ${opsN(p.views)}</b>${p.ratio ? `<i class="an-r">평소의 ${p.ratio}배</i>` : ''}</button>
     <div class="an-b"><div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
       ${p.topic ? `<div class="an-ti">${esc(p.topic)}${p.fmt_guess ? ` <span class="an-fmt">${esc(p.fmt_guess)}</span>` : ''}</div>` : ''}
       ${p.hook ? `<div class="an-hook">“${esc(p.hook)}”</div>` : `<div class="an-cap">${esc((p.caption || '').slice(0, 110))}</div>`}
@@ -1678,7 +1754,7 @@ async function renderOpsMass(body){
     <div class="ms-list">${(jobs || []).map(j => `<div class="ms-job st-${j.status}" data-msid="${j.id}">
       <div class="ms-h"><b>${esc(j.ref_title || j.ref_url || '레퍼런스')}</b> <span class="ms-st">${ST[j.status] || j.status}</span>
         <span class="an-note">${esc(j.format_label || '형식 자유')} · ${TEAM_LABEL[j.team_tag] || ''} · ${new Date(j.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}${j.ref_views ? ' · 원본 ' + opsN(j.ref_views) + '회' : ''}</span>
-        ${j.ref_url ? `<a href="${esc(j.ref_url)}" target="_blank" rel="noopener" class="an-note">원본↗</a>` : ''}
+        ${j.ref_url ? `<button type="button" class="chip sm" data-kjplay="${esc(j.ref_url)}" data-kjtitle="${esc(j.ref_title || '레퍼런스 영상')}">▶ 원본 영상 보기</button>` : ''}
         <span style="margin-left:auto"></span>${['error', 'done'].includes(j.status) ? '<button class="chip sm" data-msretry>다시 쓰기</button>' : ''}${j.status !== 'moved' ? '<button class="chip sm cd-del" data-msdrop>드랍</button>' : ''}</div>
       ${j.status === 'error' ? `<div class="msg">⚠ ${esc(j.error || '')}</div>` : ''}
       ${(j.drafts || []).length ? `<div class="ms-drafts">${j.drafts.map((d, i) => `<details ${i === 0 && j.status === 'done' ? 'open' : ''} class="${j.chosen === i ? 'chosen' : ''}"><summary><b>초안 ${i + 1}</b> ${esc(d.title || '')}${d.hook ? ` — <i>${esc(d.hook)}</i>` : ''}${j.chosen === i ? ' ✅' : ''}</summary>
@@ -1695,11 +1771,12 @@ async function renderOpsMass(body){
     kjMassModal(ls.map(l => /^https?:\/\//.test(l) ? { url: l.split('?')[0], label: l.slice(0, 60) } : { text: l, title: l.slice(0, 60), label: l.slice(0, 60) })); };
   body.querySelector('#ms-fromanal').onclick = () => { opsTab = 'anal'; try { localStorage.setItem('kj_opstab', 'anal'); } catch (e) {} renderVideo(); };
   body.querySelector('#ms-fromcand').onclick = async () => {
-    const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
+    const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb, url').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
     const bg = document.createElement('div'); bg.className = 'aiw-bg';
-    bg.innerHTML = `<div class="aiw"><h3>📥 콘텐츠 후보에서 고르기</h3><div class="ms-pick">${(cs || []).map(c => `<label><input type="checkbox" value="${c.id}">${c.thumb ? `<img src="${esc(c.thumb)}">` : ''}<span>${esc(c.title || '(미리보기 준비 중)')}<br><small>${esc(c.account || '')}</small></span></label>`).join('') || '<p class="lede">새 후보가 없습니다.</p>'}</div>
+    bg.innerHTML = `<div class="aiw"><h3>📥 콘텐츠 후보에서 고르기</h3><div class="ms-pick">${(cs || []).map(c => `<label><input type="checkbox" value="${c.id}"><button type="button" class="kj-pick-play" data-kjplay="${esc(c.url)}" data-kjtitle="${esc(c.title || '레퍼런스 영상')}" aria-label="${esc(c.title || '후보')} 영상 보기">${c.thumb ? `<img loading="lazy" src="${esc(c.thumb)}" alt="">` : ''}<span>▶ 보기</span></button><span>${esc(c.title || '(미리보기 준비 중)')}<br><small>${esc(c.account || '')}</small></span></label>`).join('') || '<p class="lede">새 후보가 없습니다.</p>'}</div>
       <div class="row"><button class="btn sm" id="pk-go">다음</button><button class="chip" id="pk-x">닫기</button></div></div>`;
     document.body.appendChild(bg); const close = () => bg.remove(); bg.querySelector('#pk-x').onclick = close;
+    bg.querySelectorAll('[data-kjplay]').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); kjOpenReference(b.dataset.kjplay, b.dataset.kjtitle); });
     bg.querySelector('#pk-go').onclick = () => { const ids = [...bg.querySelectorAll('input:checked')].map(i => i.value); if (!ids.length) return; close();
       kjMassModal(ids.map(id => { const c = cs.find(x => x.id === id); return { cand_id: id, label: c.title || c.account || '후보' }; })); };
   };
