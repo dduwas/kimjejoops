@@ -499,7 +499,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v38</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v39</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -718,6 +718,9 @@ let ownerFilter = new Set();          // 생산 라인 담당자 필터
 let teamFilter = new Set();           // (v37부터 안 씀 — 라인 탭으로 대체)
 // v37: 생산 라인을 웰니스박스·솔루션즈·기타로 완전히 나눔. 한 번에 한 라인만 보임(마지막 선택 기억)
 let curLine = (() => { try { return localStorage.getItem('kj_line'); } catch (_) { return null; } })();
+// v39: 게시 일정은 '전체'(세 라인 함께) 또는 라인 하나를 골라 봄 — 생산 라인 탭과 따로 기억(kj_scline), 기본 전체
+let scLine = (() => { try { return localStorage.getItem('kj_scline') || 'all'; } catch (_) { return 'all'; } })();
+const scLineOk = c => scLine === 'all' || teamTag(c) === scLine;
 let scOwnerFilter = new Set();        // 게시 일정 담당자 필터
 let scChannelFilter = new Set();      // 게시 일정 채널 필터
 
@@ -927,13 +930,23 @@ function buildLineTabs(){
   lineOf();
   const live = c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP;
   const HINT = { board: '카드를 다른 라인 탭에 끌어다 놓으면 단계는 그대로 두고 그 라인으로 옮겨집니다 (우클릭 → 라인 옮기기도 가능)',
-    sc: '게시 일정도 고른 라인만 보입니다. 캘린더의 일정을 다른 라인 탭에 끌어다 놓으면 그 라인으로 옮겨집니다',
+    sc: '전체 = 세 라인을 함께(일정마다 웰·솔·기타 표시). 라인을 고르면 그 라인만. 캘린더 일정을 라인 탭에 끌어 놓으면 그 라인으로 옮겨집니다',
     ins: '성과·정리 필요 카드도 고른 라인만 봅니다' };
   $$('#line-tabs, .linetabs[data-ltview]').forEach(box => {
     const v = box.dataset.ltview || 'board';
-    box.innerHTML = TEAM_TAGS.map(t => `<button class="ltab ltab-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'} ${t === curLine ? 'on' : ''}" data-line="${t}"><b>${TEAM_LABEL[t]}</b> 라인<span>${cards.filter(c => live(c) && teamTag(c) === t).length}</span></button>`).join('')
+    const sel = v === 'sc' ? scLine : curLine;
+    box.innerHTML = (v === 'sc' ? `<button class="ltab ltab-e ${scLine === 'all' ? 'on' : ''}" data-line="all"><b>전체</b> 보기</button>` : '')
+      + TEAM_TAGS.map(t => `<button class="ltab ltab-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'} ${t === sel ? 'on' : ''}" data-line="${t}"><b>${TEAM_LABEL[t]}</b> 라인<span>${cards.filter(c => live(c) && teamTag(c) === t).length}</span></button>`).join('')
       + `<span class="lhint">${HINT[v]}</span>`;
     box.querySelectorAll('[data-line]').forEach(b => {
+      if (v === 'sc') {
+        b.onclick = () => { if (b.dataset.line === scLine) return; scLine = b.dataset.line; try { localStorage.setItem('kj_scline', scLine); } catch (_) {} scOwnerFilter.clear(); buildScheduleChips(); buildLineTabs(); renderSchedule(); };
+        if (b.dataset.line === 'all') return;
+        b.ondragover = e => { e.preventDefault(); b.classList.add('drop'); };
+        b.ondragleave = () => b.classList.remove('drop');
+        b.ondrop = async e => { e.preventDefault(); b.classList.remove('drop'); await moveLine(e.dataTransfer.getData('text/plain'), b.dataset.line); };
+        return;
+      }
       b.onclick = () => { if (b.dataset.line === curLine) return; curLine = b.dataset.line; try { localStorage.setItem('kj_line', curLine); } catch (_) {} ownerFilter.clear(); scOwnerFilter.clear(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); };
       b.ondragover = e => { if (b.dataset.line === curLine) return; e.preventDefault(); b.classList.add('drop'); };
       b.ondragleave = () => b.classList.remove('drop');
@@ -950,7 +963,7 @@ async function moveLine(id, t){
 }
 
 function buildScheduleChips(){
-  const pool = cards.filter(c => teamTag(c) === lineOf() && (
+  const pool = cards.filter(c => scLineOk(c) && (
     c.stage === '촬영' || c.stage === '편집' || c.stage === PLANNED || c.stage === DONE));
   buildChips('#sc-owner-chips', '#sc-owner-clear', ownerItems(pool), scOwnerFilter, renderSchedule);
   const chs = channels.filter(c => c.active).map(c => ({ key: c.label, label: c.label }));
@@ -1255,7 +1268,7 @@ const SC_KINDS = {
 function scheduleEvents(){
   const out = [];
   cards.forEach(c => {
-    if (teamTag(c) !== lineOf()) return;   // v38: 고른 라인만
+    if (!scLineOk(c)) return;   // v39: 전체 또는 고른 라인
     if (!matchOwner(c, scOwnerFilter)) return;
     if (!matchChannel(c, scChannelFilter)) return;
 
@@ -1324,7 +1337,7 @@ function renderCalendar(evs){
         return `<div class="ev" draggable="true" data-open="${e.card.id}"
           data-ev="${e.card.id}|${e.kind}" style="border-left-color:${color}"
           title="${esc(k.label)} · ${esc(e.card.title)} — 끌어서 날짜를 옮길 수 있습니다">
-          <span class="dotmark ${k.cls}"></span>${esc(e.card.title)}</div>`;
+          <span class="dotmark ${k.cls}"></span>${scLine === 'all' ? tagHTML(e.card) : ''}${esc(e.card.title)}</div>`;
       }).join('')}
     </div>`);
   }
@@ -1443,7 +1456,7 @@ function newScheduleCard(dateStr){
   const preset = asShoot
     ? { stage: '촬영',  shoot_date: dateStr || null }
     : { stage: PLANNED, publish_date: dateStr || null };
-  openCard(null, { ...preset, team_tag: lineOf() });   // v38: 지금 라인에 추가
+  openCard(null, { ...preset, team_tag: scLine === 'all' ? lineOf() : scLine });   // v39: 게시 일정에서 고른 라인(전체면 생산 라인 탭의 라인)
 }
 
 $('#sc-new').onclick = () => newScheduleCard(null);
