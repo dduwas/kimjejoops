@@ -508,6 +508,40 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 .fmt-src{margin-top:8px;font-size:11.5px;color:var(--muted)}
 .fe-imgs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}.fe-imgs span{position:relative}.fe-imgs img{width:72px;height:96px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
 .fe-imgs button{position:absolute;top:2px;right:2px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer}
+.cd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:12px}
+.cd-card,.an-card{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;display:flex;flex-direction:column}
+.cd-img,.an-img{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:4/5;background:#eef2f8;color:var(--muted);font-size:13px;text-decoration:none;overflow:hidden}
+.cd-img img,.an-img img{width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block}
+.cd-b,.an-b{padding:9px 11px 11px;font-size:12.5px;line-height:1.5;display:flex;flex-direction:column;gap:3px;flex:1}
+.cd-acc,.an-acc{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd-ti,.an-ti{font-weight:700;font-size:13.5px;color:var(--ink)}
+.cd-cap,.an-cap{color:#4a5668;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.cd-note{background:#fff7e6;border-radius:6px;padding:3px 7px;color:#7a4b00}
+.cd-meta{color:var(--muted);font-size:11.5px;margin-top:auto;padding-top:4px}
+.cd-mv{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:4px}.cd-mv span{font-size:11.5px;color:var(--navy);font-weight:700;margin-right:2px}
+.cd-act,.an-act{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:4px;align-items:center}.cd-del{color:#b42318}
+.cd-done{color:#16794a;font-size:12px;margin-top:4px}
+.an-head{margin:4px 0 8px;font-size:13.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.an-wait{background:#fff7e6;border:1px solid #f3d9a4;border-radius:10px;padding:9px 12px;font-size:13px;margin:6px 0 10px;color:#6b4300}
+.an-tabs{display:flex;gap:6px;margin:6px 0 10px}.an-filters{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;margin-bottom:8px}.an-filters span{color:var(--muted);margin:0 2px 0 8px}
+.an-note{color:var(--muted);font-size:11.5px}
+.an-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.an-card.sel{outline:2px solid var(--navy)}.an-card.star{border-color:#e0a800}
+.an-v{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.65);color:#fff;border-radius:6px;padding:2px 7px;font-size:12px}
+.an-r{position:absolute;right:8px;bottom:8px;background:#d9480f;color:#fff;border-radius:6px;padding:2px 7px;font-size:11.5px;font-style:normal;font-weight:700}
+.an-fmt{font-weight:400;font-size:11px;background:#eef2fb;color:var(--navy);border-radius:5px;padding:1px 6px}
+.an-hook{color:#334;font-style:italic}.an-angle{background:#f1f8f3;border-radius:6px;padding:3px 7px;color:#1e6b3a}
+.an-chk{font-size:12px;display:flex;align-items:center;gap:3px}.an-st{font-size:12px;color:#16794a}
+.an-bar{position:sticky;bottom:10px;margin-top:12px;background:var(--navy);color:#fff;border-radius:12px;padding:9px 14px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 16px rgba(11,42,91,.25)}.an-bar .chip{background:#fff}
+.an-tbl{width:100%;font-size:12.5px;border-collapse:collapse}.an-tbl td,.an-tbl th{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}.an-tbl tr.off{opacity:.45}
+.an-info{color:var(--muted);font-size:11px}.an-src{display:inline-block;background:#eef2fb;border-radius:5px;padding:0 5px;margin:1px;font-size:11px}
+.ms-items{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}.ms-items span{background:#eef2fb;border-radius:6px;padding:2px 7px;font-size:12px}
+.ms-new{border:1px dashed var(--line);border-radius:12px;padding:10px 12px;margin:4px 0 14px}.ms-new textarea{width:100%;margin:6px 0}
+.ms-job{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;background:#fff}.ms-job.st-moved{opacity:.7}
+.ms-h{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ms-st{font-size:12px;background:#eef2fb;border-radius:6px;padding:1px 7px}
+.ms-job.st-writing .ms-st,.ms-job.st-queued .ms-st{background:#fff3bf}.ms-job.st-error .ms-st{background:#ffe3e3}
+.ms-drafts details{border-top:1px solid var(--line);padding:6px 0}.ms-drafts details.chosen summary{color:#16794a}.ms-drafts table{width:100%;font-size:12.5px;margin:6px 0}
+.ms-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;max-height:60vh;overflow:auto}.ms-pick label{display:flex;gap:6px;align-items:center;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:5px}.ms-pick img{width:40px;height:50px;object-fit:cover;border-radius:4px}
 </style>
 </head>
 <body>
@@ -564,9 +598,10 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v52</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v54</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
+        <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
         <button data-view="insight">성과·정리</button>
@@ -734,6 +769,13 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
     <div id="vd-root"></div>
   </section>
 
+  <section id="view-cands" class="hide wrap">
+    <h3>콘텐츠 후보</h3>
+    <p class="lede">인스타연구소(인스타 DM방)에 공유한 레퍼런스가 20분마다 자동으로 카드가 됩니다. 쓸 만하면 담당팀을 골라 <b>생산 라인</b>으로, 대본을 여러 개 뽑아 보려면 <b>🏭 대본 양산</b>, 아니면 드랍·삭제. 사진을 누르면 원본 릴스가 열립니다.</p>
+    <div class="fmt-top"><input id="cd-url" placeholder="릴스 링크로 직접 추가" style="max-width:340px"><button class="btn sm" id="cd-add">＋ 추가</button></div>
+    <div class="chips" id="cd-chips" style="margin:8px 0 0"></div>
+    <div id="cd-list"></div>
+  </section>
   <section id="view-formats" class="hide wrap">
     <h3>형식</h3>
     <p class="lede">김제조 릴스 형식 모음입니다. 잘 된 틀을 분류해 두고, 새 형식은 <b>＋ 형식 추가</b>로 계속 쌓아 갑니다. 카드 사진을 누르면 예시 영상이 열립니다.</p>
@@ -950,7 +992,7 @@ $$('nav button').forEach(b => b.onclick = async () => {
   }
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','team','settings'].forEach(v =>
+  ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','cands','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
@@ -1062,6 +1104,8 @@ async function renderVideo(){
     <div class="ops-tabs">
       <button data-opstab="comments" class="${opsTab === 'comments' ? 'on' : ''}">💬 댓글·DM${newCm ? ` <span class="nbadge">${newCm}</span>` : ''}</button>
       <button data-opstab="upload" class="${opsTab === 'upload' ? 'on' : ''}">📤 업로드 자동화</button>
+      <button data-opstab="anal" class="${opsTab === 'anal' ? 'on' : ''}">🔎 분석 대상</button>
+      <button data-opstab="mass" class="${opsTab === 'mass' ? 'on' : ''}">🏭 대본 양산</button>
       <button data-opstab="video" class="${opsTab === 'video' ? 'on' : ''}">🎬 AI 영상편집</button>
       <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
     </div><div id="ops-body"></div>
@@ -1082,6 +1126,8 @@ async function renderVideo(){
   if (opsTab === 'sns') return renderOpsSns(body);
   if (opsTab === 'comments') return renderOpsComments(body);
   if (opsTab === 'upload') return renderOpsUpload(body);
+  if (opsTab === 'anal') return renderOpsAnal(body);
+  if (opsTab === 'mass') return renderOpsMass(body);
   return renderOpsVideo(body);
 }
 function renderOpsSns(body){
@@ -1431,6 +1477,237 @@ $$('[data-scsave]').forEach(b => b.onclick = () => {   // v41 칸(탭)별 저장
   scriptDownload(list, `${TEAM_LABEL[lineOf()]} 라인 ${st.length > 1 ? '전체' : nm + ' 칸'}`);
 });
 
+/* ---------- v53 📥 콘텐츠 후보 (생산 라인 앞단, 10-25 대표 요청) ----------
+   인스타연구소(메인 계정 인스타 그룹 DM, 인스타팀)에 공유한 레퍼런스 릴스 → n8n 45가 20분마다 kj_candidates에 카드로 저장(미리보기·썸네일 포함).
+   여기서 담당팀(웰니스박스/솔루션즈/기타)을 골라 생산 라인(아이디어)으로 넘기거나, 🏭 대본 양산(운영관리)으로 보내거나, 드랍(되살리기 가능)·삭제(숨김, 다시 수집되지 않음). */
+let CANDS = [], cdLoaded = false, cdBusy = false, cdTab = 'new', cdErrAt = 0;
+async function loadCands(){
+  const { data, error } = await sb.from('kj_candidates').select('*').neq('status', 'deleted').order('shared_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).limit(600);
+  if (error) { cdErrAt = Date.now(); return error; }
+  CANDS = data || []; cdLoaded = true; cdBadge(); return null;
+}
+function cdBadge(){ const b = document.getElementById('cd-badge'); if (!b) return; const n = CANDS.filter(c => c.status === 'new').length; b.textContent = n; b.classList.toggle('hide', !n); }
+const cdDate = s => { if (!s) return ''; const d = new Date(s); return (d.getMonth() + 1) + '/' + d.getDate(); };
+function cdCard(c){
+  const t = c.title || (c.caption || '').split('\n').find(x => x.trim()) || '미리보기 준비 중 (최대 20분)';
+  const acts = c.status === 'new'
+    ? `<div class="cd-mv"><span>생산 라인으로</span><button class="chip sm" data-cdmv="웰">웰니스박스</button><button class="chip sm" data-cdmv="솔">솔루션즈</button><button class="chip sm" data-cdmv="기타">기타</button></div>
+       <div class="cd-act"><button class="chip sm" data-cdmass>🏭 대본 양산</button><button class="chip sm" data-cddrop>드랍</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`
+    : c.status === 'moved' ? `<div class="cd-done">✅ 생산 라인(${esc(TEAM_LABEL[c.team_tag] || c.team_tag || '')})으로 넘김 · ${cdDate(c.decided_at)}</div>`
+    : `<div class="cd-act"><button class="chip sm" data-cdback>되살리기</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`;
+  return `<div class="cd-card" data-cdid="${c.id}">
+    <a class="cd-img" href="${esc(c.url)}" target="_blank" rel="noopener">${c.thumb ? `<img loading="lazy" src="${esc(c.thumb)}" alt="">` : '<span>▶ 열어 보기</span>'}</a>
+    <div class="cd-b"><div class="cd-acc">${esc(c.account || '인스타그램')}</div>
+      <div class="cd-ti">${esc(t)}</div>
+      ${c.caption ? `<div class="cd-cap">${esc(c.caption.slice(0, 220))}</div>` : ''}
+      ${c.note ? `<div class="cd-note">💬 ${esc(c.note)}</div>` : ''}
+      <div class="cd-meta">${c.src === 'manual' ? '직접 추가' : '공유 @' + esc(c.shared_by || '?')} · ${cdDate(c.shared_at || c.created_at)}</div>
+      ${acts}</div></div>`;
+}
+async function cdSet(c, patch){
+  const { data, error } = await sb.from('kj_candidates').update({ ...patch, decided_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', c.id).select('id');
+  if (error || !data || !data.length) { alert(error ? cleanErr(error.message) : '저장되지 않았습니다(권한 확인).'); return false; }
+  Object.assign(c, patch); return true;
+}
+async function cdMove(c, team){
+  const title = (c.title || (c.caption || '').split('\n').find(x => x.trim()) || '인스타 레퍼런스').replace(/\s+/g, ' ').trim().slice(0, 60);
+  const { data, error } = await sb.from('contents').insert({ title, stage: IDEA, team_tag: team, reference_url: c.url,
+    next_action: `콘텐츠 후보(인스타연구소)에서 넘어옴 · ${c.account || ''}${c.note ? ' · 메모: ' + c.note : ''}`.slice(0, 500) }).select('id').single();
+  if (error) return alert(cleanErr(error.message));
+  if (await cdSet(c, { status: 'moved', team_tag: team, content_id: data.id })) { await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); }
+}
+async function renderCands(){
+  if (!cdLoaded) { if (cdBusy || Date.now() - cdErrAt < 30000) return; cdBusy = true; const e = await loadCands(); cdBusy = false; if (e) return; }
+  const v = document.getElementById('view-cands'); if (!v || v.classList.contains('hide')) return;
+  const cnt = s => CANDS.filter(c => c.status === s).length;
+  const chips = document.getElementById('cd-chips');
+  chips.innerHTML = [['new', '새 후보'], ['moved', '넘김'], ['dropped', '드랍']].map(([k, l]) => `<button class="chip ${k === cdTab ? 'on' : ''}" data-cdtab="${k}">${l} ${cnt(k)}</button>`).join('') + '<button class="chip" id="cd-reload" title="새로 불러오기">↻</button>';
+  chips.querySelectorAll('[data-cdtab]').forEach(b => b.onclick = () => { cdTab = b.dataset.cdtab; renderCands(); });
+  chips.querySelector('#cd-reload').onclick = async () => { cdLoaded = false; await renderCands(); };
+  const list = CANDS.filter(c => c.status === cdTab);
+  const box = document.getElementById('cd-list');
+  box.innerHTML = list.length ? `<div class="cd-grid">${list.map(cdCard).join('')}</div>` : `<p class="lede" style="margin-top:14px">${cdTab === 'new' ? '새 후보가 없습니다. 인스타연구소 DM방에 릴스를 공유하면 20분 안에 여기 들어옵니다.' : '없습니다.'}</p>`;
+  const get = el => CANDS.find(c => c.id === el.closest('[data-cdid]').dataset.cdid);
+  box.querySelectorAll('[data-cdmv]').forEach(b => b.onclick = async () => { b.disabled = true; await cdMove(get(b), b.dataset.cdmv); cdBadge(); renderCands(); });
+  box.querySelectorAll('[data-cdmass]').forEach(b => b.onclick = () => { const c = get(b); kjMassModal([{ cand_id: c.id, label: c.title || c.account || '후보' }]); });
+  box.querySelectorAll('[data-cddrop]').forEach(b => b.onclick = async () => { if (await cdSet(get(b), { status: 'dropped' })) { cdBadge(); renderCands(); } });
+  box.querySelectorAll('[data-cdback]').forEach(b => b.onclick = async () => { if (await cdSet(get(b), { status: 'new' })) { cdBadge(); renderCands(); } });
+  box.querySelectorAll('[data-cddel]').forEach(b => b.onclick = async () => { const c = get(b); if (!confirm('이 후보를 지울까요? (목록에서 사라지고 다시 수집되지 않습니다)')) return; if (await cdSet(c, { status: 'deleted' })) { CANDS = CANDS.filter(x => x !== c); cdBadge(); renderCands(); } });
+}
+$('#cd-add') && ($('#cd-add').onclick = async () => {
+  const u = $('#cd-url').value.trim().split('?')[0]; if (!/^https?:\/\//.test(u)) return alert('릴스·게시물 링크를 넣어 주세요.');
+  const sc = (u.match(/\/(?:reel|reels|p|tv)\/([\w-]+)/) || [])[1] || null;
+  const { error } = await sb.from('kj_candidates').insert({ src: 'manual', url: u, shortcode: sc, ext_key: sc ? 'iglab:' + sc : 'manual:' + u, shared_at: new Date().toISOString() });
+  if (error) return alert(/duplicate|unique/i.test(error.message) ? '이미 후보에 있는 링크입니다.' : cleanErr(error.message));
+  $('#cd-url').value = ''; cdLoaded = false; cdTab = 'new'; await renderCands(); poToast('후보에 넣었습니다. 미리보기는 20분 안에 채워집니다.');
+});
+
+
+/* ---------- v54 🔎 분석 대상 · 🏭 대본 양산 (운영관리 탭, 10-26 대표 요청) ----------
+   분석 대상: kj_targets(약사 인플루언서 26.09 109명 + kjs_ref 팔로잉) 최근 게시물 조회수를 n8n 46이 인스타 공식 API로 수집(kj_tposts)
+     → 계정 평소(중앙값) 대비 2.5배↑·2만↑ 또는 30만↑ = 🔥 터진 영상 → AI가 주제·형식·훅·김제조 각도 태깅
+   대본 양산: 고른 영상·콘텐츠 후보·링크 → 형식(kj_formats) + 김제조 대본 스킬로 초안 N개(kj-anal 함수) → 하나 골라 생산 라인(대본 단계)으로 */
+let anTab = 'hot', anSel = new Set(), anSrc = 'all', anDays = 90, anFmt = '', anSort = 'score', anData = null, msTimer = null;
+const kjFnUrl = () => String(window.SUPABASE_URL).replace(/\/+$/, '') + '/functions/v1/kj-anal';
+async function kjFn(body){
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch(kjFnUrl(), { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token, apikey: window.SUPABASE_ANON_KEY, 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  return r.json().catch(() => ({ error: '응답 오류 ' + r.status }));
+}
+async function loadAnal(){
+  const [t, p] = await Promise.all([
+    sb.from('kj_targets').select('*').order('influence', { ascending: false, nullsFirst: false }),
+    sb.from('kj_tposts').select('*').order('views', { ascending: false, nullsFirst: false }).limit(1500)]);
+  anData = { targets: t.data || [], posts: p.data || [], err: t.error || p.error };
+}
+const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10));
+function anCard(p, tg){
+  const sel = anSel.has(p.id);
+  return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
+    <a class="an-img" href="${esc(p.permalink || '#')}" target="_blank" rel="noopener">${p.thumb ? `<img loading="lazy" src="${esc(p.thumb)}" alt="">` : `<span>${esc((p.topic || p.handle || '').slice(0, 8))}</span>`}
+      <b class="an-v">▶ ${opsN(p.views)}</b>${p.ratio ? `<i class="an-r">평소의 ${p.ratio}배</i>` : ''}</a>
+    <div class="an-b"><div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
+      ${p.topic ? `<div class="an-ti">${esc(p.topic)}${p.fmt_guess ? ` <span class="an-fmt">${esc(p.fmt_guess)}</span>` : ''}</div>` : ''}
+      ${p.hook ? `<div class="an-hook">“${esc(p.hook)}”</div>` : `<div class="an-cap">${esc((p.caption || '').slice(0, 110))}</div>`}
+      ${p.kj_angle ? `<div class="an-angle">💡 ${esc(p.kj_angle)}</div>` : ''}
+      <div class="an-act">${p.status === 'mass' ? '<span class="an-st">🏭 양산 중</span>' : p.status === 'line' ? '<span class="an-st">✅ 생산 라인</span>' : `<label class="an-chk"><input type="checkbox" data-ansel ${sel ? 'checked' : ''}> 선택</label>
+        <button class="chip sm" data-anmass>🏭 양산</button><button class="chip sm" data-anstar>${p.status === 'starred' ? '★' : '☆'}</button>
+        <button class="chip sm" data-anline title="생산 라인 아이디어로">→라인</button><button class="chip sm cd-del" data-androp>드랍</button>`}</div></div></div>`;
+}
+async function renderOpsAnal(body){
+  if (!anData) { body.innerHTML = '<p class="lede">불러오는 중…</p>'; await loadAnal(); }
+  const { targets, posts } = anData; const T = new Map(targets.map(t => [t.handle, t]));
+  const fetched = targets.filter(t => t.last_fetch && !t.fetch_error).length, errs = targets.filter(t => t.fetch_error).length;
+  const since = anDays ? Date.now() - anDays * 86400000 : 0;
+  let list = posts.filter(p => p.status !== 'dropped' && (!since || !p.posted_at || new Date(p.posted_at).getTime() >= since) && (anSrc === 'all' || (T.get(p.handle)?.sources || []).includes(anSrc)));
+  if (anTab === 'hot') list = list.filter(p => p.hot);
+  if (anFmt) list = list.filter(p => p.fmt_guess === anFmt);
+  list.sort(anSort === 'views' ? (a, b) => (b.views || 0) - (a.views || 0) : anSort === 'new' ? (a, b) => String(b.posted_at).localeCompare(String(a.posted_at)) : (a, b) => anScore(b) - anScore(a));
+  const fmts = [...new Set(posts.filter(p => p.hot && p.fmt_guess).map(p => p.fmt_guess))];
+  const srcs = [...new Set(targets.flatMap(t => t.sources || []))];
+  const chip = (attr, v, cur, l) => `<button class="chip sm ${String(v) === String(cur) ? 'on' : ''}" ${attr}="${esc(String(v))}">${esc(l)}</button>`;
+  body.innerHTML = `<div class="an-head"><b>분석 대상 ${targets.length}계정</b> · 수집 ${fetched}${errs ? ` · 오류 ${errs}` : ''} · 영상 ${posts.length} · 🔥 ${posts.filter(p => p.hot).length}
+      <button class="chip sm" id="an-re">↻</button>${posts.some(p => p.hot && !p.ai_at) ? '<button class="chip sm" id="an-tag">🤖 AI 분류 지금</button>' : ''}</div>
+    ${!fetched ? `<div class="an-wait">🔌 <b>조회수 수집 연결 대기</b> — 인스타 공식 API(Facebook 로그인) 토큰이 연결되면 1시간마다 20계정씩 최근 게시물·조회수를 모읍니다. 계정 목록은 준비됐습니다(아래 '👥 계정').</div>` : ''}
+    <div class="an-tabs">${chip('data-antab', 'hot', anTab, '🔥 추천')}${chip('data-antab', 'all', anTab, '📊 전체 영상')}${chip('data-antab', 'targets', anTab, '👥 계정 ' + targets.length)}</div>
+    <div id="an-body"></div>`;
+  body.querySelector('#an-re').onclick = async () => { anData = null; renderOpsAnal(body); };
+  const tb = body.querySelector('#an-tag'); if (tb) tb.onclick = async () => { tb.disabled = true; tb.textContent = '분류 중…'; const j = await kjFn({ action: 'tag_now' }); if (j.error) alert(j.error); anData = null; renderOpsAnal(body); };
+  body.querySelectorAll('[data-antab]').forEach(b => b.onclick = () => { anTab = b.dataset.antab; renderOpsAnal(body); });
+  const ab = body.querySelector('#an-body');
+  if (anTab === 'targets') return renderAnTargets(ab, body);
+  ab.innerHTML = `<div class="an-filters"><span>기간</span>${[[30, '30일'], [90, '90일'], [0, '전체']].map(([v, l]) => chip('data-andays', v, anDays, l)).join('')}
+      <span>출처</span>${chip('data-ansrc', 'all', anSrc, '전체')}${srcs.map(s => chip('data-ansrc', s, anSrc, s)).join('')}
+      <span>정렬</span>${chip('data-ansort', 'score', anSort, '추천순')}${chip('data-ansort', 'views', anSort, '조회수')}${chip('data-ansort', 'new', anSort, '최신')}
+      ${fmts.length ? `<br><span>형식</span>${chip('data-anfmt', '', anFmt, '전체')}${fmts.map(f => chip('data-anfmt', f, anFmt, f)).join('')}` : ''}</div>
+    ${anTab === 'hot' ? '<p class="an-note">🔥 = 그 계정 평소(최근 영상 중앙값) 대비 2.5배 이상이면서 2만 회 이상, 또는 30만 회 이상. 추천순 = 배수 × 조회수 규모.</p>' : ''}
+    <div class="an-grid">${list.slice(0, 240).map(p => anCard(p, T.get(p.handle))).join('') || '<p class="lede">아직 없습니다.</p>'}</div>
+    <div class="an-bar ${anSel.size ? '' : 'hide'}" id="an-bar"><b>${anSel.size}개 선택</b><button class="btn sm" id="an-go">🏭 대본 양산으로</button><button class="chip sm" id="an-clr">선택 해제</button></div>`;
+  const re = () => renderOpsAnal(body);
+  ab.querySelectorAll('[data-andays]').forEach(b => b.onclick = () => { anDays = +b.dataset.andays; re(); });
+  ab.querySelectorAll('[data-ansrc]').forEach(b => b.onclick = () => { anSrc = b.dataset.ansrc; re(); });
+  ab.querySelectorAll('[data-ansort]').forEach(b => b.onclick = () => { anSort = b.dataset.ansort; re(); });
+  ab.querySelectorAll('[data-anfmt]').forEach(b => b.onclick = () => { anFmt = b.dataset.anfmt; re(); });
+  const P = el => posts.find(p => p.id === el.closest('[data-anid]').dataset.anid);
+  const upd = async (p, patch) => { const { data, error } = await sb.from('kj_tposts').update({ ...patch, decided_at: new Date().toISOString() }).eq('id', p.id).select('id'); if (error || !data?.length) { alert(error ? cleanErr(error.message) : '저장 안 됨'); return false; } Object.assign(p, patch); return true; };
+  ab.querySelectorAll('[data-ansel]').forEach(c => c.onchange = () => { const p = P(c); c.checked ? anSel.add(p.id) : anSel.delete(p.id); re(); });
+  ab.querySelectorAll('[data-anstar]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: p.status === 'starred' ? 'new' : 'starred' })) re(); });
+  ab.querySelectorAll('[data-androp]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: 'dropped' })) { anSel.delete(p.id); re(); } });
+  ab.querySelectorAll('[data-anmass]').forEach(b => b.onclick = () => kjMassModal([{ post_id: P(b).id, label: '@' + P(b).handle + ' ' + (P(b).topic || '') }]));
+  ab.querySelectorAll('[data-anline]').forEach(b => b.onclick = async () => {
+    const p = P(b); const t = prompt('담당팀: 웰(웰니스박스) / 솔(솔루션즈) / 기타', '솔'); if (!t) return; const team = /웰/.test(t) ? '웰' : /솔/.test(t) ? '솔' : '기타';
+    const title = (p.topic ? p.topic + ' — ' : '') + ((p.caption || '').split('\n').find(x => x.trim()) || '@' + p.handle);
+    const { data, error } = await sb.from('contents').insert({ title: title.replace(/\s+/g, ' ').slice(0, 60), stage: IDEA, team_tag: team, reference_url: p.permalink,
+      next_action: `🔎 분석 대상(@${p.handle}, 조회 ${opsN(p.views)}${p.ratio ? ', 평소의 ' + p.ratio + '배' : ''})에서 넘어옴${p.kj_angle ? ' · 각도: ' + p.kj_angle : ''}`.slice(0, 500) }).select('id').single();
+    if (error) return alert(cleanErr(error.message));
+    await upd(p, { status: 'line', content_id: data.id }); await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); re(); });
+  const go = ab.querySelector('#an-go'); if (go) go.onclick = () => kjMassModal([...anSel].map(id => { const p = posts.find(x => x.id === id); return { post_id: id, label: '@' + (p ? p.handle + ' ' + (p.topic || '') : id) }; }), () => { anSel.clear(); });
+  const clr = ab.querySelector('#an-clr'); if (clr) clr.onclick = () => { anSel.clear(); re(); };
+}
+function renderAnTargets(ab, body){
+  const ts = anData.targets;
+  ab.innerHTML = `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 (예: yakstory119)" style="max-width:240px"><input id="an-hm" placeholder="메모(선택)" style="max-width:240px"><button class="btn sm" id="an-hadd">＋ 분석 대상 추가</button></div>
+    <p class="an-note">출처: 약사 인플루언서 26.09 조사(109명) + kjs_ref 팔로잉(10-20, 132개 중 공개 프로필). 비즈니스·크리에이터 계정만 조회수 수집이 됩니다. 끄면 수집에서 빠집니다.</p>
+    <div class="tbl-wrap"><table class="an-tbl"><tr><th>계정</th><th>출처</th><th>팔로워</th><th>평소 조회</th><th>🔥</th><th>수집</th><th>사용</th></tr>
+    ${ts.map(t => `<tr class="${t.active ? '' : 'off'}"><td><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener">@${esc(t.handle)}</a>${t.name ? ' ' + esc(t.name) : ''}${t.lang === 'en' ? ' 🌐' : ''}${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</td>
+      <td>${(t.sources || []).map(s => `<span class="an-src">${esc(s.replace(' 26.09', '').replace(' 팔로잉', ''))}</span>`).join('')}</td>
+      <td>${t.followers ? opsN(t.followers) : (t.influence ? t.influence + '만*' : '-')}</td><td>${t.median_views ? opsN(t.median_views) : '-'}</td><td>${t.hot_n || ''}</td>
+      <td>${t.fetch_error ? `<span title="${esc(t.fetch_error)}" style="color:#b42318">오류</span>` : t.last_fetch ? (new Date(t.last_fetch).getMonth() + 1) + '/' + new Date(t.last_fetch).getDate() : '대기'}</td>
+      <td><input type="checkbox" data-anact="${esc(t.handle)}" ${t.active ? 'checked' : ''}></td></tr>`).join('')}</table></div>
+    <p class="an-note">* 팔로워 칸의 '만*'은 26.09 조사 당시 영향력 수치입니다.</p>`;
+  ab.querySelectorAll('[data-anact]').forEach(c => c.onchange = async () => { const { error } = await sb.from('kj_targets').update({ active: c.checked }).eq('handle', c.dataset.anact); if (error) alert(cleanErr(error.message)); else anData.targets.find(t => t.handle === c.dataset.anact).active = c.checked; });
+  ab.querySelector('#an-hadd').onclick = async () => {
+    const h = $('#an-h').value.trim().replace(/^@/, '').replace(/.*instagram\.com\//, '').replace(/[/?].*$/, '').toLowerCase(); if (!h) return;
+    const { error } = await sb.from('kj_targets').insert({ handle: h, sources: ['직접 추가'], info: $('#an-hm').value.trim() || null });
+    if (error) return alert(/duplicate/i.test(error.message) ? '이미 있는 계정입니다.' : cleanErr(error.message));
+    anData = null; renderOpsAnal(body); poToast('@' + h + ' 추가. 다음 수집 때 조회수를 모읍니다.');
+  };
+}
+async function kjMassModal(items, after){
+  const { data: fm } = await sb.from('kj_formats').select('id, grp, name').order('sort');
+  const grps = [...new Set((fm || []).map(f => f.grp))];
+  const bg = document.createElement('div'); bg.className = 'aiw-bg';
+  bg.innerHTML = `<div class="aiw"><h3>🏭 대본 양산 — ${items.length}개</h3>
+    <div class="sub">고른 레퍼런스마다 김제조 말투 대본 초안을 여러 개 씁니다. 결과는 운영관리 › 🏭 대본 양산 탭에서 골라 생산 라인으로 넘깁니다.</div>
+    <div class="ms-items">${items.map(i => `<span>${esc(i.label || i.url || '')}</span>`).join('')}</div>
+    <label>형식</label><select id="ms-fmt"><option value="">레퍼런스 구조 그대로 (형식 자유)</option>${grps.map(g => `<optgroup label="${esc(g)}">${fm.filter(f => f.grp === g).map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('')}</optgroup>`).join('')}</select>
+    <label>레퍼런스마다 초안 수</label><select id="ms-n"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
+    <label>담당팀 (말투 예시를 이 팀 대본에서 가져옴)</label><select id="ms-team"><option value="솔">솔루션즈</option><option value="웰">웰니스박스</option><option value="기타">기타</option></select>
+    <label>추가 지시 (선택)</label><input id="ms-note" placeholder="예: 40초 이내, 숫자 근거 1개 이상, 마지막에 댓글 유도 질문">
+    <div class="row"><button class="btn sm" id="ms-go">🏭 양산 시작</button><button class="chip" id="ms-x">닫기</button><span id="ms-st" style="font-size:12.5px;color:var(--muted)"></span></div></div>`;
+  document.body.appendChild(bg);
+  const $b = s => bg.querySelector(s); const close = () => bg.remove();
+  $b('#ms-x').onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
+  $b('#ms-go').onclick = async () => {
+    $b('#ms-go').disabled = true; $b('#ms-st').textContent = '보내는 중…';
+    const j = await kjFn({ action: 'mass_queue', items: items.map(({ label, ...x }) => x), format_id: $b('#ms-fmt').value || null, n: +$b('#ms-n').value, team: $b('#ms-team').value, note: $b('#ms-note').value });
+    if (j.error) { $b('#ms-go').disabled = false; $b('#ms-st').textContent = ''; return alert(j.error); }
+    close(); if (after) after(); if (anData) anData = null;
+    poToast(`${j.queued}건 양산 시작. 1건에 30~90초 — 🏭 대본 양산 탭에서 확인하세요.`, 4000);
+    try { opsTab = 'mass'; localStorage.setItem('kj_opstab', 'mass'); } catch (e) {}
+    if (!$('#view-video').classList.contains('hide')) renderVideo();
+  };
+}
+async function renderOpsMass(body){
+  const { data: jobs, error } = await sb.from('kj_mass_jobs').select('*').neq('status', 'dropped').order('created_at', { ascending: false }).limit(60);
+  if (error) { body.innerHTML = `<div class="msg">⚠ ${esc(error.message)}</div>`; return; }
+  const ST = { queued: '대기', writing: '✍️ 쓰는 중', done: '✅ 초안 완료', error: '⚠ 오류', moved: '➡ 생산 라인' };
+  body.innerHTML = `<div class="ms-new"><b>새로 양산</b> <span class="an-note">링크·글을 한 줄에 하나씩 (인스타·유튜브 링크, 또는 아이디어 문장)</span>
+      <textarea id="ms-lines" rows="3" placeholder="https://www.instagram.com/reel/...&#10;마그네슘 종류별 흡수율 비교"></textarea>
+      <div class="row"><button class="btn sm" id="ms-fromtext">🏭 이걸로 양산</button><button class="chip sm" id="ms-fromcand">📥 콘텐츠 후보에서 고르기</button><button class="chip sm" id="ms-fromanal">🔎 분석 대상 추천에서 고르기</button></div></div>
+    <div class="ms-list">${(jobs || []).map(j => `<div class="ms-job st-${j.status}" data-msid="${j.id}">
+      <div class="ms-h"><b>${esc(j.ref_title || j.ref_url || '레퍼런스')}</b> <span class="ms-st">${ST[j.status] || j.status}</span>
+        <span class="an-note">${esc(j.format_label || '형식 자유')} · ${TEAM_LABEL[j.team_tag] || ''} · ${new Date(j.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}${j.ref_views ? ' · 원본 ' + opsN(j.ref_views) + '회' : ''}</span>
+        ${j.ref_url ? `<a href="${esc(j.ref_url)}" target="_blank" rel="noopener" class="an-note">원본↗</a>` : ''}
+        <span style="margin-left:auto"></span>${['error', 'done'].includes(j.status) ? '<button class="chip sm" data-msretry>다시 쓰기</button>' : ''}${j.status !== 'moved' ? '<button class="chip sm cd-del" data-msdrop>드랍</button>' : ''}</div>
+      ${j.status === 'error' ? `<div class="msg">⚠ ${esc(j.error || '')}</div>` : ''}
+      ${(j.drafts || []).length ? `<div class="ms-drafts">${j.drafts.map((d, i) => `<details ${i === 0 && j.status === 'done' ? 'open' : ''} class="${j.chosen === i ? 'chosen' : ''}"><summary><b>초안 ${i + 1}</b> ${esc(d.title || '')}${d.hook ? ` — <i>${esc(d.hook)}</i>` : ''}${j.chosen === i ? ' ✅' : ''}</summary>
+        <table><tr><th style="width:40%">장면</th><th>대사/자막</th></tr>${(d.rows || []).map(r => `<tr><td>${esc(r.scene)}</td><td>${esc(r.line)}</td></tr>`).join('')}</table>
+        ${d.notes ? `<div class="an-note">메모: ${esc(d.notes)}</div>` : ''}
+        ${j.status === 'done' ? `<div class="row"><span class="an-note">생산 라인(대본 단계)으로:</span><button class="chip sm" data-msline="${i}" data-team="웰">웰니스박스</button><button class="chip sm" data-msline="${i}" data-team="솔">솔루션즈</button><button class="chip sm" data-msline="${i}" data-team="기타">기타</button></div>` : ''}</details>`).join('')}</div>` : ''}
+    </div>`).join('') || '<p class="lede">아직 양산한 대본이 없습니다.</p>'}</div>`;
+  const J = el => (jobs || []).find(j => j.id === el.closest('[data-msid]').dataset.msid);
+  body.querySelectorAll('[data-msline]').forEach(b => b.onclick = async () => { b.disabled = true; const r = await kjFn({ action: 'mass_line', id: J(b).id, idx: +b.dataset.msline, team: b.dataset.team });
+    if (r.error) { b.disabled = false; return alert(r.error); } await refresh(); poToast(`생산 라인(${TEAM_LABEL[b.dataset.team]}) '대본' 단계에 카드로 넣었습니다.`); renderOpsMass(body); });
+  body.querySelectorAll('[data-msretry]').forEach(b => b.onclick = async () => { await kjFn({ action: 'mass_retry', id: J(b).id }); setTimeout(() => renderOpsMass(body), 800); });
+  body.querySelectorAll('[data-msdrop]').forEach(b => b.onclick = async () => { await sb.from('kj_mass_jobs').update({ status: 'dropped', updated_at: new Date().toISOString() }).eq('id', J(b).id); renderOpsMass(body); });
+  body.querySelector('#ms-fromtext').onclick = () => { const ls = body.querySelector('#ms-lines').value.split('\n').map(s => s.trim()).filter(Boolean); if (!ls.length) return;
+    kjMassModal(ls.map(l => /^https?:\/\//.test(l) ? { url: l.split('?')[0], label: l.slice(0, 60) } : { text: l, title: l.slice(0, 60), label: l.slice(0, 60) })); };
+  body.querySelector('#ms-fromanal').onclick = () => { opsTab = 'anal'; try { localStorage.setItem('kj_opstab', 'anal'); } catch (e) {} renderVideo(); };
+  body.querySelector('#ms-fromcand').onclick = async () => {
+    const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
+    const bg = document.createElement('div'); bg.className = 'aiw-bg';
+    bg.innerHTML = `<div class="aiw"><h3>📥 콘텐츠 후보에서 고르기</h3><div class="ms-pick">${(cs || []).map(c => `<label><input type="checkbox" value="${c.id}">${c.thumb ? `<img src="${esc(c.thumb)}">` : ''}<span>${esc(c.title || '(미리보기 준비 중)')}<br><small>${esc(c.account || '')}</small></span></label>`).join('') || '<p class="lede">새 후보가 없습니다.</p>'}</div>
+      <div class="row"><button class="btn sm" id="pk-go">다음</button><button class="chip" id="pk-x">닫기</button></div></div>`;
+    document.body.appendChild(bg); const close = () => bg.remove(); bg.querySelector('#pk-x').onclick = close;
+    bg.querySelector('#pk-go').onclick = () => { const ids = [...bg.querySelectorAll('input:checked')].map(i => i.value); if (!ids.length) return; close();
+      kjMassModal(ids.map(id => { const c = cs.find(x => x.id === id); return { cand_id: id, label: c.title || c.account || '후보' }; })); };
+  };
+  clearTimeout(msTimer);
+  if ((jobs || []).some(j => ['queued', 'writing'].includes(j.status))) msTimer = setTimeout(() => { if (opsTab === 'mass' && !$('#view-video').classList.contains('hide') && document.body.contains(body)) renderOpsMass(body); }, 6000);
+}
+
+
 /* ---------- v52 🧩 형식 — 릴스 형식 분류 (10-25 대표 요청) ----------
    kj_formats 표(Supabase) + storage 'formats' 버킷(예시 캡처). 처음 내용은 숏폼 대본 스킬 §3·0807 회의·260907 레퍼런스 분석·숏폼기준점 v1.0에서 정리. */
 let FMT = [], fmtLoaded = false, fmtGrp = '', fmtQ = '', fmtBusy = false;
@@ -1664,7 +1941,7 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ renderFormats(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
+function render(){ renderCands(); renderFormats(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
 
 /* ---------------- 공용 숫자 도우미 ---------------- */
 const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
