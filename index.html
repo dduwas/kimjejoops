@@ -453,6 +453,22 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
   .col.wide .colbody{grid-template-columns:1fr}
   .cell{min-height:74px}
 }
+.nbadge{display:inline-block;min-width:17px;height:17px;line-height:17px;padding:0 5px;margin-left:5px;border-radius:9px;background:#D9480F;color:#fff;font-size:11px;font-weight:800;text-align:center}
+.nbadge.hide{display:none}
+.rv-t{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border:1px solid var(--line);border-radius:var(--r)}
+.rv-t th{background:var(--wash);text-align:left;padding:8px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.rv-t td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.rv-t td.fn{font-weight:700;word-break:break-all}
+.rv-t select{max-width:260px;font-size:12.5px;padding:4px}
+.rv-ok{color:#2B8A3E;font-weight:800}.rv-bad{color:#D9480F;font-weight:800}.rv-warn{color:#E67700;font-size:12px}
+.rv-sub{color:var(--muted);font-size:12px;margin-top:3px}
+.vd-lock{max-width:380px;margin:40px auto;border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:28px 26px;text-align:center}
+.vd-lock h3{margin:0 0 6px}.vd-lock input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;margin:14px 0 10px;font-size:15px}
+.vd-msg{color:#D9480F;font-size:13px;min-height:18px}
+.vd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin:14px 0 24px}
+.vd-card{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:16px}
+.vd-card b{display:block;margin-bottom:6px}.vd-card span{color:var(--muted);font-size:12.5px;line-height:1.6}
+@media (max-width:700px){.rv-t thead{display:none}.rv-t tr{display:block;border-bottom:1px solid var(--line);padding:8px 0}.rv-t td{display:block;border:0;padding:3px 10px}}
 </style>
 </head>
 <body>
@@ -509,12 +525,14 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v42</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v43</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
         <button data-view="insight">성과·정리</button>
         <button data-view="posts">글쓰기</button>
+        <button data-view="review">최종검수<span class="nbadge hide" id="rv-badge"></span></button>
+        <button data-view="video">🎬 영상편집</button>
         <button data-view="drops">드랍</button>
         <button data-view="team" class="admin-only">팀 관리</button>
         <button data-view="settings" class="admin-only">설정</button>
@@ -655,6 +673,25 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
     <p class="lede">최근 30일 게시물 성과와, 14일 넘게 움직이지 않은 카드를 모아 봅니다.
       성과는 매일 아침 6:30 인스타·유튜브에서 자동으로 채워집니다.</p>
     <div class="ins" id="kj-ins"></div>
+  </section>
+
+  <section id="view-review" class="hide wrap">
+    <h3>최종검수</h3>
+    <p class="lede">NAS <b>02. 영상자료 › 3. 인스타그램</b> 폴더에 새 영상이 올라오면 30분 안에 여기 자동으로 올라옵니다.
+      파일명 앞 날짜와 제목으로 카드를 찾아 붙이고, 그 카드는 <b>검수·승인</b> 칸으로 옮겨집니다.
+      카드 담당자(또는 관리자)가 <b>제목·날짜·파일명</b>을 확인하고 OK를 누르면 문제없음 처리되고 카드가 <b>게시예정</b>으로 넘어갑니다. 반려하면 사유와 함께 편집으로 돌아갑니다.</p>
+    <div class="toolbar" style="padding:0 0 10px">
+      <button class="chip rv-f on" data-rvf="pending">검수 대기</button>
+      <button class="chip rv-f" data-rvf="rejected">반려</button>
+      <button class="chip rv-f" data-rvf="ok">OK 완료</button>
+      <button class="chip rv-f" data-rvf="all">전체 파일</button>
+      <span class="count" id="rv-count"></span>
+    </div>
+    <div id="rv-list"></div>
+  </section>
+
+  <section id="view-video" class="hide wrap">
+    <div id="vd-root"></div>
   </section>
 
   <section id="view-drops" class="hide wrap">
@@ -855,6 +892,7 @@ async function refresh(){
   cards = c.data || []; team = p.data || []; moats = m.data || []; channels = ch.data || [];
   todos = td.data || []; meetings = mt.data || []; posts = po.data || [];
   await loadSettings();
+  await loadReview();
   render();
 }
 
@@ -865,10 +903,119 @@ $$('nav button').forEach(b => b.onclick = async () => {
   }
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','schedule','insight','posts','todo','meetings','drops','team','settings'].forEach(v =>
+  ['board','schedule','insight','posts','todo','meetings','review','video','drops','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
+
+/* ---------------- 최종검수 (v43) ---------------- */
+let reviewFiles = [], rvFilter = 'pending';
+async function loadReview(){
+  const { data, error } = await sb.from('review_files').select('*').order('mtime', { ascending:false }).limit(400);
+  reviewFiles = error ? [] : (data || []);
+}
+const rvStatusKo = { pending:'검수 대기', ok:'OK', rejected:'반려', baseline:'기존 파일' };
+const fmtMB = n => n ? (n / 1048576 >= 1024 ? (n / 1073741824).toFixed(1) + 'GB' : Math.round(n / 1048576) + 'MB') : '';
+const fmtKst = t => t ? new Date(t).toLocaleString('ko-KR', { timeZone:'Asia/Seoul', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+function canReview(r){
+  if (!profile) return false;
+  if (['master','admin','lead'].includes(profile.role)) return true;
+  const c = cards.find(x => x.id === r.content_id);
+  return !!(c && (c.owner_ids || []).includes(me.id));
+}
+function renderReview(){
+  const pend = reviewFiles.filter(r => r.kind === 'master' && r.status === 'pending').length;
+  const bd = $('#rv-badge'); if (bd) { bd.textContent = pend; bd.classList.toggle('hide', !pend); }
+  const box = $('#rv-list'); if (!box || $('#view-review').classList.contains('hide')) return;
+  let list = reviewFiles.filter(r => r.kind === 'master');
+  if (rvFilter !== 'all') list = list.filter(r => r.status === rvFilter);
+  $('#rv-count').textContent = list.length + '건';
+  if (!list.length) { box.innerHTML = `<p class="lede">${rvFilter === 'pending' ? '검수 대기 중인 영상이 없습니다. NAS 인스타그램 폴더에 새 파일이 올라오면 여기 뜹니다.' : '해당 항목이 없습니다.'}</p>`; return; }
+  const opts = cards.filter(c => c.stage !== DROP).sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+  box.innerHTML = `<table class="rv-t"><thead><tr><th>파일 (올라온 날짜)</th><th>연결된 카드</th><th>확인할 것</th><th>검수</th></tr></thead><tbody>${list.map(r => {
+    const c = cards.find(x => x.id === r.content_id);
+    const clean = reviewFiles.filter(x => x.master_id === r.id);
+    const warns = [];
+    if (!c) warns.push('카드가 연결되지 않았습니다 — 오른쪽에서 골라 주세요');
+    else {
+      if (r.match_score != null && r.match_score < 0.7) warns.push('파일 제목과 카드 제목이 조금 다릅니다');
+      const pd = c.publish_date;
+      if (r.file_date && pd && Math.abs(Date.parse(r.file_date) - Date.parse(pd)) > 3 * 864e5) warns.push(`파일 날짜 ${r.file_date} ↔ 카드 게시일 ${pd}`);
+      if (!pd) warns.push('카드 게시일이 비어 있습니다');
+    }
+    if (!clean.length) warns.push('클린본이 아직 없습니다');
+    const can = canReview(r) && r.status !== 'baseline';
+    return `<tr>
+      <td class="fn">${esc(r.filename)}<div class="rv-sub">파일 날짜 ${esc(r.file_date || '-')} · NAS 올라옴 ${esc(fmtKst(r.mtime))} · ${fmtMB(r.size)}${clean.length ? ' · 클린본 ✓' : ''}</div>
+        <div class="rv-sub">${esc(r.path)}</div></td>
+      <td><select data-rvlink="${r.id}" ${r.status === 'pending' ? '' : 'disabled'}><option value="">— 카드 선택 —</option>${(c && !opts.includes(c) ? [c] : []).concat(opts).map(o => `<option value="${o.id}" ${o.id === r.content_id ? 'selected' : ''}>[${esc(TEAM_LABEL[o.team_tag] || o.team_tag || '')}] ${esc(o.title)} · ${esc(o.stage)}</option>`).join('')}</select>
+        ${c ? `<div class="rv-sub">담당 ${esc(ownerNames(c.owner_ids))}${c.publish_date ? ' · 게시일 ' + esc(c.publish_date) : ''} · <a href="#" data-rvopen="${c.id}">카드 열기</a></div>` : ''}</td>
+      <td>${warns.length ? warns.map(w => `<div class="rv-warn">⚠ ${esc(w)}</div>`).join('') : '<span class="rv-ok">제목·날짜 일치</span>'}
+        ${r.note ? `<div class="rv-sub">메모: ${esc(r.note)}</div>` : ''}</td>
+      <td>${r.status === 'pending'
+        ? (can ? `<button class="btn sm" data-rvok="${r.id}">OK</button> <button class="btn sm danger" data-rvno="${r.id}">반려</button>` : '<span class="rv-sub">카드 담당자·관리자만 검수</span>')
+        : `<span class="${r.status === 'ok' ? 'rv-ok' : r.status === 'rejected' ? 'rv-bad' : ''}">${rvStatusKo[r.status]}</span>${r.reviewed_by ? `<div class="rv-sub">${esc(nameOf(r.reviewed_by))} · ${esc(fmtKst(r.reviewed_at))}</div>` : ''}`}</td></tr>`;
+  }).join('')}</tbody></table>`;
+  box.querySelectorAll('[data-rvlink]').forEach(s => s.onchange = async () => {
+    const { data, error } = await sb.rpc('review_link', { p_id: s.dataset.rvlink, p_content: s.value || null });
+    if (error || !data?.ok) return alert((data && data.msg) || error?.message || '연결 실패');
+    await refresh();
+  });
+  box.querySelectorAll('[data-rvopen]').forEach(a => a.onclick = e => { e.preventDefault(); const c = cards.find(x => x.id === a.dataset.rvopen); if (c) openCard(c); });
+  const decide = async (id, ok) => {
+    let note = null;
+    if (!ok) { note = prompt('반려 사유를 적어 주세요 (편집 담당자에게 카드 다음 액션으로 전달됩니다)'); if (note === null) return; }
+    const { data, error } = await sb.rpc('review_decide', { p_id: id, p_ok: ok, p_note: note });
+    if (error || !data?.ok) return alert((data && data.msg) || error?.message || '처리 실패');
+    await refresh();
+  };
+  box.querySelectorAll('[data-rvok]').forEach(b => b.onclick = () => decide(b.dataset.rvok, true));
+  box.querySelectorAll('[data-rvno]').forEach(b => b.onclick = () => decide(b.dataset.rvno, false));
+}
+document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.rv-f').forEach(x => x.classList.remove('on')); b.classList.add('on'); rvFilter = b.dataset.rvf; renderReview();
+});
+
+/* ---------------- 영상편집 (v43, 입장 비밀번호) ---------------- */
+let vdOpen = null;
+async function renderVideo(){
+  const root = $('#vd-root'); if (!root || $('#view-video').classList.contains('hide')) return;
+  if (vdOpen === null) { const { data } = await sb.rpc('gate_status', { p_gate: 'video' }); vdOpen = !!data; }
+  if (!vdOpen) {
+    root.innerHTML = `<div class="vd-lock"><h3>🎬 AI 영상편집</h3><p class="lede" style="margin:0">허가된 사람만 들어갈 수 있습니다.<br>입장 비밀번호를 넣어 주세요.</p>
+      <form id="vd-form" autocomplete="off"><input type="password" id="vd-pw" placeholder="입장 비밀번호" autocomplete="new-password">
+      <button class="btn" style="width:100%">들어가기</button></form><div class="vd-msg" id="vd-msg"></div></div>`;
+    $('#vd-form').onsubmit = async e => {
+      e.preventDefault();
+      const { data, error } = await sb.rpc('gate_enter', { p_gate: 'video', p_pw: $('#vd-pw').value });
+      $('#vd-pw').value = '';
+      if (error || !data?.ok) { $('#vd-msg').textContent = (data && data.msg) || error?.message || '확인 실패'; return; }
+      vdOpen = true; renderVideo();
+    };
+    setTimeout(() => $('#vd-pw')?.focus(), 0);
+    return;
+  }
+  root.innerHTML = `<h3>🎬 AI 영상편집 <button class="btn sm ghost" id="vd-lockbtn" style="margin-left:8px">잠그기</button></h3>
+    <p class="lede">원본을 고르고 작업을 요청하면 AI 컴퓨터가 편집해서 NAS <b>김제조_영상자동화 › 04_검수대기</b>에 올립니다. 발행은 검수·승인 후에만 합니다. <b>지금은 페이지만 만들어 둔 단계입니다(준비 중).</b></p>
+    <div class="vd-grid">
+      <div class="vd-card"><b>① 원본 고르기</b><span>NAS 01_원본·02. 영상자료에서 촬영본 선택. 카드와 연결.</span></div>
+      <div class="vd-card"><b>② 작업 요청</b><span>A 컷편집(1.1배속·-14LUFS) · D 풀편집(자막·효과음·이미지) · B/C 영어판(더빙·립싱크)</span></div>
+      <div class="vd-card"><b>③ 진행 현황</b><span>대기 → 작업중 → 검수대기. 밤 일괄 작업 결과도 여기서.</span></div>
+      <div class="vd-card"><b>④ 검수·발행</b><span>결과는 '최종검수' 목록으로 넘어가 담당자 OK 후 게시예정.</span></div>
+    </div>
+    ${profile?.role === 'master' ? `<details class="vd-card" style="max-width:420px"><summary style="cursor:pointer;font-weight:800">입장 비밀번호 바꾸기 (대표만)</summary>
+      <form id="vd-set" autocomplete="off" style="margin-top:10px"><input type="password" id="vd-new" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <button class="btn sm" style="margin-top:8px">바꾸기</button> <span class="vd-msg" id="vd-setmsg"></span></form>
+      <p class="rv-sub">바꾸면 다른 사람은 다시 입력해야 들어올 수 있습니다.</p></details>` : ''}`;
+  $('#vd-lockbtn').onclick = async () => { await sb.rpc('gate_lock', { p_gate: 'video' }); vdOpen = false; renderVideo(); };
+  const f = $('#vd-set');
+  if (f) f.onsubmit = async e => {
+    e.preventDefault();
+    const { data, error } = await sb.rpc('gate_set', { p_gate: 'video', p_pw: $('#vd-new').value });
+    $('#vd-new').value = '';
+    $('#vd-setmsg').textContent = (error || !data?.ok) ? ((data && data.msg) || error?.message || '실패') : '바뀌었습니다';
+  };
+}
 
 /* ---------------- 필터 ---------------- */
 $$('.bd-view').forEach(b => b.onclick = () => {
@@ -1105,7 +1252,7 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
+function render(){ renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
 
 /* ---------------- 공용 숫자 도우미 ---------------- */
 const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
