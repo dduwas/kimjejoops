@@ -141,6 +141,7 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .aiw textarea{min-height:70px}.aiw .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
 .aiw table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}.aiw td,.aiw th{border:1px solid #D9D9D9;padding:7px 9px;vertical-align:top;white-space:pre-wrap}.aiw th{background:#F2F2F2;text-align:left}
 .aiw .msg{font-size:13px;margin-top:10px;padding:8px 10px;border-radius:8px;background:#F5F8FC}
+.aiw .aiw-sec{border:1px solid var(--line);border-radius:10px;padding:4px 14px 14px;margin-top:12px;background:#FAFBFD}.aiw .aiw-h{font-weight:800;font-size:14px;margin:10px 0 2px}.aiw .aiw-hint{font-weight:400;color:var(--muted);font-size:12px}.aiw .aiw-fmts{display:flex;flex-wrap:wrap;gap:6px}.aiw select{width:100%}
 .scbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 24px 0;padding:9px 12px;background:#FFF7E6;border:1px solid #F5D08A;border-radius:10px;font-size:13px}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
 .ttag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-right:6px;vertical-align:1px;line-height:18px}.ttag-w{background:#E6F4EA;color:#1E7B3A}.ttag-s{background:#E8F0FE;color:#1A56C4}.ttag-e{background:#F1F1EF;color:#787774}
@@ -547,7 +548,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v46</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v47</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
@@ -1327,48 +1328,84 @@ $$('[data-scsave]').forEach(b => b.onclick = () => {   // v41 칸(탭)별 저장
   scriptDownload(list, `${TEAM_LABEL[lineOf()]} 라인 ${st.length > 1 ? '전체' : nm + ' 칸'}`);
 });
 
-/* ---------- v41 🤖 AI 대본 쓰기 (대본 저장과 별개) ----------
-   서버 함수 write-script: 내용 레퍼런스(링크/붙여넣기) → 내용 카피, 형식 레퍼런스(카드 대본/붙여넣기) → 형식 적용.
-   대본 쓰는 규칙은 DB script_skills(버전)에 있어 함수 수정 없이 키울 수 있음. 결과는 script_jobs 기록, 카드에 넣는 건 사람이 확인 후. */
+/* ---------- v47 🤖 AI 대본 쓰기 (대본 저장과 별개) ----------
+   서버 함수 write-script: 내용 레퍼런스(링크/붙여넣기) → 내용 카피, 형식(유형 + 붙여넣기/카드 대본) → 형식 적용.
+   형식 유형은 김제조 숏폼 대본 스킬(v1, 10-25)의 '잘 되는 포맷'. 결과는 script_jobs 기록, 카드에 넣는 건 사람이 확인 후.
+   v47: 카드 편집창에서 열었을 때 '카드 대본에 넣기'가 편집창 대본 칸도 채움(편집창 저장 시 빈 대본으로 덮어쓰던 문제 수정). */
+const AI_FMT = [
+  { k:'', label:'기본 구조', desc:'내 문제 → 충격적인 사실 → 이유(근거·숫자) → 행동', re:null },
+  { k:'vs', label:'A vs B 판정형', desc:'제품·선택지 → 판정 → 근거 한 줄(숫자) 3박자 반복. 예: 다이소 vs 올영, 혈당 과일 vs 과일', re:/vs|VS|대결|비교/ },
+  { k:'tier', label:'티어리스트', desc:'S~D 등급으로 나눠 등급마다 이유 한 줄. 예: 진통제·피로회복제 티어리스트', re:/티어/ },
+  { k:'rank', label:'TOP5·랭킹', desc:'N가지·순위 호명. 순서를 섞어 호명해 끝까지 보게. 예: 번아웃 신호 5가지, 자기 전 별로인 영양제 TOP5', re:/TOP|top|가지|랭킹|순위|베스트/ },
+  { k:'eval', label:'생활 평가형', desc:'생활 습관·자세를 하나씩 점수/평가. 예: 잠자는 포지션 평가', re:/평가|점수/ }
+];
 async function aiScript(card){
   if (!card) return;
-  const fmtCards = cards.filter(c => c.script && c.id !== card.id).sort((a, b) => (b.stage === DONE) - (a.stage === DONE) || (b.views || 0) - (a.views || 0)).slice(0, 80);
+  const withScript = cards.filter(c => c.script && c.id !== card.id).sort((a, b) => (b.views || 0) - (a.views || 0));
+  let fmtK = '';
   const bg = document.createElement('div'); bg.className = 'aiw-bg';
   bg.innerHTML = `<div class="aiw"><h3>🤖 AI 대본 쓰기 — ${esc(card.title)}</h3>
-    <div class="sub">내용 레퍼런스의 내용을 가져와, 형식 레퍼런스(없으면 우리 채널 기본 형식)대로 초안을 씁니다. 결과를 확인한 뒤 '카드 대본에 넣기'를 눌러야 저장됩니다.</div>
-    <label>내용 레퍼런스 링크 (카드의 레퍼런스 링크)</label><input id="aw-url" value="${esc(card.reference_url || '')}" placeholder="https://www.instagram.com/p/…">
-    <label>레퍼런스 내용 붙여넣기 (선택) — 영상 자막·캡션·기사 본문. 인스타·유튜브는 링크에서 캡션만 읽히므로 말하는 내용은 여기 붙여 주세요</label><textarea id="aw-reftext"></textarea>
-    <label>형식 레퍼런스 (선택) — 이 대본의 장면 구성·리듬·자막 방식을 따름</label>
-    <select id="aw-fmtcard"><option value="">없음 — 우리 채널 기본 형식(같은 라인 최근 대본)</option>${fmtCards.map(c => `<option value="${c.id}">[${teamTag(c)}] ${esc(c.title)}${c.views ? ' · 조회 ' + fmtN(c.views) : ''}</option>`).join('')}</select>
-    <textarea id="aw-fmttext" placeholder="또는 따라 할 형식(다른 계정 대본 구성 등)을 붙여넣기" style="margin-top:6px"></textarea>
+    <div class="sub">① 무엇을 말할지(내용) ② 어떤 틀로 말할지(형식)를 정하면 김제조 말투로 초안을 씁니다. 결과를 보고 <b>카드 대본에 넣기</b>를 눌러야 저장됩니다.</div>
+    <div class="aiw-sec"><div class="aiw-h">① 내용 레퍼런스</div>
+      <label>링크</label><input id="aw-url" value="${esc(card.reference_url || '')}" placeholder="https://www.instagram.com/p/…">
+      <label>내용 붙여넣기 <span class="aiw-hint">영상 자막·캡션·기사 본문. 인스타·유튜브는 링크로 캡션만 읽혀서, 말하는 내용은 여기 붙여 주세요</span></label><textarea id="aw-reftext"></textarea>
+    </div>
+    <div class="aiw-sec"><div class="aiw-h">② 형식 레퍼런스 <span class="aiw-hint">(선택)</span></div>
+      <label>따라 할 형식 붙여넣기 <span class="aiw-hint">다른 계정 대본·장면 구성. 여기 쓰면 아래 선택보다 우선</span></label>
+      <textarea id="aw-fmttext" placeholder="예: 0~2초 결론 먼저 → 1번 … → 2번 … → 마무리 질문"></textarea>
+      <label>또는 형식 고르기</label>
+      <div class="aiw-fmts">${AI_FMT.map(f => `<button type="button" class="chip ${f.k === fmtK ? 'on' : ''}" data-awfmt="${f.k}">${esc(f.label)}</button>`).join('')}</div>
+      <div class="aiw-hint" id="aw-fmtdesc" style="margin:6px 0 0"></div>
+      <label>본보기 대본 <span class="aiw-hint">고른 형식의 우리 대본(조회수 순). 장면 구성·리듬·자막 방식을 따라 함</span></label>
+      <select id="aw-fmtcard"></select>
+    </div>
     <label>추가 지시 (선택)</label><input id="aw-note" placeholder="예: 40초 이내, 네/아니요 형식, TTS 질문 + 약사 답">
     <div class="row"><button class="btn sm" id="aw-go">✍️ 초안 쓰기</button><button class="chip" id="aw-x">닫기</button><span id="aw-st" style="font-size:12.5px;color:var(--muted)"></span></div>
     <div id="aw-out"></div></div>`;
   document.body.appendChild(bg);
+  const $b = s => bg.querySelector(s);
+  const fillFmt = () => {
+    const f = AI_FMT.find(x => x.k === fmtK) || AI_FMT[0];
+    bg.querySelectorAll('[data-awfmt]').forEach(b => b.classList.toggle('on', b.dataset.awfmt === fmtK));
+    $b('#aw-fmtdesc').textContent = '틀: ' + f.desc;
+    const list = (f.re ? withScript.filter(c => f.re.test(c.title || '')) : withScript).slice(0, 60);
+    $b('#aw-fmtcard').innerHTML = `<option value="">${f.re ? '본보기 없이 이 형식으로' : '없음 — 같은 라인 최근 대본 형식'}</option>` +
+      list.map((c, i) => `<option value="${c.id}" ${f.re && i === 0 ? 'selected' : ''}>[${teamTag(c)}] ${esc(c.title)}${c.views ? ' · 조회 ' + fmtN(c.views) : ''}</option>`).join('');
+  };
+  fillFmt();
+  bg.querySelectorAll('[data-awfmt]').forEach(b => b.onclick = () => { fmtK = b.dataset.awfmt; fillFmt(); });
   const close = () => bg.remove();
-  bg.querySelector('#aw-x').onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
-  const call = async (extra) => {
+  $b('#aw-x').onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
+  const call = async () => {
     const { data: { session } } = await sb.auth.getSession();
+    const f = AI_FMT.find(x => x.k === fmtK) || AI_FMT[0];
     const r = await fetch(String(window.SUPABASE_URL).replace(/\/+$/, '') + '/functions/v1/write-script', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token, apikey: window.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({ card_id: card.id, ref_url: bg.querySelector('#aw-url').value.trim(), ref_text: bg.querySelector('#aw-reftext').value, format_card_id: bg.querySelector('#aw-fmtcard').value || null, format_text: bg.querySelector('#aw-fmttext').value, note: bg.querySelector('#aw-note').value, ...(extra || {}) }) });
+      body: JSON.stringify({ card_id: card.id, ref_url: $b('#aw-url').value.trim(), ref_text: $b('#aw-reftext').value, format_text: $b('#aw-fmttext').value,
+        format_card_id: $b('#aw-fmttext').value.trim() ? null : ($b('#aw-fmtcard').value || null), format_type: fmtK ? `${f.label} — ${f.desc}` : '', note: $b('#aw-note').value }) });
     return r.json();
   };
-  bg.querySelector('#aw-go').onclick = async () => {
-    const st = bg.querySelector('#aw-st'), out = bg.querySelector('#aw-out'), go = bg.querySelector('#aw-go');
+  $b('#aw-go').onclick = async () => {
+    const st = $b('#aw-st'), out = $b('#aw-out'), go = $b('#aw-go');
     go.disabled = true; st.textContent = '쓰는 중… (20~60초)'; out.innerHTML = '';
     try {
       const j = await call();
       if (j.error) { out.innerHTML = `<div class="msg">⚠ ${esc(j.error)}</div>`; return; }
-      if (j.need_key) { out.innerHTML = `<div class="msg">⚠ AI 키가 아직 설정되지 않았습니다(대표가 Supabase 설정에 ANTHROPIC_API_KEY 입력). 아래는 AI에게 보낼 준비가 된 내용입니다.<br>내용: ${esc(j.ref_how || '레퍼런스 없음')} · 형식: ${esc(j.fmt_how || '')} · 스킬 v${j.skill_version}</div><textarea style="min-height:180px;margin-top:8px" readonly>${esc(j.prompt || '')}</textarea>`; return; }
-      out.innerHTML = `<div class="msg">내용: ${esc(j.ref_how || '-')} · 형식: ${esc(j.fmt_how || '-')} · 스킬 v${j.skill_version} · ${esc(j.model)}${j.hook ? `<br><b>훅:</b> ${esc(j.hook)}` : ''}${j.notes ? `<br><b>메모:</b> ${esc(j.notes)}` : ''}</div>
+      if (j.need_key) { out.innerHTML = `<div class="msg">⚠ AI 키가 아직 설정되지 않았습니다.</div>`; return; }
+      out.innerHTML = `<div class="msg">내용: ${esc(j.ref_how || '-')} · 형식: ${esc(j.fmt_how || '-')} · 스킬 v${j.skill_version}${j.hook ? `<br><b>훅:</b> ${esc(j.hook)}` : ''}${j.notes ? `<br><b>메모:</b> ${esc(j.notes)}` : ''}</div>
         <table><tr><th style="width:42%">장면 설명</th><th>대사/자막</th></tr>${(j.rows || []).map(r => `<tr><td>${esc(r.scene || '')}</td><td>${esc(r.line || '')}</td></tr>`).join('')}</table>
-        <div class="row"><button class="btn sm" id="aw-apply">카드 대본에 넣기</button><span style="font-size:12.5px;color:var(--muted)">${card.script ? '지금 대본은 기록(script_jobs)에 남기고 바꿉니다' : ''}</span></div>`;
-      out.querySelector('#aw-apply').onclick = async () => {
-        if (card.script && !confirm('카드에 있는 대본·메모를 이 초안으로 바꿉니다. (이전 대본은 AI 작업 기록에 남습니다)')) return;
-        const { error } = await sb.from('contents').update({ script: j.script }).eq('id', card.id);
-        if (error) return alert(cleanErr(error.message));
+        <div class="row"><button class="btn sm" id="aw-apply">카드 대본에 넣기</button><button class="chip" id="aw-again">다시 쓰기</button><span style="font-size:12.5px;color:var(--muted)">${card.script ? '지금 대본은 AI 작업 기록에 남기고 바꿉니다' : ''}</span></div>`;
+      out.querySelector('#aw-again').onclick = () => $b('#aw-go').click();
+      out.querySelector('#aw-apply').onclick = async e => {
+        const cur = cards.find(x => x.id === card.id) || card;
+        if (cur.script && !confirm('카드에 있는 대본·메모를 이 초안으로 바꿉니다. (이전 대본은 AI 작업 기록에 남습니다)')) return;
+        e.target.disabled = true;
+        const { data: upd, error } = await sb.from('contents').update({ script: j.script }).eq('id', card.id).select('id, script');
+        if (error) { e.target.disabled = false; return alert(cleanErr(error.message)); }
+        if (!upd || !upd.length || upd[0].script !== j.script) { e.target.disabled = false; return alert('저장되지 않았습니다(권한 확인 필요). 다시 시도하거나 대표에게 알려 주세요.'); }
         if (j.job_id) await sb.from('script_jobs').update({ applied_at: new Date().toISOString() }).eq('id', j.job_id);
-        close(); await refresh(); poToast('AI 초안을 카드 대본에 넣었습니다. 📝 대본 저장으로 docx를 받을 수 있습니다.', 3500);
+        const fs = document.getElementById('f-script');   // 카드 편집창이 열려 있으면 그 칸도 같은 대본으로(편집창 저장 때 덮어쓰기 방지)
+        if (fs) { fs.value = j.script; fs.dispatchEvent(new Event('input', { bubbles: true })); }
+        close(); await refresh(); poToast(fs ? 'AI 초안을 카드 대본에 저장했고, 편집창 대본 칸에도 넣었습니다.' : 'AI 초안을 카드 대본에 넣었습니다. 📝 대본 저장으로 docx를 받을 수 있습니다.', 3500);
       };
     } catch (err) { out.innerHTML = `<div class="msg">⚠ ${esc(err.message || String(err))}</div>`; }
     finally { go.disabled = false; st.textContent = ''; }
