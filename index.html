@@ -85,6 +85,13 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .ops-steps{counter-reset:s;list-style:none;padding:0;margin:8px 0 18px}
 .ops-steps li{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:10px 14px;margin-bottom:8px;font-size:13px}
 .ops-steps li b{margin-right:6px}.ops-steps li .st{float:right;font-size:12px;font-weight:800}
+.cm-card{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:12px 14px;margin-bottom:10px}
+.cm-q{margin:6px 0 8px;font-size:14px;line-height:1.55}
+.cm-rec{background:#FFF4E6;border-radius:8px;padding:9px 11px;font-size:13.5px;line-height:1.55}
+.cm-tag{display:inline-block;font-size:11px;font-weight:800;color:#E8590C;margin-right:4px}
+.cm-act{display:flex;gap:6px;margin:8px 0}
+.cm-my{display:flex;gap:6px;align-items:flex-start}.cm-my textarea{flex:1;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit;font-size:13.5px;resize:vertical}
+.cm-done{color:#2B8A3E;font-weight:700;font-size:13px}
 .hright{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:#A9C4EA}
 .hright b{color:#fff;font-weight:600}
 .linkbtn{background:transparent;border:0;color:#A9C4EA;text-decoration:underline;font-size:13px;padding:0}
@@ -540,7 +547,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v44</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v45</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
@@ -993,7 +1000,7 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
 
 /* ---------------- 운영관리 (v44, 입장 비밀번호) ---------------- */
 // 비밀번호 통과(gate 'video', 12시간) 뒤 3칸: 댓글·DM / AI 영상편집 / SNS 성과
-let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views';
+let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo';
 try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
 const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
 const PF_KO = { youtube:'유튜브', instagram:'인스타', xiaohongshu:'샤오홍슈', douyin:'더우인', _summary:'요약' };
@@ -1024,7 +1031,7 @@ async function renderVideo(){
     return;
   }
   if (!opsData) { root.innerHTML = '<p class="lede">불러오는 중…</p>'; await loadOps(); }
-  const newCm = opsData.comments.filter(c => c.status === 'new').length;
+  const newCm = opsData.comments.filter(c => ['new','drafted'].includes(c.status)).length;
   root.innerHTML = `<h3>🔐 운영관리 <button class="btn sm ghost" id="vd-lockbtn" style="margin-left:8px">잠그기</button></h3>
     <div class="ops-tabs">
       <button data-opstab="comments" class="${opsTab === 'comments' ? 'on' : ''}">💬 댓글·DM${newCm ? ` <span class="nbadge">${newCm}</span>` : ''}</button>
@@ -1080,22 +1087,56 @@ function renderOpsSns(body){
 }
 function renderOpsComments(body){
   const cm = opsData.comments;
-  const step = (n, t, d, st) => `<li><b>${n}</b>${t}<span class="st" style="color:${st === '연결됨' ? '#2B8A3E' : '#E67700'}">${st}</span><div class="rv-sub">${d}</div></li>`;
-  body.innerHTML = `<p class="lede">모든 영상의 댓글과 DM을 한곳에 모아, AI가 답장 초안을 쓰고 사람이 확인해서 보냅니다. 하나씩 연결하는 중입니다.</p>
-    <ol class="ops-steps">
-      ${step('①', '인스타 릴스 댓글 모으기', '김제조 인스타(@kimjejo_pharm) 게시물 댓글을 정기적으로 가져옴 (인스타 연동 권한 확인 필요)', '준비 중')}
-      ${step('②', '유튜브 댓글 모으기', '@kimjejopharma 쇼츠·롱폼 댓글 (읽기는 지금 키로 가능)', '준비 중')}
-      ${step('③', 'AI 답장 초안', '김제조 말투·규제 기준(제품 추천 금지 등)으로 초안 작성, 키워드 댓글은 자료 링크 자동 매칭', '준비 중')}
-      ${step('④', '승인 후 답장 보내기', '여기서 확인·수정 → 보내기 (보내기는 사람만)', '준비 중')}
-      ${step('⑤', '인스타 DM', '메시지 권한(instagram_manage_messages) 승인이 필요 — 대표 계정 연결 후 진행', '준비 중')}
-    </ol>
-    <h4 style="margin:10px 0">받은 댓글·DM <span class="count">${cm.length}건</span></h4>
-    ${cm.length ? `<table class="rv-t"><thead><tr><th>채널·게시물</th><th>작성자·내용</th><th>답장</th><th>상태</th></tr></thead><tbody>${cm.map(c => `<tr>
-      <td>${esc(PF_KO[c.platform] || c.platform)} ${c.kind === 'dm' ? 'DM' : ''}<div class="rv-sub">${esc(c.post_title || '')}</div></td>
-      <td><b>${esc(c.author || '')}</b> <span class="rv-sub">${esc(fmtKst(c.created_at))}</span><div>${esc(c.text || '')}</div></td>
-      <td>${esc(c.replied_text || c.reply_draft || '')}</td><td>${esc({ new:'새 댓글', drafted:'초안', replied:'답장함', hidden:'숨김', skip:'건너뜀' }[c.status] || c.status)}</td></tr>`).join('')}</tbody></table>`
-      : '<p class="lede">아직 연결 전이라 비어 있습니다.</p>'}`;
+  const ACC = [
+    { k:'all', label:'전체', on:true },
+    { k:'youtube', label:'유튜브 @kimjejopharma', on:true },
+    { k:'instagram', label:'인스타 @kimjejo_pharma', on:true, warn:'댓글 읽기 권한이 아직 없어 0건 — 인스타 연동에 댓글 권한 추가 필요' },
+    { k:'instagram_global', label:'인스타 @jejo.rx', on:false, warn:'계정 연동 전' },
+    { k:'xiaohongshu', label:'샤오홍슈', on:false, warn:'API 없음 — 장희원 사원 휴대폰 운영' },
+    { k:'douyin', label:'더우인', on:false, warn:'API 없음 — 장희원 사원 휴대폰 운영' }
+  ];
+  const ST = { todo:['new','drafted'], sending:['sending'], replied:['replied'], skip:['skip','hidden'], all:null };
+  const STL = { todo:'답장 필요', sending:'보내는 중', replied:'답장 완료', skip:'건너뜀', all:'전체' };
+  const accOf = c => c.platform;
+  const inAcc = c => opsCmAcc === 'all' || accOf(c) === opsCmAcc;
+  const list = cm.filter(inAcc).filter(c => !ST[opsCmSt] || ST[opsCmSt].includes(c.status));
+  const cnt = (k, st) => cm.filter(c => (k === 'all' || accOf(c) === k) && (!ST[st] || ST[st].includes(c.status))).length;
+  const curAcc = ACC.find(a => a.k === opsCmAcc) || ACC[0];
+  body.innerHTML = `<p class="lede">계정별 댓글을 30분마다 모으고 AI가 추천 답장을 붙입니다. <b>이대로 보내기</b>를 누르거나, 아래 칸에 직접 써서 <b>확인</b>을 누르면 그 댓글에 답글이 달립니다(1분 안에 AI 컴퓨터가 보냄).</p>
+    <div class="toolbar" style="padding:0 0 8px">${ACC.map(a => `<button class="chip ${opsCmAcc === a.k ? 'on' : ''}" data-cmacc="${a.k}">${esc(a.label)} <b>${a.k === 'all' || a.on ? cnt(a.k, 'todo') : '-'}</b></button>`).join('')}</div>
+    ${curAcc.warn ? `<div class="rv-warn" style="margin:0 0 10px">⚠ ${esc(curAcc.warn)}</div>` : ''}
+    <div class="toolbar" style="padding:0 0 12px">${Object.keys(STL).map(s => `<button class="chip ${opsCmSt === s ? 'on' : ''}" data-cmst="${s}">${STL[s]} ${cnt(opsCmAcc, s)}</button>`).join('')}
+      <div class="sep"></div><button class="chip" id="cm-draft">🤖 추천 답장 더 만들기</button><button class="chip" id="cm-reload">↻ 새로고침</button></div>
+    <div id="cm-list">${list.length ? list.slice(0, 120).map(c => `<div class="cm-card" data-cm="${esc(c.id)}">
+      <div class="rv-sub">${esc(PF_KO[c.platform] || c.platform)}${c.kind === 'dm' ? ' DM' : ''} · ${c.post_url ? `<a href="${esc(c.post_url)}" target="_blank" rel="noopener">${esc(c.post_title || '게시물')}</a>` : esc(c.post_title || '')} · ${esc(fmtKst(c.created_at))}</div>
+      <div class="cm-q"><b>${esc(c.author || '')}</b> ${esc(c.text || '')}</div>
+      ${c.status === 'replied' ? `<div class="cm-done">✓ 답장 완료${c.replied_text ? ': ' + esc(c.replied_text) : ''}</div>`
+      : c.status === 'sending' ? `<div class="cm-done" style="color:#E67700">⏳ 보내는 중: ${esc(c.replied_text || '')} <button class="linkbtn" data-cmundo="${esc(c.id)}">취소</button></div>`
+      : c.status === 'skip' ? `<div class="rv-sub">건너뜀 <button class="linkbtn" data-cmundo="${esc(c.id)}">되돌리기</button></div>`
+      : `${c.send_error ? `<div class="rv-warn">⚠ ${esc(c.send_error)}</div>` : ''}
+        <div class="cm-rec"><span class="cm-tag">추천 답장</span> ${c.reply_draft ? esc(c.reply_draft) : '<span class="rv-sub">아직 없음 — 🤖 추천 답장 더 만들기</span>'}</div>
+        <div class="cm-act">${c.reply_draft && !/답장 안 함/.test(c.reply_draft) ? `<button class="btn sm" data-cmsend="${esc(c.id)}">이대로 보내기</button>` : ''}<button class="btn sm ghost" data-cmskip="${esc(c.id)}">건너뛰기</button></div>
+        <div class="cm-my"><textarea rows="2" placeholder="추천 답장이 마음에 안 들면 여기에 직접 쓰고 확인" data-cmtxt="${esc(c.id)}"></textarea><button class="btn sm" data-cmmy="${esc(c.id)}">확인</button></div>`}
+    </div>`).join('') : '<p class="lede">해당하는 댓글이 없습니다.</p>'}</div>`;
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-reply', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const set = (id, patch) => { const c = opsData.comments.find(x => x.id === id); if (c) Object.assign(c, patch); renderOpsComments(body); };
+  body.querySelectorAll('[data-cmacc]').forEach(b => b.onclick = () => { opsCmAcc = b.dataset.cmacc; renderOpsComments(body); });
+  body.querySelectorAll('[data-cmst]').forEach(b => b.onclick = () => { opsCmSt = b.dataset.cmst; renderOpsComments(body); });
+  body.querySelectorAll('[data-cmsend]').forEach(b => b.onclick = async () => {
+    const c = opsData.comments.find(x => x.id === b.dataset.cmsend); if (!c) return;
+    b.disabled = true; if (await call({ action:'send', id:c.id, text:c.reply_draft })) set(c.id, { status:'sending', replied_text:c.reply_draft, send_error:null }); else b.disabled = false;
+  });
+  body.querySelectorAll('[data-cmmy]').forEach(b => b.onclick = async () => {
+    const id = b.dataset.cmmy; const t = body.querySelector(`[data-cmtxt="${CSS.escape(id)}"]`).value.trim();
+    if (!t) return alert('답장 내용을 적어 주세요.');
+    b.disabled = true; if (await call({ action:'send', id, text:t })) set(id, { status:'sending', replied_text:t, send_error:null }); else b.disabled = false;
+  });
+  body.querySelectorAll('[data-cmskip]').forEach(b => b.onclick = async () => { if (await call({ action:'skip', id:b.dataset.cmskip })) set(b.dataset.cmskip, { status:'skip' }); });
+  body.querySelectorAll('[data-cmundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.cmundo })) set(b.dataset.cmundo, { status:'drafted' }); });
+  $('#cm-draft').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…'; const d = await call({ action:'draft' }); await loadOps(); renderOpsComments(body); if (d) alert(`추천 답장 ${d.drafted || 0}개를 만들었습니다.`); };
+  $('#cm-reload').onclick = async () => { await loadOps(); renderOpsComments(body); };
 }
+
 function renderOpsVideo(body){
   body.innerHTML = `<p class="lede">원본을 고르고 작업을 요청하면 AI 컴퓨터(ChatGPT·Codex)가 편집해서 NAS <b>김제조_영상자동화 › 04_검수대기</b>에 올리고, 여기서 승인·결과를 확인합니다. 발행은 승인 후에만 합니다.</p>
     <ol class="ops-steps">
