@@ -552,6 +552,14 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 .ms-pick label{display:block}.ms-pick label>.kj-ref-inline{margin:6px 0}.ms-pick label>span:last-child{display:block}
 @media(max-width:360px){.kj-ref-inline iframe,.kj-ref-inline video{height:530px}}
 
+.kj-ref-player{width:min(490px,calc(100vw - 20px));max-width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:14px;box-shadow:0 20px 80px #0006;overflow:auto;color:var(--text,#172033);background:#fff}
+.kj-ref-player::backdrop{background:rgba(11,20,40,.65)}
+.kj-ref-head{display:flex;align-items:center;gap:12px;padding:12px 14px;position:sticky;top:0;background:#fff;z-index:1}
+.kj-ref-head b{flex:1;min-width:0;overflow-wrap:anywhere;font-size:14px}.kj-ref-head button{flex-shrink:0}
+.kj-ref-screen{background:#f4f6fa;min-height:140px;overflow-wrap:anywhere}
+.kj-ref-screen iframe,.kj-ref-screen video{display:block;width:100%;height:min(650px,calc(100dvh - 175px));min-height:240px;border:0;object-fit:contain}
+.kj-ref-note{font-size:12px;line-height:1.6;color:#64748b;padding:10px 14px;margin:0}
+
 </style>
 </head>
 <body>
@@ -608,7 +616,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v56</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v57</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1506,6 +1514,46 @@ function kjReferenceSource(raw) {
   if (/\.(?:mp4|webm|mov)$/i.test(u.pathname)) return { kind: 'video', src: u.href, provider: '영상' };
   return null;
 }
+function kjOpenProductionReference(raw, title = '레퍼런스 영상') {
+  const source = kjReferenceSource(raw);
+  const previous = document.activeElement;
+  document.querySelector('#kj-reference-player')?.close();
+  const dialog = document.createElement('dialog');
+  dialog.id = 'kj-reference-player'; dialog.className = 'kj-ref-player';
+  dialog.setAttribute('aria-labelledby', 'kj-ref-title');
+  dialog.innerHTML = `<div class="kj-ref-head"><b id="kj-ref-title">${esc(title || '레퍼런스 영상')}</b><button class="chip sm" data-ref-close autofocus aria-label="영상 닫기">닫기 ✕</button></div><div class="kj-ref-screen"></div><p class="kj-ref-note"></p>`;
+  const screen = dialog.querySelector('.kj-ref-screen'), note = dialog.querySelector('.kj-ref-note');
+  if (source) {
+    const media = document.createElement(source.kind);
+    media.src = source.src;
+    if (source.kind === 'video') {
+      media.controls = true; media.playsInline = true; media.autoplay = true;
+      media.addEventListener('error', () => { note.textContent = '영상을 불러오지 못했습니다. 원본 주소의 만료·접근 권한을 확인해 주세요.'; });
+    } else {
+      media.title = `${source.provider} 레퍼런스 영상`;
+      media.allow = 'autoplay; encrypted-media; fullscreen; picture-in-picture';
+      media.allowFullscreen = true;
+      media.referrerPolicy = 'strict-origin-when-cross-origin';
+      media.addEventListener('error', () => { note.textContent = '서비스에서 미리보기를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'; });
+    }
+    screen.appendChild(media);
+    note.textContent = source.provider === 'Instagram'
+      ? '영상 안의 ▶를 눌러 재생하세요. 비공개·삭제·임베드 제한·로그인 요구 영상은 Instagram 정책상 여기서 재생되지 않을 수 있습니다.'
+      : '이 화면에서 재생됩니다. 원본 제공자가 임베드를 제한한 영상은 재생되지 않을 수 있습니다.';
+  } else {
+    screen.textContent = '이 레퍼런스는 영상 미리보기를 지원하지 않습니다.';
+    try { const u = new URL(raw); if (['https:', 'http:'].includes(u.protocol)) { const link = document.createElement('a'); link.href = u.href; link.target = '_blank'; link.rel = 'noopener'; link.textContent = '원본 사이트 열기'; note.appendChild(link); } } catch {} 
+  }
+  dialog.querySelector('[data-ref-close]').onclick = () => dialog.close();
+  dialog.addEventListener('click', e => { if (e.target === dialog) { const r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) dialog.close(); } });
+  dialog.addEventListener('close', () => {
+    const video = dialog.querySelector('video'); if (video) { video.pause(); video.removeAttribute('src'); video.load(); }
+    dialog.querySelector('iframe')?.remove(); dialog.remove();
+    if (previous?.isConnected) previous.focus();
+  }, { once: true });
+  document.body.appendChild(dialog); dialog.showModal();
+}
+
 function kjReferenceMarkup(raw, title = '레퍼런스 영상') {
   const source = kjReferenceSource(raw);
   if (!source) return '<span class="kj-ref-inline kj-ref-unavailable">이 링크는 화면 안 재생을 지원하지 않습니다.</span>';
@@ -2028,7 +2076,7 @@ function cardHTML(c){
       ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}</div>
     ${(c.publish_url || c.reference_url) ? `<div class="cardlinks">
       ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" data-nolink="1">게시 링크</a>` : ''}
-      ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1">레퍼런스</a>` : ''}
+      ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}">레퍼런스</a>` : ''}
     </div>` : ''}
     ${doneBtn}</div>`;
 }
@@ -2212,7 +2260,7 @@ function renderBoardTable(list){
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px">${c.publish_date || '—'}</td>
       <td style="white-space:nowrap">
         ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시</a> ` : ''}
-        ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px">참고</a> ` : ''}
+        ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}">참고</a> ` : ''}
         ${c.stage === REVIEW ? `<button class="btn sm" data-tpub="${c.id}">게시 승인</button>` : ''}
       </td></tr>`;
   });
@@ -4255,6 +4303,12 @@ document.addEventListener('click', e => {
   const a = isPlainLink(e.target);
   if (a) {
     e.stopPropagation();
+    // Ordinary production-reference clicks preview here; modifiers retain native new-tab behavior.
+    if (a.hasAttribute('data-production-ref') && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
+      e.preventDefault();
+      kjOpenProductionReference(a.href, a.dataset.refTitle);
+      return;
+    }
     if (!a.target) a.target = '_blank';
     a.rel = 'noopener';
     return;                                // 기본 동작(새 탭 열기)은 그대로 둔다
