@@ -80,6 +80,12 @@ nav button:hover{color:#fff}
 /* 도구 막대 — 내 담당 / 채널 분리 */
 .toolbar{display:flex;align-items:center;gap:10px;padding:14px 24px 0;flex-wrap:wrap}
 .toolbar.mid{padding:12px 24px 0}
+.linetabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px 24px 2px}
+.ltab{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 16px;font-size:14px;cursor:pointer;color:var(--muted)}
+.ltab b{color:var(--ink)} .ltab span{font-weight:800;margin-left:5px}
+.ltab.on.ltab-w{background:#E6F4EA;border-color:#1E7B3A;color:#1E7B3A}.ltab.on.ltab-s{background:#E8F0FE;border-color:#1A56C4;color:#1A56C4}.ltab.on.ltab-e{background:#F1F1EF;border-color:#787774;color:#555}
+.ltab.on b{color:inherit}.ltab.drop{outline:2px dashed #F59E0B;outline-offset:2px;background:#FFF7E6}
+.lhint{font-size:12px;color:var(--muted);margin-left:4px}
 .toolbar.second{padding:12px 24px 15px;border-bottom:1px solid var(--line)}
 .filterlabel{font-size:11px;font-weight:800;letter-spacing:.09em;color:var(--muted);margin-right:2px}
 .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
@@ -493,7 +499,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v36</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v37</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -512,6 +518,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
   </header>
 
   <section id="view-board">
+    <div class="linetabs" id="line-tabs"></div>
     <div class="toolbar">
       <button class="btn sm" id="btn-new">+ 콘텐츠 추가</button>
       <div class="sep"></div>
@@ -531,11 +538,6 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <span class="filterlabel">담당자</span>
       <div id="owner-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
       <button class="chip reset hide" id="owner-clear">담당자 전체</button>
-    </div>
-    <div class="toolbar mid">
-      <span class="filterlabel">담당팀</span>
-      <div id="team-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
-      <button class="chip reset hide" id="team-clear">담당팀 전체</button>
     </div>
     <div class="toolbar second">
       <span class="filterlabel">채널</span>
@@ -711,7 +713,9 @@ let bdView = 'kanban';
 let stageFilter = new Set();
 let channelFilter = new Set();
 let ownerFilter = new Set();          // 생산 라인 담당자 필터
-let teamFilter = new Set();           // 생산 라인 담당팀 필터(웰·솔·기타)
+let teamFilter = new Set();           // (v37부터 안 씀 — 라인 탭으로 대체)
+// v37: 생산 라인을 웰니스박스·솔루션즈·기타로 완전히 나눔. 한 번에 한 라인만 보임(마지막 선택 기억)
+let curLine = (() => { try { return localStorage.getItem('kj_line'); } catch (_) { return null; } })();
 let scOwnerFilter = new Set();        // 게시 일정 담당자 필터
 let scChannelFilter = new Set();      // 게시 일정 채널 필터
 
@@ -907,9 +911,32 @@ function matchChannel(c, set){
 }
 
 function buildOwnerChips(){
-  const pool = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP);
+  const pool = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP && teamTag(c) === lineOf());
   buildChips('#owner-chips', '#owner-clear', ownerItems(pool), ownerFilter, renderBoard);
-  buildChips('#team-chips', '#team-clear', TEAM_TAGS.map(t => ({ key: t, label: `${TEAM_LABEL[t]} ${pool.filter(c => teamTag(c) === t).length}` })), teamFilter, renderBoard);
+  buildLineTabs();
+}
+
+function lineOf(){
+  if (!TEAM_TAGS.includes(curLine)) curLine = (me && teamByOwners([me.id])) || '솔';
+  return curLine;
+}
+function buildLineTabs(){
+  const box = $('#line-tabs'); if (!box) return; lineOf();
+  const live = c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP;
+  box.innerHTML = TEAM_TAGS.map(t => `<button class="ltab ltab-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'} ${t === curLine ? 'on' : ''}" data-line="${t}"><b>${TEAM_LABEL[t]}</b> 라인<span>${cards.filter(c => live(c) && teamTag(c) === t).length}</span></button>`).join('')
+    + `<span class="lhint">카드를 다른 라인 탭에 끌어다 놓으면 단계는 그대로 두고 그 라인으로 옮겨집니다 (우클릭 → 라인 옮기기도 가능)</span>`;
+  box.querySelectorAll('[data-line]').forEach(b => {
+    b.onclick = () => { if (b.dataset.line === curLine) return; curLine = b.dataset.line; try { localStorage.setItem('kj_line', curLine); } catch (_) {} ownerFilter.clear(); buildOwnerChips(); renderBoard(); };
+    b.ondragover = e => { if (b.dataset.line === curLine) return; e.preventDefault(); b.classList.add('drop'); };
+    b.ondragleave = () => b.classList.remove('drop');
+    b.ondrop = async e => { e.preventDefault(); b.classList.remove('drop'); await moveLine(e.dataTransfer.getData('text/plain'), b.dataset.line); };
+  });
+}
+async function moveLine(id, t){
+  const c = cards.find(x => x.id === id); if (!c || teamTag(c) === t) return;
+  const { error } = await sb.from('contents').update({ team_tag: t }).eq('id', id);
+  if (error) return alert(cleanErr(error.message));
+  await refresh(); poToast(`"${(c.title || '').slice(0, 24)}" → ${TEAM_LABEL[t]} 라인으로 옮김 (단계 '${c.stage}' 그대로)`, 2800);
 }
 
 function buildScheduleChips(){
@@ -950,7 +977,7 @@ function visible(){
     if (c.stage === PLANNED || c.stage === DONE || c.stage === DROP) return false;
     if (onlyMine && !(c.owner_ids || []).includes(me.id)) return false;
     if (!matchOwner(c, ownerFilter)) return false;
-    if (teamFilter.size && !teamFilter.has(teamTag(c))) return false;
+    if (teamTag(c) !== lineOf()) return false;
     if (!matchChannel(c, channelFilter)) return false;
     if (stageFilter.size && !stageFilter.has(colNameOf(c.stage))) return false;
     return true;
@@ -1027,13 +1054,14 @@ function buildStageChips(){
 
 function renderBoard(){
   const list = visible();
-  const live = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP).length;
-  const bits = [`제작 중 ${live}개`];
-  if (onlyMine || channelFilter.size || ownerFilter.size || teamFilter.size || stageFilter.size)
+  const inLine = cards.filter(c => teamTag(c) === lineOf());
+  const live = inLine.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP).length;
+  const bits = [`${TEAM_LABEL[curLine]} 라인 제작 중 ${live}개`];
+  if (onlyMine || channelFilter.size || ownerFilter.size || stageFilter.size)
     bits.push(`보이는 카드 ${list.length}개`);
-  bits.push(`게시 예정 ${cards.filter(c => c.stage === PLANNED).length}개`);
-  bits.push(`게시 완료 ${cards.filter(c => c.stage === DONE).length}개`);
-  const dropped = cards.filter(c => c.stage === DROP).length;
+  bits.push(`게시 예정 ${inLine.filter(c => c.stage === PLANNED).length}개`);
+  bits.push(`게시 완료 ${inLine.filter(c => c.stage === DONE).length}개`);
+  const dropped = inLine.filter(c => c.stage === DROP).length;
   if (dropped) bits.push(`드랍 ${dropped}개`);
   $('#board-count').textContent = bits.join(' · ');
 
@@ -3002,7 +3030,7 @@ function renderChannels(){
 }
 
 /* ---------------- 카드 상세 ---------------- */
-$('#btn-new').onclick = () => openCard(null);
+$('#btn-new').onclick = () => openCard(null, { team_tag: lineOf() });   // v37: 지금 보고 있는 라인에 추가
 
 function openCard(c, preset){
   const isNew = !c;
@@ -3019,7 +3047,7 @@ function openCard(c, preset){
       <div class="field"><label>단계</label><select id="f-stage">
         ${STAGES.map(s => `<option ${d.stage===s?'selected':''}>${s}</option>`).join('')}
         ${d.stage===DROP ? '<option selected>드랍</option>' : ''}</select></div>
-      <div class="field"><label>담당팀 — 담당자를 고르면 자동, 직접 바꿀 수 있음</label><select id="f-tag">
+      <div class="field"><label>생산 라인 — 바꾸면 단계는 그대로 두고 그 라인으로 옮겨짐</label><select id="f-tag">
         ${TEAM_TAGS.map(t => `<option value="${t}" ${teamTag(d)===t?'selected':''}>${TEAM_LABEL[t]}</option>`).join('')}</select></div>
     </div>
     <div class="field"><label>핵심 메시지 — 이 콘텐츠가 남길 한 줄</label>
@@ -3138,7 +3166,7 @@ function openCard(c, preset){
   $('#dr-cancel').onclick = () => ctl.discard();
 
   // 담당자 → 담당팀 자동(웰니스박스: 유현일·김호준 / 솔루션즈: 김주성·강민형·채진병). 담당팀을 직접 바꾸면 그 뒤로는 자동으로 안 바꿈
-  { let manual = !!d.team_tag && d.team_tag !== (teamByOwners(d.owner_ids) || d.team_tag);
+  { let manual = (isNew && !!d.team_tag) || (!!d.team_tag && d.team_tag !== (teamByOwners(d.owner_ids) || d.team_tag));   // v37: 라인에서 새로 만든 카드는 담당자를 골라도 라인 유지
     if ($('#f-tag')) $('#f-tag').addEventListener('change', () => { manual = true; });
     const box = $('#f-owners');
     if (box) box.addEventListener('change', () => { if (manual) return; const t = teamByOwners([...box.querySelectorAll('input:checked')].map(i => i.value)); if (t && $('#f-tag')) $('#f-tag').value = t; }); }
@@ -3302,7 +3330,7 @@ document.addEventListener('contextmenu', e => {
     + items.map((x, i) => `<button class="it ${x[2] || ''}" data-ci="${i}">${x[0]}</button>`).join('')
     + (t.kind === 'card' ? `<div class="sep"></div><div class="h">단계 이동</div>
         <div class="stg">${[...STAGES, DROP].map(s => `<button data-cs="${esc(s)}" class="${obj.stage === s ? 'on' : ''}">${esc(s)}</button>`).join('')}</div>
-        <div class="h">담당팀</div><div class="stg">${TEAM_TAGS.map(t => `<button data-ct="${t}" class="${teamTag(obj) === t ? 'on' : ''}">${TEAM_LABEL[t]}</button>`).join('')}</div>
+        <div class="h">라인 옮기기 (단계 그대로)</div><div class="stg">${TEAM_TAGS.map(t => `<button data-ct="${t}" class="${teamTag(obj) === t ? 'on' : ''}">${TEAM_LABEL[t]}</button>`).join('')}</div>
         <div class="h">게시예정일</div><input type="date" data-cd value="${obj.publish_date || ''}">` : '');
   document.body.appendChild(m);
   const W = m.offsetWidth, H = m.offsetHeight;
@@ -3316,8 +3344,7 @@ document.addEventListener('contextmenu', e => {
     await moveStage(obj.id, s);
   });
   m.querySelectorAll('[data-ct]').forEach(b => b.onclick = async () => {
-    closeCtx(); const { error } = await sb.from('contents').update({ team_tag: b.dataset.ct }).eq('id', obj.id);
-    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('담당팀: ' + TEAM_LABEL[b.dataset.ct], 2000);
+    closeCtx(); await moveLine(obj.id, b.dataset.ct);
   });
   const di = m.querySelector('[data-cd]');
   if (di) di.onchange = async () => {
