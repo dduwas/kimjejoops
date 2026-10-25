@@ -29,7 +29,7 @@
     const out = [];
     // 장면 칸이 있는 줄 바로 다음의 대사 줄은 같은 칸(원래 한 칸 안 줄바꿈)으로 합침 — 빈 줄(\n\n)이 이미 있으면 합치지 않음
     rows.forEach(r => { const p = out[out.length - 1];
-      if (p && p.scene && !r.scene && !/^(※|카메라 구도|동작|컷 ?\d)/.test(r.line) && !/\n\n/.test(p.line || '')) p.line = p.line ? p.line + '\n' + r.line : r.line;
+      if (p && p.scene && !r.scene && !/^(※|카메라 구도|동작|컷 ?\d)/.test(r.line) && !/김제조 팔로우/.test(r.line) && !/\n\n/.test(p.line || '')) p.line = p.line ? p.line + '\n' + r.line : r.line;
       else out.push(r); });
     return out;
   }
