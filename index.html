@@ -549,7 +549,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v48</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v49</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
@@ -1005,7 +1005,7 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
 let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo', opsUpSt = 'draft', opsThreadsReady = false;
 try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
 const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
-const PF_KO = { youtube:'유튜브', instagram:'인스타', xiaohongshu:'샤오홍슈', douyin:'더우인', _summary:'요약' };
+const PF_KO = { youtube:'유튜브', instagram:'인스타', xiaohongshu:'샤오홍슈', douyin:'더우인', threads:'쓰레드', _summary:'요약' };
 async function loadOps(){
   const [a, p, l, cm] = await Promise.all([
     sb.from('ops_sns_accounts').select('*').order('sort', { ascending:true }),
@@ -1097,6 +1097,7 @@ function renderOpsComments(body){
     { k:'youtube', label:'유튜브 @kimjejopharma', on:true },
     { k:'instagram', label:'인스타 댓글 @kimjejo_pharma', on:true },
     { k:'instagram_dm', label:'인스타 DM', on:true, warn:'DM은 상대가 마지막 메시지를 보낸 뒤 24시간 안에만 답장할 수 있습니다(인스타 규칙).' },
+    { k:'threads', label:'쓰레드 @kimjejo_pharma', on:true },
     { k:'instagram_global', label:'인스타 @jejo.rx', on:false, warn:'계정 연동 전' },
     { k:'xiaohongshu', label:'샤오홍슈', on:false, warn:'API 없음 — 장희원 사원 휴대폰 운영' },
     { k:'douyin', label:'더우인', on:false, warn:'API 없음 — 장희원 사원 휴대폰 운영' }
@@ -1108,7 +1109,7 @@ function renderOpsComments(body){
   const list = cm.filter(inAcc).filter(c => !ST[opsCmSt] || ST[opsCmSt].includes(c.status));
   const cnt = (k, st) => cm.filter(c => (k === 'all' || accOf(c) === k) && (!ST[st] || ST[st].includes(c.status))).length;
   const curAcc = ACC.find(a => a.k === opsCmAcc) || ACC[0];
-  body.innerHTML = `<p class="lede">계정별 댓글을 30분마다 모으고 AI가 추천 답장을 붙입니다. <b>이대로 보내기</b>를 누르거나, 아래 칸에 직접 써서 <b>확인</b>을 누르면 그 댓글에 답글이 달립니다(1분 안에 AI 컴퓨터가 보냄).</p>
+  body.innerHTML = `<p class="lede">계정별 댓글·DM을 5분마다 모으고 AI가 추천 답장을 붙입니다. <b>이대로 보내기</b>를 누르거나, 아래 칸에 직접 써서 <b>확인</b>을 누르면 그 댓글에 답글이 달립니다(1분 안에 AI 컴퓨터가 보냄).</p>
     <div class="toolbar" style="padding:0 0 8px">${ACC.map(a => `<button class="chip ${opsCmAcc === a.k ? 'on' : ''}" data-cmacc="${a.k}">${esc(a.label)} <b>${a.k === 'all' || a.on ? cnt(a.k, 'todo') : '-'}</b></button>`).join('')}</div>
     ${curAcc.warn ? `<div class="rv-warn" style="margin:0 0 10px">⚠ ${esc(curAcc.warn)}</div>` : ''}
     <div class="toolbar" style="padding:0 0 12px">${Object.keys(STL).map(s => `<button class="chip ${opsCmSt === s ? 'on' : ''}" data-cmst="${s}">${STL[s]} ${cnt(opsCmAcc, s)}</button>`).join('')}
@@ -1158,7 +1159,7 @@ async function renderOpsUpload(body){
       <div class="sep"></div><button class="chip" id="up-gen">🤖 초안 더 만들기</button></div>
     <div>${list.length ? list.map(t => `<div class="cm-card">
       <div class="rv-sub">원본: <b>${esc(t.source_title || '-')}</b>${t.source_views ? ' · 조회 ' + opsN(t.source_views) : ''}${t.why ? ' · ' + esc(t.why) : ''}</div>
-      ${['posted','posting'].includes(t.status) ? `<div class="cm-q" style="white-space:pre-wrap">${esc(t.text)}</div><div class="cm-done">${t.status === 'posted' ? '✓ ' + esc(fmtKst(t.posted_at)) + ' 올라감' + (t.permalink ? ` · <a href="${esc(t.permalink)}" target="_blank" rel="noopener">쓰레드에서 보기</a>` : '') : '⏳ 올리는 중'}</div>`
+      ${['posted','posting'].includes(t.status) ? `<div class="cm-q" style="white-space:pre-wrap">${esc(t.text)}</div><div class="cm-done">${t.status === 'posted' ? '✓ ' + esc(fmtKst(t.posted_at)) + ' 올라감' + (t.views != null ? ` · 조회 ${opsN(t.views)} · 좋아요 ${opsN(t.likes)} · 답글 ${opsN(t.replies_n)}` : '') + (t.permalink ? ` · <a href="${esc(t.permalink)}" target="_blank" rel="noopener">쓰레드에서 보기</a>` : '') : '⏳ 올리는 중'}</div>`
       : `<textarea class="up-txt" data-uptxt="${t.id}" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:14px;line-height:1.6;margin:6px 0">${esc(t.text)}</textarea>
         <div class="rv-sub" data-upcnt="${t.id}">${(t.text || '').length}/500자</div>
         ${t.error ? `<div class="rv-warn">⚠ ${esc(t.error)}</div>` : ''}
