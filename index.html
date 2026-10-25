@@ -1202,6 +1202,7 @@ async function renderOpsVideo(body){
   const list = all.filter(j => inG(j, opsVdSt));
   const bar = Math.min(100, Math.round(spent / 5000));
   body.innerHTML = `<p class="lede">기존 영상의 <b>영어판·중국어판</b>이나 <b>신규 AI 영상</b>을 요청하면, 대표 승인 뒤 AI 컴퓨터(Codex)가 편집해 NAS <b>T:\\01.자동편집</b>에 올리고 여기서 검수합니다. 발행은 하지 않습니다.</p>
+    <div class="rv-warn" style="margin:0 0 10px">🧪 시험 단계 — 요청·승인은 여기에 쌓이지만 AI 컴퓨터로 보내지 않습니다(자동편집 꺼짐). 대표가 켜면 승인된 순서대로 시작합니다.</div>
     <div class="vd-budget"><span>이번 달 AI 편집 비용 <b>${opsN(spent)}원</b> / 500,000원</span><div class="vd-bar"><i style="width:${bar}%;background:${bar >= 80 ? '#E03131' : '#E67700'}"></i></div></div>
     <div class="toolbar" style="padding:8px 0 12px">${Object.keys(VD_GL).map(g => `<button class="chip ${opsVdSt === g ? 'on' : ''}" data-vdst="${g}">${VD_GL[g]} ${all.filter(j => inG(j, g)).length}</button>`).join('')}
       <div class="sep"></div><button class="btn sm" id="vd-newbtn">＋ 새 편집 요청</button></div>
@@ -1211,7 +1212,7 @@ async function renderOpsVideo(body){
       const st = `<span class="vd-st vd-${j.status}">${VD_ST[j.status] || j.status}</span>`;
       let act = '';
       if (j.status === 'requested') act = (isMaster ? `<button class="btn sm" data-vdok="${j.id}">승인(편집 시작)</button><button class="btn sm ghost" data-vdno="${j.id}">반려</button>` : '<span class="rv-sub">대표 승인을 기다립니다(유료 작업).</span>') + `<button class="btn sm ghost" data-vdcancel="${j.id}">요청 취소</button>`;
-      else if (j.status === 'approved') act = `<span class="rv-sub">5분 안에 AI 컴퓨터로 넘어갑니다.</span><button class="btn sm ghost" data-vdcancel="${j.id}">취소</button>`;
+      else if (j.status === 'approved') act = `<span class="rv-sub">승인됨 — 자동편집을 켜면 AI 컴퓨터로 넘어갑니다.</span><button class="btn sm ghost" data-vdcancel="${j.id}">취소</button>`;
       else if (['queued', 'working', 'redo'].includes(j.status)) act = `<span class="rv-sub">${j.status === 'working' ? 'AI 컴퓨터가 편집하고 있습니다.' : 'AI 컴퓨터가 차례대로 처리합니다.'}</span>`;
       else if (j.status === 'review') act = `<button class="btn sm" data-vddone="${j.id}">검수 승인(완료)</button><textarea rows="2" data-vdwhy="${j.id}" placeholder="재작업이 필요하면 고칠 점을 적고 '재작업'" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:13px"></textarea><button class="btn sm ghost" data-vdredo="${j.id}">재작업</button>`;
       return `<div class="cm-card">
@@ -1261,7 +1262,7 @@ async function renderOpsVideo(body){
       const b = { action:'request', kind:k, note:$('#vd-note').value, approve: !!($('#vd-appr') && $('#vd-appr').checked) };
       if (k === 'new') b.content_id = opsVdNew.pick; else b.source_file_id = opsVdNew.pick;
       const d = await call(b);
-      if (d) { opsVdNew = null; opsVdSt = d.status === 'approved' ? 'run' : 'todo'; poToast(d.status === 'approved' ? '승인된 요청으로 등록했습니다. 5분 안에 AI 컴퓨터로 넘어갑니다.' : '요청했습니다. 대표 승인 후 시작합니다.', 3000); again(); }
+      if (d) { opsVdNew = null; opsVdSt = d.status === 'approved' ? 'run' : 'todo'; poToast(d.status === 'approved' ? '승인된 요청으로 등록했습니다(시험 단계라 아직 편집은 시작하지 않습니다).' : '요청했습니다. 대표 승인 후 시작합니다.', 3000); again(); }
       else e.target.disabled = false;
     };
   };
