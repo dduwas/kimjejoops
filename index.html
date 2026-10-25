@@ -141,6 +141,7 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .aiw textarea{min-height:70px}.aiw .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px}
 .aiw table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}.aiw td,.aiw th{border:1px solid #D9D9D9;padding:7px 9px;vertical-align:top;white-space:pre-wrap}.aiw th{background:#F2F2F2;text-align:left}
 .aiw .msg{font-size:13px;margin-top:10px;padding:8px 10px;border-radius:8px;background:#F5F8FC}
+.vd-budget{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px}.vd-bar{flex:1;min-width:160px;max-width:360px;height:8px;background:#EEF1F5;border-radius:6px;overflow:hidden}.vd-bar i{display:block;height:100%}.vd-st{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:10px;font-size:11.5px;font-weight:700;background:#EEF1F5;color:#495057}.vd-review,.vd-requested{background:#FFF4E6;color:#E67700}.vd-done{background:#EBFBEE;color:#2B8A3E}.vd-failed,.vd-rejected{background:#FFF5F5;color:#E03131}.vd-working,.vd-queued,.vd-approved,.vd-redo{background:#E7F5FF;color:#1971C2}.vd-pick{max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}.vd-pick label{display:block;padding:5px 2px;font-size:13px;cursor:pointer;border-bottom:1px solid #F1F3F5}.vd-pick label.dim{opacity:.45;cursor:default}.vd-res{font-size:13px;margin:6px 0}.vd-res code{background:#F1F3F5;padding:1px 5px;border-radius:4px;word-break:break-all}
 .aiw .aiw-sec{border:1px solid var(--line);border-radius:10px;padding:4px 14px 14px;margin-top:12px;background:#FAFBFD}.aiw .aiw-h{font-weight:800;font-size:14px;margin:10px 0 2px}.aiw .aiw-hint{font-weight:400;color:var(--muted);font-size:12px}.aiw .aiw-fmts{display:flex;flex-wrap:wrap;gap:6px}.aiw select,.aiw input,.aiw textarea{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13.5px}.aiw textarea{min-height:84px;resize:vertical}
 .scbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 24px 0;padding:9px 12px;background:#FFF7E6;border:1px solid #F5D08A;border-radius:10px;font-size:13px}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
@@ -548,7 +549,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v47</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v48</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
@@ -1181,15 +1182,91 @@ async function renderOpsUpload(body){
   $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:2 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) alert(`초안 ${d.made || 0}개를 만들었습니다.`); };
 }
 
-function renderOpsVideo(body){
-  body.innerHTML = `<p class="lede">원본을 고르고 작업을 요청하면 AI 컴퓨터(ChatGPT·Codex)가 편집해서 NAS <b>김제조_영상자동화 › 04_검수대기</b>에 올리고, 여기서 승인·결과를 확인합니다. 발행은 승인 후에만 합니다.</p>
-    <ol class="ops-steps">
-      <li><b>①</b>원본 고르기<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">NAS 01_원본·02. 영상자료에서 촬영본 선택, 카드와 연결</div></li>
-      <li><b>②</b>작업 요청<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">A 컷편집(1.1배속·-14LUFS) · D 풀편집(자막·효과음·이미지) · B/C 영어판(더빙·립싱크) — 유료 작업은 승인 필요</div></li>
-      <li><b>③</b>진행 현황<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">대기 → 작업중 → 검수대기 (밤 일괄 작업 포함)</div></li>
-      <li><b>④</b>결과 확인·승인<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">04_검수대기 결과 미리보기 → 승인하면 05_발행승인, 반려하면 사유와 함께 재작업</div></li>
-    </ol>
-    <p class="rv-sub">완성본이 NAS 인스타그램 폴더에 올라가면 상단 '최종검수' 목록으로 자동으로 넘어갑니다(연결됨).</p>`;
+// v48 🎬 AI 영상편집 — 요청 → 대표 승인 → AI 컴퓨터(Codex) 작업 → 검수(승인/재작업). 실제 편집은 Codex, 발행은 하지 않음.
+let opsVdSt = 'todo', opsVdNew = null;
+const VD_KIND = { en:'🇺🇸 영어판', zh:'🇨🇳 중국어판', new:'✨ 신규 AI 영상' };
+const VD_ST = { requested:'대표 승인 대기', approved:'AI 컴퓨터로 보내는 중', queued:'AI 컴퓨터 대기열', working:'편집 중', review:'검수 대기', redo:'재작업 요청됨', done:'완료', rejected:'반려', cancelled:'취소', failed:'실패' };
+const VD_GROUP = { todo:['requested','review'], run:['approved','queued','working','redo'], done:['done'], off:['rejected','cancelled','failed'], all:null };
+const VD_GL = { todo:'내 차례(승인·검수)', run:'진행 중', done:'완료', off:'반려·취소·실패', all:'전체' };
+async function renderOpsVideo(body){
+  const [{ data: jobs }, { data: files }] = await Promise.all([
+    sb.from('ops_video_jobs').select('*').order('created_at', { ascending:false }).limit(300),
+    sb.from('review_files').select('id, path, filename, file_date, mtime, title_guess, content_id').order('mtime', { ascending:false }).limit(400)
+  ]);
+  const all = jobs || [], fl = files || [];
+  const isMaster = profile?.role === 'master';
+  const mon = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 7);
+  const spent = all.filter(j => j.cost_krw && new Date(new Date(j.updated_at).getTime() + 9 * 36e5).toISOString().slice(0, 7) === mon).reduce((s, j) => s + j.cost_krw, 0);
+  const cardTitle = id => (cards.find(c => c.id === id) || {}).title || '';
+  const inG = (j, g) => !VD_GROUP[g] || VD_GROUP[g].includes(j.status);
+  const list = all.filter(j => inG(j, opsVdSt));
+  const bar = Math.min(100, Math.round(spent / 5000));
+  body.innerHTML = `<p class="lede">기존 영상의 <b>영어판·중국어판</b>이나 <b>신규 AI 영상</b>을 요청하면, 대표 승인 뒤 AI 컴퓨터(Codex)가 편집해 NAS <b>T:\\01.자동편집</b>에 올리고 여기서 검수합니다. 발행은 하지 않습니다.</p>
+    <div class="vd-budget"><span>이번 달 AI 편집 비용 <b>${opsN(spent)}원</b> / 500,000원</span><div class="vd-bar"><i style="width:${bar}%;background:${bar >= 80 ? '#E03131' : '#E67700'}"></i></div></div>
+    <div class="toolbar" style="padding:8px 0 12px">${Object.keys(VD_GL).map(g => `<button class="chip ${opsVdSt === g ? 'on' : ''}" data-vdst="${g}">${VD_GL[g]} ${all.filter(j => inG(j, g)).length}</button>`).join('')}
+      <div class="sep"></div><button class="btn sm" id="vd-newbtn">＋ 새 편집 요청</button></div>
+    <div id="vd-new"></div>
+    <div>${list.length ? list.map(j => {
+      const src = j.kind === 'new' ? ('카드: ' + (cardTitle(j.content_id) || '-')) : (j.source_name || '-') + (cardTitle(j.content_id) ? ' · ' + cardTitle(j.content_id) : '');
+      const st = `<span class="vd-st vd-${j.status}">${VD_ST[j.status] || j.status}</span>`;
+      let act = '';
+      if (j.status === 'requested') act = (isMaster ? `<button class="btn sm" data-vdok="${j.id}">승인(편집 시작)</button><button class="btn sm ghost" data-vdno="${j.id}">반려</button>` : '<span class="rv-sub">대표 승인을 기다립니다(유료 작업).</span>') + `<button class="btn sm ghost" data-vdcancel="${j.id}">요청 취소</button>`;
+      else if (j.status === 'approved') act = `<span class="rv-sub">5분 안에 AI 컴퓨터로 넘어갑니다.</span><button class="btn sm ghost" data-vdcancel="${j.id}">취소</button>`;
+      else if (['queued', 'working', 'redo'].includes(j.status)) act = `<span class="rv-sub">${j.status === 'working' ? 'AI 컴퓨터가 편집하고 있습니다.' : 'AI 컴퓨터가 차례대로 처리합니다.'}</span>`;
+      else if (j.status === 'review') act = `<button class="btn sm" data-vddone="${j.id}">검수 승인(완료)</button><textarea rows="2" data-vdwhy="${j.id}" placeholder="재작업이 필요하면 고칠 점을 적고 '재작업'" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:13px"></textarea><button class="btn sm ghost" data-vdredo="${j.id}">재작업</button>`;
+      return `<div class="cm-card">
+        <div class="rv-sub">${VD_KIND[j.kind] || j.kind} · ${esc(fmtKst(j.created_at))} ${st}${j.cost_krw ? ` · 비용 ${opsN(j.cost_krw)}원` : ''}</div>
+        <div class="cm-q"><b>${esc(src)}</b>${j.note ? `<div class="rv-sub" style="white-space:pre-wrap">요청: ${esc(j.note)}</div>` : ''}</div>
+        ${j.redo_reason && ['redo', 'queued', 'working', 'review'].includes(j.status) ? `<div class="rv-sub">재작업 사유: ${esc(j.redo_reason)}</div>` : ''}
+        ${j.result_path ? `<div class="vd-res">📁 결과 <code>${esc(j.result_path)}</code> <button class="linkbtn" data-vdcopy="${esc(j.result_path)}">경로 복사</button>${j.result_preview ? `<div class="rv-sub">미리보기: <code>${esc(j.result_preview)}</code></div>` : ''}</div>` : ''}
+        ${j.codex_note ? `<div class="rv-sub" style="white-space:pre-wrap">AI 메모: ${esc(j.codex_note)}</div>` : ''}
+        ${j.error ? `<div class="rv-warn">⚠ ${esc(j.error)}</div>` : ''}
+        ${j.reject_reason ? `<div class="rv-sub">반려 사유: ${esc(j.reject_reason)}</div>` : ''}
+        ${act ? `<div class="cm-act" style="align-items:center;flex-wrap:wrap">${act}</div>` : ''}
+      </div>`; }).join('') : `<p class="lede">${VD_GL[opsVdSt]} 항목이 없습니다.</p>`}</div>`;
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-video', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const again = () => renderOpsVideo(body);
+  body.querySelectorAll('[data-vdst]').forEach(b => b.onclick = () => { opsVdSt = b.dataset.vdst; again(); });
+  body.querySelectorAll('[data-vdok]').forEach(b => b.onclick = async () => { b.disabled = true; if (await call({ action:'approve', id:b.dataset.vdok })) again(); else b.disabled = false; });
+  body.querySelectorAll('[data-vdno]').forEach(b => b.onclick = async () => { const r = prompt('반려 사유(선택)', ''); if (r === null) return; if (await call({ action:'reject', id:b.dataset.vdno, reason:r })) again(); });
+  body.querySelectorAll('[data-vdcancel]').forEach(b => b.onclick = async () => { if (!confirm('이 요청을 취소할까요?')) return; if (await call({ action:'cancel', id:b.dataset.vdcancel })) again(); });
+  body.querySelectorAll('[data-vddone]').forEach(b => b.onclick = async () => { if (await call({ action:'decide', id:b.dataset.vddone, ok:true })) { poToast('검수 승인했습니다.', 2000); again(); } });
+  body.querySelectorAll('[data-vdredo]').forEach(b => b.onclick = async () => { const t = body.querySelector(`[data-vdwhy="${b.dataset.vdredo}"]`).value.trim(); if (!t) return alert('고칠 점을 적어 주세요.'); if (await call({ action:'decide', id:b.dataset.vdredo, ok:false, reason:t })) again(); });
+  body.querySelectorAll('[data-vdcopy]').forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.vdcopy); b.textContent = '복사됨'; } catch (e) { prompt('경로', b.dataset.vdcopy); } });
+  // 새 요청
+  const box = $('#vd-new');
+  const drawNew = () => {
+    if (!opsVdNew) { box.innerHTML = ''; return; }
+    const k = opsVdNew.kind, q = (opsVdNew.q || '').trim().toLowerCase();
+    const usedKey = new Set(all.filter(j => !['rejected', 'cancelled', 'failed'].includes(j.status)).map(j => j.kind + ':' + j.source_file_id));
+    const fs = fl.filter(f => !q || (f.filename + ' ' + (f.title_guess || '') + ' ' + cardTitle(f.content_id)).toLowerCase().includes(q)).slice(0, 80);
+    const cs = cards.filter(c => c.script && (!q || (c.title || '').toLowerCase().includes(q))).sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 80);
+    box.innerHTML = `<div class="vd-card" style="margin-bottom:14px"><b>새 편집 요청</b>
+      <div class="toolbar" style="padding:8px 0">${Object.keys(VD_KIND).map(x => `<button class="chip ${k === x ? 'on' : ''}" data-vdk="${x}">${VD_KIND[x]}</button>`).join('')}</div>
+      <div class="rv-sub">${k === 'new' ? '대본이 있는 카드를 고르세요. 김제조 AI 아바타 + 제품·자료 화면 + AI 장면으로 새로 만듭니다.' : '완성된 한국어 영상(NAS 인스타그램 폴더)을 고르세요. 원본은 그대로 두고 새 파일로 만듭니다.'}</div>
+      <input id="vd-q" value="${esc(opsVdNew.q || '')}" placeholder="${k === 'new' ? '카드 제목 검색' : '파일명·카드 제목 검색'}" style="width:100%;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:8px">
+      <div class="vd-pick">${k === 'new'
+        ? cs.map(c => `<label><input type="radio" name="vdpick" value="${c.id}" ${opsVdNew.pick === c.id ? 'checked' : ''}> [${teamTag(c)}] ${esc(c.title)}${c.views ? ` <span class="rv-sub">조회 ${fmtN(c.views)}</span>` : ''}</label>`).join('') || '<p class="rv-sub">대본 있는 카드가 없습니다.</p>'
+        : fs.map(f => { const used = usedKey.has(k + ':' + f.id); return `<label class="${used ? 'dim' : ''}"><input type="radio" name="vdpick" value="${f.id}" ${used ? 'disabled' : ''} ${opsVdNew.pick === f.id ? 'checked' : ''}> ${esc(f.filename)} <span class="rv-sub">${esc(f.file_date || String(f.mtime || '').slice(0, 10))}${cardTitle(f.content_id) ? ' · ' + esc(cardTitle(f.content_id)) : ''}${used ? ' · 이미 요청됨' : ''}</span></label>`; }).join('') || '<p class="rv-sub">파일이 없습니다.</p>'}</div>
+      <textarea id="vd-note" rows="2" placeholder="요청 메모(선택): 예) 제목은 영어로 새로, 자막 크게, 30초 이내" style="width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:8px;font:inherit">${esc(opsVdNew.note || '')}</textarea>
+      <div class="cm-act" style="align-items:center">${isMaster ? '<label class="rv-sub"><input type="checkbox" id="vd-appr" checked> 바로 승인(유료 작업 시작)</label>' : '<span class="rv-sub">요청하면 대표 승인 후 시작합니다.</span>'}
+        <button class="btn sm" id="vd-send">요청하기</button><button class="btn sm ghost" id="vd-close">닫기</button></div></div>`;
+    box.querySelectorAll('[data-vdk]').forEach(b => b.onclick = () => { opsVdNew = { kind:b.dataset.vdk, q:opsVdNew.q, note:$('#vd-note').value }; drawNew(); });
+    $('#vd-q').oninput = e => { opsVdNew.q = e.target.value; opsVdNew.note = $('#vd-note').value; const pos = e.target.selectionStart; drawNew(); const n = $('#vd-q'); n.focus(); n.setSelectionRange(pos, pos); };
+    box.querySelectorAll('[name="vdpick"]').forEach(r => r.onchange = () => { opsVdNew.pick = r.value; });
+    $('#vd-close').onclick = () => { opsVdNew = null; drawNew(); };
+    $('#vd-send').onclick = async e => {
+      if (!opsVdNew.pick) return alert(k === 'new' ? '카드를 골라 주세요.' : '원본 영상을 골라 주세요.');
+      e.target.disabled = true;
+      const b = { action:'request', kind:k, note:$('#vd-note').value, approve: !!($('#vd-appr') && $('#vd-appr').checked) };
+      if (k === 'new') b.content_id = opsVdNew.pick; else b.source_file_id = opsVdNew.pick;
+      const d = await call(b);
+      if (d) { opsVdNew = null; opsVdSt = d.status === 'approved' ? 'run' : 'todo'; poToast(d.status === 'approved' ? '승인된 요청으로 등록했습니다. 5분 안에 AI 컴퓨터로 넘어갑니다.' : '요청했습니다. 대표 승인 후 시작합니다.', 3000); again(); }
+      else e.target.disabled = false;
+    };
+  };
+  $('#vd-newbtn').onclick = () => { opsVdNew = opsVdNew ? null : { kind:'en' }; drawNew(); };
+  drawNew();
 }
 
 // 운영관리 화면이 열려 있으면 5분마다 댓글·DM 새로고침(글 쓰는 중이면 건너뜀)
