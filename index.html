@@ -493,6 +493,21 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 .vd-card{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:16px}
 .vd-card b{display:block;margin-bottom:6px}.vd-card span{color:var(--muted);font-size:12.5px;line-height:1.6}
 @media (max-width:700px){.rv-t thead{display:none}.rv-t tr{display:block;border-bottom:1px solid var(--line);padding:8px 0}.rv-t td{display:block;border:0;padding:3px 10px}}
+.fmt-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 4px}.fmt-top input{max-width:220px}
+.fmt-grp h4{margin:20px 0 10px;font-size:15px;color:var(--navy)}.fmt-grp h4 span{color:var(--muted);font-weight:400;font-size:12px}
+.fmt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.fmt-card{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden;display:flex;flex-direction:column}
+.fmt-imgs{display:flex;gap:2px;background:#eef2f8;height:170px}.fmt-imgs a{flex:1;min-width:0;display:block}
+.fmt-imgs img{width:100%;height:100%;object-fit:cover;object-position:center 30%;display:block}
+.fmt-noimg{height:56px;background:linear-gradient(135deg,#0B2A5B,#3a5f9e);color:#fff;font-size:22px;font-weight:800;display:flex;align-items:center;padding-left:14px;opacity:.9}
+.fmt-b{padding:10px 12px 12px;font-size:13px;line-height:1.55;color:var(--ink)}.fmt-h{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.fmt-h h5{margin:0;font-size:15px}.fmt-sum{margin:4px 0 6px}
+.fmt-flow{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:6px 0 8px}.fmt-flow span{background:#eef2fb;color:var(--navy);border-radius:6px;padding:2px 7px;font-size:12px}.fmt-flow i{color:var(--muted);font-style:normal;font-size:11px}
+.fmt-kv{margin:2px 0}.fmt-k{display:inline-block;min-width:30px;color:var(--muted);font-size:11.5px;margin-right:6px;font-weight:700}
+.fmt-ex{margin-top:6px}.fmt-ex a{display:block;font-size:12.5px;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fmt-ex a:hover{text-decoration:underline}.fmt-ex b{color:var(--navy)}
+.fmt-src{margin-top:8px;font-size:11.5px;color:var(--muted)}
+.fe-imgs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0}.fe-imgs span{position:relative}.fe-imgs img{width:72px;height:96px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.fe-imgs button{position:absolute;top:2px;right:2px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer}
 </style>
 </head>
 <body>
@@ -549,13 +564,14 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v51</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v52</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
         <button data-view="insight">성과·정리</button>
         <button data-view="posts">글쓰기</button>
+        <button data-view="formats">형식</button>
         <button data-view="review">최종검수<span class="nbadge hide" id="rv-badge"></span></button>
         <button data-view="drops">드랍</button>
         <button data-view="team" class="admin-only">팀 관리</button>
@@ -718,6 +734,13 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
     <div id="vd-root"></div>
   </section>
 
+  <section id="view-formats" class="hide wrap">
+    <h3>형식</h3>
+    <p class="lede">김제조 릴스 형식 모음입니다. 잘 된 틀을 분류해 두고, 새 형식은 <b>＋ 형식 추가</b>로 계속 쌓아 갑니다. 카드 사진을 누르면 예시 영상이 열립니다.</p>
+    <div class="fmt-top"><button class="btn sm" id="fmt-add">＋ 형식 추가</button><input id="fmt-q" placeholder="검색 (예: 티어, 혈당)"></div>
+    <div class="chips" id="fmt-chips" style="margin:8px 0 0"></div>
+    <div id="fmt-list"></div>
+  </section>
   <section id="view-drops" class="hide wrap">
     <h3>드랍</h3>
     <p class="lede">접은 기획을 모아둡니다. 지워지지 않으니 나중에 다시 꺼내 쓸 수 있습니다.
@@ -927,7 +950,7 @@ $$('nav button').forEach(b => b.onclick = async () => {
   }
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','schedule','insight','posts','todo','meetings','review','video','drops','team','settings'].forEach(v =>
+  ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
@@ -1408,6 +1431,101 @@ $$('[data-scsave]').forEach(b => b.onclick = () => {   // v41 칸(탭)별 저장
   scriptDownload(list, `${TEAM_LABEL[lineOf()]} 라인 ${st.length > 1 ? '전체' : nm + ' 칸'}`);
 });
 
+/* ---------- v52 🧩 형식 — 릴스 형식 분류 (10-25 대표 요청) ----------
+   kj_formats 표(Supabase) + storage 'formats' 버킷(예시 캡처). 처음 내용은 숏폼 대본 스킬 §3·0807 회의·260907 레퍼런스 분석·숏폼기준점 v1.0에서 정리. */
+let FMT = [], fmtLoaded = false, fmtGrp = '', fmtQ = '', fmtBusy = false;
+const FMT_BUCKET = () => String(window.SUPABASE_URL).replace(/\/+$/, '') + '/storage/v1/object/public/formats/';
+const fmtYt = u => { const m = String(u || '').match(/(?:youtu\.be\/|[?&]v=|shorts\/)([\w-]{11})/); return m ? m[1] : null; };
+async function loadFormats(){ const { data, error } = await sb.from('kj_formats').select('*').order('sort').order('created_at'); if (!error) { FMT = data || []; fmtLoaded = true; } return error; }
+function fmtCard(f){
+  const imgs = [...(f.images || []), ...(f.examples || []).filter(x => x.img).map(x => ({ url: x.img, cap: x.title, link: x.url }))].slice(0, 3);
+  const flow = (f.flow || '').split(/\s*→\s*/).filter(Boolean);
+  const kv = (k, v) => v ? `<div class="fmt-kv"><span class="fmt-k">${k}</span>${esc(v)}</div>` : '';
+  return `<div class="fmt-card">
+    ${imgs.length ? `<div class="fmt-imgs">${imgs.map(i => `<a href="${esc(i.link || i.url)}" target="_blank" rel="noopener" title="${esc(i.cap || '')}"><img loading="lazy" src="${esc(i.url)}" alt=""></a>`).join('')}</div>` : `<div class="fmt-noimg">${esc(f.name.slice(0, 1))}</div>`}
+    <div class="fmt-b"><div class="fmt-h"><h5>${esc(f.name)}</h5><button class="chip sm" data-fmted="${f.id}">수정</button></div>
+      ${f.summary ? `<div class="fmt-sum">${esc(f.summary)}</div>` : ''}
+      ${flow.length ? `<div class="fmt-flow">${flow.map((x, i) => (i ? '<i>→</i>' : '') + `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+      ${kv('훅', f.hook)}${kv('언제', f.use_when)}${kv('주의', f.caution)}
+      ${(f.examples || []).length ? `<div class="fmt-ex"><span class="fmt-k">예시</span>${f.examples.map(x => `<a href="${esc(x.url || '#')}" target="_blank" rel="noopener">${x.platform === 'youtube' ? '▶' : '◎'} ${esc(x.title || x.url)}${x.views ? ` <b>${fmtN(x.views)}</b>` : ''}</a>`).join('')}</div>` : ''}
+      ${f.source ? `<div class="fmt-src">출처: ${esc(f.source)}</div>` : ''}
+    </div></div>`;
+}
+async function renderFormats(){
+  const v = document.getElementById('view-formats'); if (!v || v.classList.contains('hide')) return;
+  const box = document.getElementById('fmt-list'), chips = document.getElementById('fmt-chips');
+  if (!fmtLoaded) { if (fmtBusy) return; fmtBusy = true; box.innerHTML = '<p class="lede">불러오는 중…</p>'; const e = await loadFormats(); fmtBusy = false; if (e) { box.innerHTML = `<div class="msg">⚠ ${esc(e.message)}</div>`; return; } }
+  const grps = [...new Set(FMT.map(f => f.grp))];
+  chips.innerHTML = [['', '전체 ' + FMT.length], ...grps.map(g => [g, g + ' ' + FMT.filter(f => f.grp === g).length])].map(([g, l]) => `<button class="chip ${g === fmtGrp ? 'on' : ''}" data-fmtg="${esc(g)}">${esc(l)}</button>`).join('');
+  chips.querySelectorAll('[data-fmtg]').forEach(b => b.onclick = () => { fmtGrp = b.dataset.fmtg; renderFormats(); });
+  const q = fmtQ.trim().toLowerCase();
+  const hit = f => !q || [f.name, f.summary, f.flow, f.hook, f.use_when, f.caution, ...(f.examples || []).map(x => x.title)].join(' ').toLowerCase().includes(q);
+  box.innerHTML = grps.filter(g => !fmtGrp || g === fmtGrp).map(g => { const l = FMT.filter(f => f.grp === g && hit(f)); return l.length ? `<div class="fmt-grp"><h4>${esc(g)} <span>${l.length}</span></h4><div class="fmt-grid">${l.map(fmtCard).join('')}</div></div>` : ''; }).join('') || '<p class="lede">맞는 형식이 없습니다.</p>';
+  box.querySelectorAll('[data-fmted]').forEach(b => b.onclick = () => fmtEdit(FMT.find(f => f.id === b.dataset.fmted)));
+}
+function fmtEdit(f){
+  const isNew = !f; f = f || { grp: fmtGrp || '', name: '', examples: [], images: [] };
+  let imgs = [...(f.images || [])];
+  const grps = [...new Set(FMT.map(x => x.grp))];
+  const exTxt = (f.examples || []).map(x => [x.url || '', x.title || '', x.views || ''].join(' | ')).join('\n');
+  const bg = document.createElement('div'); bg.className = 'aiw-bg';
+  bg.innerHTML = `<div class="aiw"><h3>🧩 ${isNew ? '형식 추가' : '형식 수정 — ' + esc(f.name)}</h3>
+    <label>분류</label><input id="fe-grp" list="fe-grps" value="${esc(f.grp)}" placeholder="예: 성과 검증 포맷"><datalist id="fe-grps">${grps.map(g => `<option value="${esc(g)}">`).join('')}</datalist>
+    <label>이름</label><input id="fe-name" value="${esc(f.name)}" placeholder="예: A vs B 판정형">
+    <label>한 줄 설명</label><textarea id="fe-sum" rows="2">${esc(f.summary || '')}</textarea>
+    <label>흐름 <span class="aiw-hint">단계를 → 로 이어 쓰기</span></label><input id="fe-flow" value="${esc(f.flow || '')}" placeholder="질문 → 답 → 이유 → 적용">
+    <label>훅 예시</label><input id="fe-hook" value="${esc(f.hook || '')}">
+    <label>언제 쓰나</label><input id="fe-use" value="${esc(f.use_when || '')}">
+    <label>주의</label><input id="fe-cau" value="${esc(f.caution || '')}">
+    <label>예시 영상 <span class="aiw-hint">한 줄에 하나: 링크 | 제목 | 조회수 (유튜브는 썸네일 자동)</span></label><textarea id="fe-ex" rows="4">${esc(exTxt)}</textarea>
+    <label>캡처·그림 <span class="aiw-hint">릴스 화면 캡처나 구성 그림을 올리세요 (카드 위쪽에 보임)</span></label>
+    <div class="fe-imgs" id="fe-imgs"></div><input type="file" id="fe-file" accept="image/*" multiple>
+    <label>출처</label><input id="fe-src" value="${esc(f.source || '')}">
+    <div class="row"><button class="btn sm" id="fe-save">저장</button><button class="chip" id="fe-x">닫기</button>${isNew ? '' : '<button class="chip" id="fe-del" style="margin-left:auto;color:#b42318">삭제</button>'}<span id="fe-st" style="font-size:12.5px;color:var(--muted)"></span></div></div>`;
+  document.body.appendChild(bg);
+  const $b = s => bg.querySelector(s), st = $b('#fe-st');
+  const drawImgs = () => { $b('#fe-imgs').innerHTML = imgs.map((i, k) => `<span><img src="${esc(i.url)}"><button type="button" data-rm="${k}">✕</button></span>`).join(''); bg.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { imgs.splice(+b.dataset.rm, 1); drawImgs(); }); };
+  drawImgs();
+  const close = () => bg.remove(); $b('#fe-x').onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
+  $b('#fe-file').onchange = async e => {
+    for (const file of e.target.files) {
+      st.textContent = '올리는 중… ' + file.name;
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const path = 'up/' + crypto.randomUUID() + '.' + ext;
+      const { error } = await sb.storage.from('formats').upload(path, file, { contentType: file.type || 'image/jpeg' });
+      if (error) { st.textContent = ''; return alert('사진 올리기 실패: ' + cleanErr(error.message)); }
+      imgs.push({ url: FMT_BUCKET() + path, cap: file.name });
+    }
+    st.textContent = ''; e.target.value = ''; drawImgs();
+  };
+  $b('#fe-save').onclick = async () => {
+    const name = $b('#fe-name').value.trim(), grp = $b('#fe-grp').value.trim();
+    if (!name || !grp) return alert('분류와 이름을 적어 주세요.');
+    const old = new Map((f.examples || []).map(x => [x.url, x]));
+    const examples = $b('#fe-ex').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+      const [url, title, views] = l.split('|').map(x => (x || '').trim()); const o = old.get(url) || {}; const yt = fmtYt(url);
+      return { ...o, url, title: title || o.title || url, views: views ? +String(views).replace(/[^\d]/g, '') || null : (o.views || null), platform: yt ? 'youtube' : (/instagram\.com/.test(url) ? 'instagram' : (o.platform || 'web')), img: o.img || (yt ? `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` : null) };
+    });
+    const row = { grp, name, summary: $b('#fe-sum').value.trim(), flow: $b('#fe-flow').value.trim(), hook: $b('#fe-hook').value.trim(), use_when: $b('#fe-use').value.trim(), caution: $b('#fe-cau').value.trim(), source: $b('#fe-src').value.trim(), examples, images: imgs, updated_at: new Date().toISOString() };
+    if (isNew) row.sort = Math.max(0, ...FMT.filter(x => x.grp === grp).map(x => x.sort || 0)) + 1;
+    const q = isNew ? sb.from('kj_formats').insert(row).select('id') : sb.from('kj_formats').update(row).eq('id', f.id).select('id');
+    const { data, error } = await q;
+    if (error) return alert(cleanErr(error.message));
+    if (!data || !data.length) return alert('저장되지 않았습니다(권한 확인 필요).');
+    close(); fmtLoaded = false; await renderFormats(); poToast(isNew ? '형식을 추가했습니다.' : '형식을 저장했습니다.');
+  };
+  const del = $b('#fe-del');
+  if (del) del.onclick = async () => {
+    if (!confirm(`'${f.name}' 형식을 지울까요?`)) return;
+    const { data, error } = await sb.from('kj_formats').delete().eq('id', f.id).select('id');
+    if (error || !data || !data.length) return alert('삭제는 관리자만 할 수 있습니다.');
+    close(); fmtLoaded = false; await renderFormats(); poToast('형식을 지웠습니다.');
+  };
+}
+
+  $('#fmt-add') && ($('#fmt-add').onclick = () => fmtEdit(null));
+  $('#fmt-q') && ($('#fmt-q').oninput = e => { fmtQ = e.target.value; renderFormats(); });
+
 /* ---------- v47 🤖 AI 대본 쓰기 (대본 저장과 별개) ----------
    서버 함수 write-script: 내용 레퍼런스(링크/붙여넣기) → 내용 카피, 형식(유형 + 붙여넣기/카드 대본) → 형식 적용.
    형식 유형은 김제조 숏폼 대본 스킬(v1, 10-25)의 '잘 되는 포맷'. 결과는 script_jobs 기록, 카드에 넣는 건 사람이 확인 후.
@@ -1546,7 +1664,7 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
+function render(){ renderFormats(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
 
 /* ---------------- 공용 숫자 도우미 ---------------- */
 const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
