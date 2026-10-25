@@ -547,7 +547,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v45</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v46</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
@@ -1000,7 +1000,7 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
 
 /* ---------------- 운영관리 (v44, 입장 비밀번호) ---------------- */
 // 비밀번호 통과(gate 'video', 12시간) 뒤 3칸: 댓글·DM / AI 영상편집 / SNS 성과
-let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo';
+let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo', opsUpSt = 'draft', opsThreadsReady = false;
 try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
 const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
 const PF_KO = { youtube:'유튜브', instagram:'인스타', xiaohongshu:'샤오홍슈', douyin:'더우인', _summary:'요약' };
@@ -1009,8 +1009,9 @@ async function loadOps(){
     sb.from('ops_sns_accounts').select('*').order('sort', { ascending:true }),
     sb.from('ops_sns_posts').select('*').order('published', { ascending:false }).limit(1000),
     sb.from('ops_sync_log').select('*').order('at', { ascending:false }).limit(1),
-    sb.from('ops_comments').select('*').order('created_at', { ascending:false }).limit(300)
+    sb.from('ops_comments').select('*').order('created_at', { ascending:false }).limit(1000)
   ]);
+  try { const { data: tr } = await sb.from('ops_sync_log').select('id').eq('kind', 'threads_ok').limit(1); opsThreadsReady = !!(tr && tr.length); } catch (e) {}
   opsData = { acc: a.data || [], posts: p.data || [], last: (l.data || [])[0] || null, comments: cm.data || [] };
 }
 async function renderVideo(){
@@ -1035,6 +1036,7 @@ async function renderVideo(){
   root.innerHTML = `<h3>🔐 운영관리 <button class="btn sm ghost" id="vd-lockbtn" style="margin-left:8px">잠그기</button></h3>
     <div class="ops-tabs">
       <button data-opstab="comments" class="${opsTab === 'comments' ? 'on' : ''}">💬 댓글·DM${newCm ? ` <span class="nbadge">${newCm}</span>` : ''}</button>
+      <button data-opstab="upload" class="${opsTab === 'upload' ? 'on' : ''}">📤 업로드 자동화</button>
       <button data-opstab="video" class="${opsTab === 'video' ? 'on' : ''}">🎬 AI 영상편집</button>
       <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
     </div><div id="ops-body"></div>
@@ -1054,6 +1056,7 @@ async function renderVideo(){
   const body = $('#ops-body');
   if (opsTab === 'sns') return renderOpsSns(body);
   if (opsTab === 'comments') return renderOpsComments(body);
+  if (opsTab === 'upload') return renderOpsUpload(body);
   return renderOpsVideo(body);
 }
 function renderOpsSns(body){
@@ -1090,14 +1093,15 @@ function renderOpsComments(body){
   const ACC = [
     { k:'all', label:'전체', on:true },
     { k:'youtube', label:'유튜브 @kimjejopharma', on:true },
-    { k:'instagram', label:'인스타 @kimjejo_pharma', on:true, warn:'댓글 읽기 권한이 아직 없어 0건 — 인스타 연동에 댓글 권한 추가 필요' },
+    { k:'instagram', label:'인스타 댓글 @kimjejo_pharma', on:true },
+    { k:'instagram_dm', label:'인스타 DM', on:true, warn:'DM은 상대가 마지막 메시지를 보낸 뒤 24시간 안에만 답장할 수 있습니다(인스타 규칙).' },
     { k:'instagram_global', label:'인스타 @jejo.rx', on:false, warn:'계정 연동 전' },
     { k:'xiaohongshu', label:'샤오홍슈', on:false, warn:'API 없음 — 장희원 사원 휴대폰 운영' },
     { k:'douyin', label:'더우인', on:false, warn:'API 없음 — 장희원 사원 휴대폰 운영' }
   ];
   const ST = { todo:['new','drafted'], sending:['sending'], replied:['replied'], skip:['skip','hidden'], all:null };
   const STL = { todo:'답장 필요', sending:'보내는 중', replied:'답장 완료', skip:'건너뜀', all:'전체' };
-  const accOf = c => c.platform;
+  const accOf = c => c.kind === 'dm' ? c.platform + '_dm' : c.platform;
   const inAcc = c => opsCmAcc === 'all' || accOf(c) === opsCmAcc;
   const list = cm.filter(inAcc).filter(c => !ST[opsCmSt] || ST[opsCmSt].includes(c.status));
   const cnt = (k, st) => cm.filter(c => (k === 'all' || accOf(c) === k) && (!ST[st] || ST[st].includes(c.status))).length;
@@ -1137,6 +1141,45 @@ function renderOpsComments(body){
   $('#cm-reload').onclick = async () => { await loadOps(); renderOpsComments(body); };
 }
 
+async function renderOpsUpload(body){
+  const { data } = await sb.from('ops_threads').select('*').order('created_at', { ascending:false }).limit(200);
+  const all = data || [];
+  const G = { draft:'승인 대기', approved:'예약됨', posting:'올리는 중', posted:'올라감', failed:'실패', rejected:'반려' };
+  const st = opsUpSt;
+  const list = all.filter(t => st === 'draft' ? t.status === 'draft' : st === 'approved' ? ['approved','posting'].includes(t.status) : t.status === st);
+  const next = (() => { const d = new Date(Date.now() + 9 * 36e5); const h = d.getUTCHours(); if (h >= 12) d.setUTCDate(d.getUTCDate() + 1); d.setUTCHours(12, 30, 0, 0); return d.toISOString().slice(0, 16); })();
+  const kstLocal = iso => iso ? new Date(new Date(iso).getTime() + 9 * 36e5).toISOString().slice(0, 16) : next;
+  body.innerHTML = `<div class="ops-tabs" style="margin-top:0"><button class="on">🧵 쓰레드 @kimjejo_pharma</button><button disabled style="opacity:.5">＋ 다른 업로드(예정)</button></div>
+    <p class="lede">매일 아침 AI가 지금까지 콘텐츠 중 <b>조회수가 높고 결이 맞는 것</b>(영양제·화장품·성분 꿀팁)을 골라 쓰레드 글 초안 2개를 만듭니다. 고쳐서 <b>승인</b>하면 정한 시각에 AI 컴퓨터가 올립니다. 승인 안 한 글은 올라가지 않습니다.</p>
+    ${opsThreadsReady ? '' : '<div class="rv-warn" style="margin:0 0 10px">⚠ 쓰레드 계정 연결 전입니다. 승인해 두면 연결되는 대로 예약 시각 순서로 올라갑니다.</div>'}
+    <div class="toolbar" style="padding:0 0 12px">${Object.keys(G).filter(k => k !== 'posting').map(k => `<button class="chip ${st === k ? 'on' : ''}" data-upst="${k}">${G[k]} ${all.filter(t => k === 'approved' ? ['approved','posting'].includes(t.status) : t.status === k).length}</button>`).join('')}
+      <div class="sep"></div><button class="chip" id="up-gen">🤖 초안 더 만들기</button></div>
+    <div>${list.length ? list.map(t => `<div class="cm-card">
+      <div class="rv-sub">원본: <b>${esc(t.source_title || '-')}</b>${t.source_views ? ' · 조회 ' + opsN(t.source_views) : ''}${t.why ? ' · ' + esc(t.why) : ''}</div>
+      ${['posted','posting'].includes(t.status) ? `<div class="cm-q" style="white-space:pre-wrap">${esc(t.text)}</div><div class="cm-done">${t.status === 'posted' ? '✓ ' + esc(fmtKst(t.posted_at)) + ' 올라감' + (t.permalink ? ` · <a href="${esc(t.permalink)}" target="_blank" rel="noopener">쓰레드에서 보기</a>` : '') : '⏳ 올리는 중'}</div>`
+      : `<textarea class="up-txt" data-uptxt="${t.id}" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:14px;line-height:1.6;margin:6px 0">${esc(t.text)}</textarea>
+        <div class="rv-sub" data-upcnt="${t.id}">${(t.text || '').length}/500자</div>
+        ${t.error ? `<div class="rv-warn">⚠ ${esc(t.error)}</div>` : ''}
+        <div class="cm-act" style="align-items:center;flex-wrap:wrap">
+          <label class="rv-sub">올릴 시각 <input type="datetime-local" data-upat="${t.id}" value="${kstLocal(t.scheduled_at)}" style="border:1px solid var(--line);border-radius:6px;padding:4px"></label>
+          ${t.status === 'rejected' ? `<button class="btn sm ghost" data-upundo="${t.id}">되살리기</button>`
+          : `<button class="btn sm" data-upok="${t.id}">${t.status === 'approved' ? '수정 저장' : '승인·예약'}</button>
+             <button class="btn sm ghost" data-upsave="${t.id}">글만 저장</button>
+             ${t.status === 'approved' ? `<button class="btn sm ghost" data-upundo="${t.id}">승인 취소</button>` : `<button class="btn sm danger" data-upno="${t.id}">반려</button>`}`}
+        </div>`}
+    </div>`).join('') : `<p class="lede">${G[st]} 글이 없습니다.</p>`}</div>`;
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-threads', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const txt = id => body.querySelector(`[data-uptxt="${id}"]`).value;
+  const at = id => { const v = body.querySelector(`[data-upat="${id}"]`)?.value; return v ? new Date(v + ':00+09:00').toISOString() : null; };
+  body.querySelectorAll('[data-upst]').forEach(b => b.onclick = () => { opsUpSt = b.dataset.upst; renderOpsUpload(body); });
+  body.querySelectorAll('.up-txt').forEach(t => t.oninput = () => { body.querySelector(`[data-upcnt="${t.dataset.uptxt}"]`).textContent = t.value.length + '/500자'; });
+  body.querySelectorAll('[data-upok]').forEach(b => b.onclick = async () => { b.disabled = true; if (await call({ action:'approve', id:b.dataset.upok, text:txt(b.dataset.upok), scheduled_at:at(b.dataset.upok) })) renderOpsUpload(body); else b.disabled = false; });
+  body.querySelectorAll('[data-upsave]').forEach(b => b.onclick = async () => { if (await call({ action:'save', id:b.dataset.upsave, text:txt(b.dataset.upsave) })) { b.textContent = '저장됨'; setTimeout(() => b.textContent = '글만 저장', 1500); } });
+  body.querySelectorAll('[data-upno]').forEach(b => b.onclick = async () => { if (await call({ action:'reject', id:b.dataset.upno })) renderOpsUpload(body); });
+  body.querySelectorAll('[data-upundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.upundo })) renderOpsUpload(body); });
+  $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:2 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) alert(`초안 ${d.made || 0}개를 만들었습니다.`); };
+}
+
 function renderOpsVideo(body){
   body.innerHTML = `<p class="lede">원본을 고르고 작업을 요청하면 AI 컴퓨터(ChatGPT·Codex)가 편집해서 NAS <b>김제조_영상자동화 › 04_검수대기</b>에 올리고, 여기서 승인·결과를 확인합니다. 발행은 승인 후에만 합니다.</p>
     <ol class="ops-steps">
@@ -1147,6 +1190,9 @@ function renderOpsVideo(body){
     </ol>
     <p class="rv-sub">완성본이 NAS 인스타그램 폴더에 올라가면 상단 '최종검수' 목록으로 자동으로 넘어갑니다(연결됨).</p>`;
 }
+
+// 운영관리 화면이 열려 있으면 5분마다 댓글·DM 새로고침(글 쓰는 중이면 건너뜀)
+setInterval(async () => { try { if (!vdOpen || !opsData || $('#view-video').classList.contains('hide') || opsTab === 'upload') return; const a = document.activeElement; if (a && a.tagName === 'TEXTAREA' && a.value) return; await loadOps(); renderVideo(); } catch (e) {} }, 300000);
 
 /* ---------------- 필터 ---------------- */
 $$('.bd-view').forEach(b => b.onclick = () => {
