@@ -110,6 +110,9 @@ nav button:hover{color:#fff}
   border-radius:var(--r);padding:12px 13px;margin-bottom:9px;cursor:pointer;
   transition:border-color .12s, box-shadow .12s}
 .card:hover{box-shadow:0 2px 10px rgba(11,42,91,.09)}
+.scmode .card{position:relative;padding-left:36px}.scmode .card::before{content:'';position:absolute;left:11px;top:13px;width:16px;height:16px;border:2px solid #9AA8BC;border-radius:4px;background:#fff}
+.scmode .card.sel{border-color:#1A56C4;background:#F3F7FF}.scmode .card.sel::before{background:#1A56C4;border-color:#1A56C4}.scmode .card.sel::after{content:'✓';position:absolute;left:14px;top:9px;color:#fff;font-size:13px;font-weight:900}
+.scbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 24px 0;padding:9px 12px;background:#FFF7E6;border:1px solid #F5D08A;border-radius:10px;font-size:13px}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
 .ttag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-right:6px;vertical-align:1px;line-height:18px}.ttag-w{background:#E6F4EA;color:#1E7B3A}.ttag-s{background:#E8F0FE;color:#1A56C4}.ttag-e{background:#F1F1EF;color:#787774}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
@@ -499,7 +502,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v39</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v40</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -527,6 +530,9 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <button class="chip bd-view" data-bv="table">게시판</button>
       <div class="sep"></div>
       <button class="chip" id="chip-mine">내 담당만</button>
+      <div class="sep"></div>
+      <button class="chip" id="btn-sc-pick" title="카드를 골라 대본 초안(docx)을 받습니다">📝 대본 고르기</button>
+      <button class="chip" id="btn-sc-all" title="이 라인의 대본·촬영 단계 카드(지금 필터 적용) 대본을 한 파일로 받습니다">📄 전체 대본 생성하기</button>
       <span class="count" id="board-count"></span>
     </div>
     <div class="toolbar mid hide" id="stage-bar">
@@ -544,6 +550,9 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
       <div id="channel-chips" style="display:flex;gap:7px;flex-wrap:wrap"></div>
       <button class="chip reset hide" id="chip-clear">채널 전체</button>
     </div>
+    <div class="scbar hide" id="sc-bar"><b>📝 대본 고르기</b><span id="sc-bar-n">카드를 눌러 고르세요</span>
+      <button class="btn sm" id="sc-bar-go">선택한 카드 대본 받기</button><button class="chip" id="sc-bar-col">대본·촬영 칸 모두 고르기</button><button class="chip" id="sc-bar-x">취소</button>
+      <span style="color:var(--muted)">대본·메모가 있으면 그대로 표로, 비어 있으면 핵심 메시지·CTA로 뼈대를 만듭니다</span></div>
     <div class="line" id="line"></div>
     <div class="wrap hide" id="board-table" style="padding-top:4px"></div>
   </section>
@@ -671,6 +680,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="drawer-root"></div>
 
 <script src="config.js"></script>
+<script src="script_docx.js?v=40"></script>
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -954,6 +964,31 @@ function buildLineTabs(){
     });
   });
 }
+/* ---------- v40 대본 초안 docx (양식: 1022 촬영 최종 대본) ---------- */
+let scPick = null;   // 고르는 중이면 Set(카드 id)
+const ymd = () => { const d = new Date(); return String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); };
+const safeName = s => String(s || '').replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
+async function scriptDownload(list, label){
+  if (!list.length) return alert('대본을 만들 카드가 없습니다.');
+  if (!window.KJScript) return alert('대본 도구를 불러오지 못했습니다. 새로고침 후 다시 해 주세요.');
+  const name = list.length === 1 ? `${ymd()}_${safeName(list[0].title)}_대본.docx` : `${ymd()}_${label || TEAM_LABEL[lineOf()] + ' 라인'}_대본초안_${list.length}개.docx`;
+  try { poToast('대본 파일 만드는 중…', 1500); await window.KJScript.download(list, name); poToast(`다운로드: ${name}`, 3500); }
+  catch (err) { alert('대본 파일을 만들지 못했습니다: ' + (err.message || err)); }
+}
+function scBarCount(){ const n = scPick ? scPick.size : 0; $('#sc-bar-n').textContent = n ? `${n}개 골랐습니다` : '카드를 눌러 고르세요'; }
+function scPickMode(on){
+  scPick = on ? new Set() : null;
+  $('#sc-bar').classList.toggle('hide', !on); $('#line').classList.toggle('scmode', !!on); $('#btn-sc-pick').classList.toggle('on', !!on);
+  if (on && bdView !== 'kanban') { $$('.bd-view').forEach(x => x.classList.toggle('on', x.dataset.bv === 'kanban')); bdView = 'kanban'; }
+  renderBoard(); if (on) scBarCount();
+}
+const scAllList = () => { const order = ['대본', '촬영']; return visible().filter(c => order.includes(c.stage)).sort((a, b) => order.indexOf(a.stage) - order.indexOf(b.stage) || (a.shoot_date || '9999').localeCompare(b.shoot_date || '9999')); };
+$('#btn-sc-pick').onclick = () => scPickMode(!scPick);
+$('#sc-bar-x').onclick = () => scPickMode(false);
+$('#sc-bar-col').onclick = () => { scAllList().forEach(c => scPick.add(c.id)); renderBoard(); scBarCount(); };
+$('#sc-bar-go').onclick = async () => { if (!scPick || !scPick.size) return alert('카드를 먼저 골라 주세요.'); const order = cards.filter(c => scPick.has(c.id)); await scriptDownload(order, TEAM_LABEL[lineOf()] + ' 선택'); };
+$('#btn-sc-all').onclick = () => { const list = scAllList(); if (!list.length) return alert(`${TEAM_LABEL[lineOf()]} 라인의 대본·촬영 칸에 카드가 없습니다.`); scriptDownload(list); };
+
 async function moveLine(id, t){
   id = String(id || '').split('|')[0];   // 캘린더 일정은 "카드id|종류"
   const c = cards.find(x => x.id === id); if (!c || teamTag(c) === t) return;
@@ -1112,8 +1147,10 @@ function renderBoard(){
   $$('#line .card').forEach(el => {
     el.onclick = e => {
       if (e.target.closest('[data-nolink]')) return;
+      if (scPick) { scPick.has(el.dataset.id) ? scPick.delete(el.dataset.id) : scPick.add(el.dataset.id); el.classList.toggle('sel'); scBarCount(); return; }   // v40 대본 고르기
       openCard(cards.find(c => c.id === el.dataset.id));
     };
+    if (scPick && scPick.has(el.dataset.id)) el.classList.add('sel');
     el.ondragstart = e => e.dataTransfer.setData('text/plain', el.dataset.id);
   });
 
@@ -3330,6 +3367,7 @@ document.addEventListener('contextmenu', e => {
   }
   if (t.kind === 'post') items.push(['📨 보낼 링크 복사', () => copyPostLink(obj)]);
   if (t.kind === 'card' && obj.publish_url) items.push(['▶ 게시물 열기', () => window.open(obj.publish_url, '_blank', 'noopener')]);
+  if (t.kind === 'card') items.push(['📝 대본 초안 받기 (docx)', () => scriptDownload([obj])]);
   // v32: 정리 필요 등에서 바로 처리 — 게시완료·계속 진행·삭제
   if (t.kind === 'card' && obj.stage !== DONE) items.push(['✅ 게시완료로', async () => {
     const { error } = await sb.from('contents').update({ stage: DONE, publish_date: obj.publish_date || new Date().toISOString().slice(0, 10), updated_at: new Date().toISOString() }).eq('id', obj.id);
