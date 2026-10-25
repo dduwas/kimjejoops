@@ -549,7 +549,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v50</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v51</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
@@ -1154,12 +1154,12 @@ async function renderOpsUpload(body){
   const next = (() => { const d = new Date(Date.now() + 9 * 36e5); const h = d.getUTCHours(); if (h >= 12) d.setUTCDate(d.getUTCDate() + 1); d.setUTCHours(12, 30, 0, 0); return d.toISOString().slice(0, 16); })();
   const kstLocal = iso => iso ? new Date(new Date(iso).getTime() + 9 * 36e5).toISOString().slice(0, 16) : next;
   body.innerHTML = `<div class="ops-tabs" style="margin-top:0"><button class="on">🧵 쓰레드 @kimjejo_pharma</button><button disabled style="opacity:.5">＋ 다른 업로드(예정)</button></div>
-    <p class="lede">매일 아침 AI가 지금까지 콘텐츠 중 <b>조회수가 높고 결이 맞는 것</b>(영양제·화장품·성분 꿀팁)을 골라 쓰레드 글 초안 2개를 만듭니다. 고쳐서 <b>승인</b>하면 정한 시각에 AI 컴퓨터가 올립니다. 승인 안 한 글은 올라가지 않습니다.</p>
+    <p class="lede">매일 아침 AI가 지금까지 콘텐츠 중 <b>조회수가 높고 결이 맞는 것</b>(영양제·화장품·성분 꿀팁)을 골라(일부만 뽑거나 섞거나 새로 써서) 쓰레드 글 초안 3개를 만듭니다. 대표가 <b>고친 글·승인한 글·반려한 글(이유)</b>을 보고 다음 초안의 말투와 주제를 맞춰 갑니다. 고쳐서 <b>승인</b>하면 정한 시각에 AI 컴퓨터가 올립니다. 승인 안 한 글은 올라가지 않습니다.</p>
     ${opsThreadsReady ? '' : '<div class="rv-warn" style="margin:0 0 10px">⚠ 쓰레드 계정 연결 전입니다. 승인해 두면 연결되는 대로 예약 시각 순서로 올라갑니다.</div>'}
     <div class="toolbar" style="padding:0 0 12px">${Object.keys(G).filter(k => k !== 'posting').map(k => `<button class="chip ${st === k ? 'on' : ''}" data-upst="${k}">${G[k]} ${all.filter(t => k === 'approved' ? ['approved','posting'].includes(t.status) : t.status === k).length}</button>`).join('')}
       <div class="sep"></div><button class="chip" id="up-gen">🤖 초안 더 만들기</button></div>
     <div>${list.length ? list.map(t => `<div class="cm-card">
-      <div class="rv-sub">원본: <b>${esc(t.source_title || '-')}</b>${t.source_views ? ' · 조회 ' + opsN(t.source_views) : ''}${t.why ? ' · ' + esc(t.why) : ''}</div>
+      <div class="rv-sub">원본: <b>${esc(t.source_title || '-')}</b>${t.source_views ? ' · 조회 ' + opsN(t.source_views) : ''}${t.why ? ' · ' + esc(t.why) : ''}${t.reject_reason ? ' · <b>반려 이유:</b> ' + esc(t.reject_reason) : ''}</div>
       ${['posted','posting'].includes(t.status) ? `<div class="cm-q" style="white-space:pre-wrap">${esc(t.text)}</div><div class="cm-done">${t.status === 'posted' ? '✓ ' + esc(fmtKst(t.posted_at)) + ' 올라감' + (t.views != null ? ` · 조회 ${opsN(t.views)} · 좋아요 ${opsN(t.likes)} · 답글 ${opsN(t.replies_n)}` : '') + (t.permalink ? ` · <a href="${esc(t.permalink)}" target="_blank" rel="noopener">쓰레드에서 보기</a>` : '') : '⏳ 올리는 중'}</div>`
       : `<textarea class="up-txt" data-uptxt="${t.id}" rows="8" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:14px;line-height:1.6;margin:6px 0">${esc(t.text)}</textarea>
         <div class="rv-sub" data-upcnt="${t.id}">${(t.text || '').length}/500자</div>
@@ -1179,9 +1179,9 @@ async function renderOpsUpload(body){
   body.querySelectorAll('.up-txt').forEach(t => t.oninput = () => { body.querySelector(`[data-upcnt="${t.dataset.uptxt}"]`).textContent = t.value.length + '/500자'; });
   body.querySelectorAll('[data-upok]').forEach(b => b.onclick = async () => { b.disabled = true; if (await call({ action:'approve', id:b.dataset.upok, text:txt(b.dataset.upok), scheduled_at:at(b.dataset.upok) })) renderOpsUpload(body); else b.disabled = false; });
   body.querySelectorAll('[data-upsave]').forEach(b => b.onclick = async () => { if (await call({ action:'save', id:b.dataset.upsave, text:txt(b.dataset.upsave) })) { b.textContent = '저장됨'; setTimeout(() => b.textContent = '글만 저장', 1500); } });
-  body.querySelectorAll('[data-upno]').forEach(b => b.onclick = async () => { if (await call({ action:'reject', id:b.dataset.upno })) renderOpsUpload(body); });
+  body.querySelectorAll('[data-upno]').forEach(b => b.onclick = async () => { const why = prompt('반려 이유를 짧게 적어 주세요(선택) — AI가 다음 초안부터 반영합니다.\n예) 너무 광고 같음 / 말투 과함 / 주제 겹침', ''); if (why === null) return; if (await call({ action:'reject', id:b.dataset.upno, reason:why })) renderOpsUpload(body); });
   body.querySelectorAll('[data-upundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.upundo })) renderOpsUpload(body); });
-  $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:2 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) alert(`초안 ${d.made || 0}개를 만들었습니다.`); };
+  $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:3 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) alert(`초안 ${d.made || 0}개를 만들었습니다.`); };
 }
 
 // v48 🎬 AI 영상편집 — 요청 → 대표 승인 → AI 컴퓨터(Codex) 작업 → 검수(승인/재작업). 실제 편집은 Codex, 발행은 하지 않음.
