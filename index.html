@@ -70,6 +70,21 @@ nav{display:flex;gap:3px;margin-left:6px;flex-wrap:wrap}
 nav button{background:transparent;border:0;color:#A9C4EA;padding:7px 13px;border-radius:7px;font-weight:600;font-size:14px}
 nav button.on{background:var(--navy-3);color:#fff}
 nav button:hover{color:#fff}
+nav button.opsbtn{background:linear-gradient(135deg,#F59F00,#E8590C);color:#fff;font-weight:800;margin-right:8px;box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
+nav button.opsbtn:hover{filter:brightness(1.08)}
+nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#fff;box-shadow:0 0 0 2px #FFD43B inset}
+.ops-tabs{display:flex;gap:6px;margin:6px 0 16px;flex-wrap:wrap}
+.ops-tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 15px;font-weight:700;font-size:13.5px;color:var(--navy)}
+.ops-tabs button.on{background:#E8590C;border-color:#E8590C;color:#fff}
+.ops-acc{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:8px 0 18px}
+.ops-acc .a{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:12px 14px}
+.ops-acc .a b{display:block;font-size:13.5px}.ops-acc .a .n{font-size:22px;font-weight:800;margin-top:4px}
+.ops-acc .a .s{color:var(--muted);font-size:12px;margin-top:2px;line-height:1.5}
+.ops-pill{display:inline-block;font-size:11px;font-weight:800;padding:1px 7px;border-radius:9px;background:var(--wash);color:var(--navy);margin-right:4px}
+.ops-t td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ops-steps{counter-reset:s;list-style:none;padding:0;margin:8px 0 18px}
+.ops-steps li{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:10px 14px;margin-bottom:8px;font-size:13px}
+.ops-steps li b{margin-right:6px}.ops-steps li .st{float:right;font-size:12px;font-weight:800}
 .hright{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:13px;color:#A9C4EA}
 .hright b{color:#fff;font-weight:600}
 .linkbtn{background:transparent;border:0;color:#A9C4EA;text-decoration:underline;font-size:13px;padding:0}
@@ -525,14 +540,14 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v43</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v44</span></div>
       <nav>
+        <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
         <button data-view="insight">성과·정리</button>
         <button data-view="posts">글쓰기</button>
         <button data-view="review">최종검수<span class="nbadge hide" id="rv-badge"></span></button>
-        <button data-view="video">🎬 영상편집</button>
         <button data-view="drops">드랍</button>
         <button data-view="team" class="admin-only">팀 관리</button>
         <button data-view="settings" class="admin-only">설정</button>
@@ -976,13 +991,26 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
   document.querySelectorAll('.rv-f').forEach(x => x.classList.remove('on')); b.classList.add('on'); rvFilter = b.dataset.rvf; renderReview();
 });
 
-/* ---------------- 영상편집 (v43, 입장 비밀번호) ---------------- */
-let vdOpen = null;
+/* ---------------- 운영관리 (v44, 입장 비밀번호) ---------------- */
+// 비밀번호 통과(gate 'video', 12시간) 뒤 3칸: 댓글·DM / AI 영상편집 / SNS 성과
+let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views';
+try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
+const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
+const PF_KO = { youtube:'유튜브', instagram:'인스타', xiaohongshu:'샤오홍슈', douyin:'더우인', _summary:'요약' };
+async function loadOps(){
+  const [a, p, l, cm] = await Promise.all([
+    sb.from('ops_sns_accounts').select('*').order('sort', { ascending:true }),
+    sb.from('ops_sns_posts').select('*').order('published', { ascending:false }).limit(1000),
+    sb.from('ops_sync_log').select('*').order('at', { ascending:false }).limit(1),
+    sb.from('ops_comments').select('*').order('created_at', { ascending:false }).limit(300)
+  ]);
+  opsData = { acc: a.data || [], posts: p.data || [], last: (l.data || [])[0] || null, comments: cm.data || [] };
+}
 async function renderVideo(){
   const root = $('#vd-root'); if (!root || $('#view-video').classList.contains('hide')) return;
   if (vdOpen === null) { const { data } = await sb.rpc('gate_status', { p_gate: 'video' }); vdOpen = !!data; }
   if (!vdOpen) {
-    root.innerHTML = `<div class="vd-lock"><h3>🎬 AI 영상편집</h3><p class="lede" style="margin:0">허가된 사람만 들어갈 수 있습니다.<br>입장 비밀번호를 넣어 주세요.</p>
+    root.innerHTML = `<div class="vd-lock"><h3>🔐 운영관리</h3><p class="lede" style="margin:0">허가된 사람만 들어갈 수 있습니다.<br>입장 비밀번호를 넣어 주세요.</p>
       <form id="vd-form" autocomplete="off"><input type="password" id="vd-pw" placeholder="입장 비밀번호" autocomplete="new-password">
       <button class="btn" style="width:100%">들어가기</button></form><div class="vd-msg" id="vd-msg"></div></div>`;
     $('#vd-form').onsubmit = async e => {
@@ -990,24 +1018,25 @@ async function renderVideo(){
       const { data, error } = await sb.rpc('gate_enter', { p_gate: 'video', p_pw: $('#vd-pw').value });
       $('#vd-pw').value = '';
       if (error || !data?.ok) { $('#vd-msg').textContent = (data && data.msg) || error?.message || '확인 실패'; return; }
-      vdOpen = true; renderVideo();
+      vdOpen = true; opsData = null; renderVideo();
     };
     setTimeout(() => $('#vd-pw')?.focus(), 0);
     return;
   }
-  root.innerHTML = `<h3>🎬 AI 영상편집 <button class="btn sm ghost" id="vd-lockbtn" style="margin-left:8px">잠그기</button></h3>
-    <p class="lede">원본을 고르고 작업을 요청하면 AI 컴퓨터가 편집해서 NAS <b>김제조_영상자동화 › 04_검수대기</b>에 올립니다. 발행은 검수·승인 후에만 합니다. <b>지금은 페이지만 만들어 둔 단계입니다(준비 중).</b></p>
-    <div class="vd-grid">
-      <div class="vd-card"><b>① 원본 고르기</b><span>NAS 01_원본·02. 영상자료에서 촬영본 선택. 카드와 연결.</span></div>
-      <div class="vd-card"><b>② 작업 요청</b><span>A 컷편집(1.1배속·-14LUFS) · D 풀편집(자막·효과음·이미지) · B/C 영어판(더빙·립싱크)</span></div>
-      <div class="vd-card"><b>③ 진행 현황</b><span>대기 → 작업중 → 검수대기. 밤 일괄 작업 결과도 여기서.</span></div>
-      <div class="vd-card"><b>④ 검수·발행</b><span>결과는 '최종검수' 목록으로 넘어가 담당자 OK 후 게시예정.</span></div>
-    </div>
-    ${profile?.role === 'master' ? `<details class="vd-card" style="max-width:420px"><summary style="cursor:pointer;font-weight:800">입장 비밀번호 바꾸기 (대표만)</summary>
+  if (!opsData) { root.innerHTML = '<p class="lede">불러오는 중…</p>'; await loadOps(); }
+  const newCm = opsData.comments.filter(c => c.status === 'new').length;
+  root.innerHTML = `<h3>🔐 운영관리 <button class="btn sm ghost" id="vd-lockbtn" style="margin-left:8px">잠그기</button></h3>
+    <div class="ops-tabs">
+      <button data-opstab="comments" class="${opsTab === 'comments' ? 'on' : ''}">💬 댓글·DM${newCm ? ` <span class="nbadge">${newCm}</span>` : ''}</button>
+      <button data-opstab="video" class="${opsTab === 'video' ? 'on' : ''}">🎬 AI 영상편집</button>
+      <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
+    </div><div id="ops-body"></div>
+    ${profile?.role === 'master' ? `<details class="vd-card" style="max-width:420px;margin-top:28px"><summary style="cursor:pointer;font-weight:800">입장 비밀번호 바꾸기 (대표만)</summary>
       <form id="vd-set" autocomplete="off" style="margin-top:10px"><input type="password" id="vd-new" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
       <button class="btn sm" style="margin-top:8px">바꾸기</button> <span class="vd-msg" id="vd-setmsg"></span></form>
       <p class="rv-sub">바꾸면 다른 사람은 다시 입력해야 들어올 수 있습니다.</p></details>` : ''}`;
-  $('#vd-lockbtn').onclick = async () => { await sb.rpc('gate_lock', { p_gate: 'video' }); vdOpen = false; renderVideo(); };
+  $('#vd-lockbtn').onclick = async () => { await sb.rpc('gate_lock', { p_gate: 'video' }); vdOpen = false; opsData = null; renderVideo(); };
+  root.querySelectorAll('[data-opstab]').forEach(b => b.onclick = () => { opsTab = b.dataset.opstab; try { localStorage.setItem('kj_opstab', opsTab); } catch (e) {} renderVideo(); });
   const f = $('#vd-set');
   if (f) f.onsubmit = async e => {
     e.preventDefault();
@@ -1015,6 +1044,67 @@ async function renderVideo(){
     $('#vd-new').value = '';
     $('#vd-setmsg').textContent = (error || !data?.ok) ? ((data && data.msg) || error?.message || '실패') : '바뀌었습니다';
   };
+  const body = $('#ops-body');
+  if (opsTab === 'sns') return renderOpsSns(body);
+  if (opsTab === 'comments') return renderOpsComments(body);
+  return renderOpsVideo(body);
+}
+function renderOpsSns(body){
+  const { acc, posts, last } = opsData;
+  const sum = acc.find(a => a.platform === '_summary');
+  const accs = acc.filter(a => a.platform !== '_summary');
+  let list = posts.filter(p => opsPf === 'all' || p.platform === opsPf);
+  list = list.slice().sort((a, b) => opsSort === 'views' ? (b.views || 0) - (a.views || 0) : String(b.published).localeCompare(String(a.published)));
+  const fm = {}; list.forEach(p => { const k = p.format || '미분류'; (fm[k] = fm[k] || []).push(p.views || 0); });
+  const fmRows = Object.entries(fm).map(([k, v]) => [k, v.length, Math.round(v.reduce((s, x) => s + x, 0) / v.length)]).sort((a, b) => b[2] - a[2]);
+  const pfs = ['all', ...new Set(posts.map(p => p.platform))];
+  body.innerHTML = `<p class="lede">솔루션즈 웍스 SNS 성과(유튜브·인스타·샤오홍슈·더우인)를 매시 17분에 그대로 받아옵니다.
+      원본 수집은 매일 아침(유튜브 09:05·인스타 09:15 등)이라 숫자는 하루 한 번 바뀝니다. 마지막 받은 시각 ${esc(last ? fmtKst(last.at) : '-')}</p>
+    <div class="ops-acc">${accs.map(a => `<div class="a"><b>${esc(PF_KO[a.platform] || a.platform)} · ${esc(a.handle || '')}</b>
+      <div class="n">${opsN(a.followers)}<span style="font-size:12px;font-weight:600;color:var(--muted)"> ${a.platform === 'youtube' ? '구독' : '팔로워'}</span></div>
+      <div class="s">${esc(a.role || '')}<br>게시물 ${opsN(a.posts)}${a.total_views ? ' · 누적 조회 ' + opsN(a.total_views) : ''}${a.operator ? '<br>운영 ' + esc(a.operator) : ''}</div>
+      ${a.analysis ? `<details style="margin-top:6px"><summary class="rv-sub" style="cursor:pointer">분석 보기</summary>${['strengths','weaknesses','next'].filter(k => (a.analysis[k] || []).length).map(k => `<div class="rv-sub" style="margin-top:6px"><b>${{ strengths:'강점', weaknesses:'약점', next:'다음 할 것' }[k]}</b><br>${a.analysis[k].map(x => '· ' + esc(x)).join('<br>')}</div>`).join('')}</details>` : ''}</div>`).join('')}</div>
+    ${sum?.analysis?.points?.length ? `<details class="vd-card" style="margin-bottom:16px"><summary style="cursor:pointer;font-weight:800">전 계정 공통 결론</summary><div class="rv-sub" style="line-height:1.7;margin-top:8px">${sum.analysis.points.map(x => '· ' + esc(x)).join('<br>')}</div></details>` : ''}
+    <div class="toolbar" style="padding:0 0 10px">${pfs.map(p => `<button class="chip ${opsPf === p ? 'on' : ''}" data-opspf="${p}">${p === 'all' ? '전체' : esc(PF_KO[p] || p)}</button>`).join('')}
+      <div class="sep"></div><button class="chip ${opsSort === 'views' ? 'on' : ''}" data-opssort="views">조회순</button><button class="chip ${opsSort === 'date' ? 'on' : ''}" data-opssort="date">최신순</button>
+      <span class="count">${list.length}개</span></div>
+    <details style="margin-bottom:12px"><summary class="rv-sub" style="cursor:pointer;font-weight:700">형식별 평균 조회 (지금 필터 기준)</summary>
+      <table class="rv-t ops-t" style="max-width:520px;margin-top:6px"><tbody>${fmRows.map(r => `<tr><td>${esc(r[0])}</td><td class="num">${r[1]}개</td><td class="num">평균 ${opsN(r[2])}</td></tr>`).join('')}</tbody></table></details>
+    <table class="rv-t ops-t"><thead><tr><th>게시일</th><th>채널</th><th>제목</th><th>형식·주제</th><th>조회</th><th>좋아요</th><th>댓글</th></tr></thead><tbody>${list.slice(0, 300).map(p => `<tr>
+      <td class="num">${esc(String(p.published || '').slice(0, 10))}</td><td>${esc(PF_KO[p.platform] || p.platform)}${p.kind ? ` <span class="rv-sub">${esc(p.kind)}</span>` : ''}</td>
+      <td>${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title || '(제목 없음)')}</a>` : esc(p.title || '')}</td>
+      <td>${p.format ? `<span class="ops-pill">${esc(p.format)}</span>` : ''}${p.topic ? `<span class="ops-pill">${esc(p.topic)}</span>` : ''}</td>
+      <td class="num">${opsN(p.views)}</td><td class="num">${opsN(p.likes)}</td><td class="num">${opsN(p.comments)}</td></tr>`).join('')}</tbody></table>`;
+  body.querySelectorAll('[data-opspf]').forEach(b => b.onclick = () => { opsPf = b.dataset.opspf; renderOpsSns(body); });
+  body.querySelectorAll('[data-opssort]').forEach(b => b.onclick = () => { opsSort = b.dataset.opssort; renderOpsSns(body); });
+}
+function renderOpsComments(body){
+  const cm = opsData.comments;
+  const step = (n, t, d, st) => `<li><b>${n}</b>${t}<span class="st" style="color:${st === '연결됨' ? '#2B8A3E' : '#E67700'}">${st}</span><div class="rv-sub">${d}</div></li>`;
+  body.innerHTML = `<p class="lede">모든 영상의 댓글과 DM을 한곳에 모아, AI가 답장 초안을 쓰고 사람이 확인해서 보냅니다. 하나씩 연결하는 중입니다.</p>
+    <ol class="ops-steps">
+      ${step('①', '인스타 릴스 댓글 모으기', '김제조 인스타(@kimjejo_pharm) 게시물 댓글을 정기적으로 가져옴 (인스타 연동 권한 확인 필요)', '준비 중')}
+      ${step('②', '유튜브 댓글 모으기', '@kimjejopharma 쇼츠·롱폼 댓글 (읽기는 지금 키로 가능)', '준비 중')}
+      ${step('③', 'AI 답장 초안', '김제조 말투·규제 기준(제품 추천 금지 등)으로 초안 작성, 키워드 댓글은 자료 링크 자동 매칭', '준비 중')}
+      ${step('④', '승인 후 답장 보내기', '여기서 확인·수정 → 보내기 (보내기는 사람만)', '준비 중')}
+      ${step('⑤', '인스타 DM', '메시지 권한(instagram_manage_messages) 승인이 필요 — 대표 계정 연결 후 진행', '준비 중')}
+    </ol>
+    <h4 style="margin:10px 0">받은 댓글·DM <span class="count">${cm.length}건</span></h4>
+    ${cm.length ? `<table class="rv-t"><thead><tr><th>채널·게시물</th><th>작성자·내용</th><th>답장</th><th>상태</th></tr></thead><tbody>${cm.map(c => `<tr>
+      <td>${esc(PF_KO[c.platform] || c.platform)} ${c.kind === 'dm' ? 'DM' : ''}<div class="rv-sub">${esc(c.post_title || '')}</div></td>
+      <td><b>${esc(c.author || '')}</b> <span class="rv-sub">${esc(fmtKst(c.created_at))}</span><div>${esc(c.text || '')}</div></td>
+      <td>${esc(c.replied_text || c.reply_draft || '')}</td><td>${esc({ new:'새 댓글', drafted:'초안', replied:'답장함', hidden:'숨김', skip:'건너뜀' }[c.status] || c.status)}</td></tr>`).join('')}</tbody></table>`
+      : '<p class="lede">아직 연결 전이라 비어 있습니다.</p>'}`;
+}
+function renderOpsVideo(body){
+  body.innerHTML = `<p class="lede">원본을 고르고 작업을 요청하면 AI 컴퓨터(ChatGPT·Codex)가 편집해서 NAS <b>김제조_영상자동화 › 04_검수대기</b>에 올리고, 여기서 승인·결과를 확인합니다. 발행은 승인 후에만 합니다.</p>
+    <ol class="ops-steps">
+      <li><b>①</b>원본 고르기<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">NAS 01_원본·02. 영상자료에서 촬영본 선택, 카드와 연결</div></li>
+      <li><b>②</b>작업 요청<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">A 컷편집(1.1배속·-14LUFS) · D 풀편집(자막·효과음·이미지) · B/C 영어판(더빙·립싱크) — 유료 작업은 승인 필요</div></li>
+      <li><b>③</b>진행 현황<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">대기 → 작업중 → 검수대기 (밤 일괄 작업 포함)</div></li>
+      <li><b>④</b>결과 확인·승인<span class="st" style="color:#E67700">준비 중</span><div class="rv-sub">04_검수대기 결과 미리보기 → 승인하면 05_발행승인, 반려하면 사유와 함께 재작업</div></li>
+    </ol>
+    <p class="rv-sub">완성본이 NAS 인스타그램 폴더에 올라가면 상단 '최종검수' 목록으로 자동으로 넘어갑니다(연결됨).</p>`;
 }
 
 /* ---------------- 필터 ---------------- */
