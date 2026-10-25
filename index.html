@@ -499,7 +499,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v37</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v38</span></div>
       <nav>
         <button data-view="board" class="on">생산 라인</button>
         <button data-view="schedule">게시 일정</button>
@@ -549,6 +549,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
   </section>
 
   <section id="view-schedule" class="hide wrap">
+    <div class="linetabs" data-ltview="sc" style="padding:0 0 10px"></div>
     <h3>게시 일정</h3>
     <p class="lede">게시 승인이 난 콘텐츠와 게시가 끝난 콘텐츠를 함께 봅니다.
       생산 라인을 거치지 않은 일정도 여기서 바로 만들 수 있습니다.</p>
@@ -630,6 +631,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
   </section>
 
   <section id="view-insight" class="hide wrap">
+    <div class="linetabs" data-ltview="ins" style="padding:0 0 10px"></div>
     <h3>성과·정리</h3>
     <p class="lede">최근 30일 게시물 성과와, 14일 넘게 움직이지 않은 카드를 모아 봅니다.
       성과는 매일 아침 6:30 인스타·유튜브에서 자동으로 채워집니다.</p>
@@ -920,19 +922,27 @@ function lineOf(){
   if (!TEAM_TAGS.includes(curLine)) curLine = (me && teamByOwners([me.id])) || '솔';
   return curLine;
 }
+// v38: 같은 라인 탭을 생산 라인·게시 일정·성과·정리에 모두 둔다. 고른 라인은 세 화면 공통
 function buildLineTabs(){
-  const box = $('#line-tabs'); if (!box) return; lineOf();
+  lineOf();
   const live = c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP;
-  box.innerHTML = TEAM_TAGS.map(t => `<button class="ltab ltab-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'} ${t === curLine ? 'on' : ''}" data-line="${t}"><b>${TEAM_LABEL[t]}</b> 라인<span>${cards.filter(c => live(c) && teamTag(c) === t).length}</span></button>`).join('')
-    + `<span class="lhint">카드를 다른 라인 탭에 끌어다 놓으면 단계는 그대로 두고 그 라인으로 옮겨집니다 (우클릭 → 라인 옮기기도 가능)</span>`;
-  box.querySelectorAll('[data-line]').forEach(b => {
-    b.onclick = () => { if (b.dataset.line === curLine) return; curLine = b.dataset.line; try { localStorage.setItem('kj_line', curLine); } catch (_) {} ownerFilter.clear(); buildOwnerChips(); renderBoard(); };
-    b.ondragover = e => { if (b.dataset.line === curLine) return; e.preventDefault(); b.classList.add('drop'); };
-    b.ondragleave = () => b.classList.remove('drop');
-    b.ondrop = async e => { e.preventDefault(); b.classList.remove('drop'); await moveLine(e.dataTransfer.getData('text/plain'), b.dataset.line); };
+  const HINT = { board: '카드를 다른 라인 탭에 끌어다 놓으면 단계는 그대로 두고 그 라인으로 옮겨집니다 (우클릭 → 라인 옮기기도 가능)',
+    sc: '게시 일정도 고른 라인만 보입니다. 캘린더의 일정을 다른 라인 탭에 끌어다 놓으면 그 라인으로 옮겨집니다',
+    ins: '성과·정리 필요 카드도 고른 라인만 봅니다' };
+  $$('#line-tabs, .linetabs[data-ltview]').forEach(box => {
+    const v = box.dataset.ltview || 'board';
+    box.innerHTML = TEAM_TAGS.map(t => `<button class="ltab ltab-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'} ${t === curLine ? 'on' : ''}" data-line="${t}"><b>${TEAM_LABEL[t]}</b> 라인<span>${cards.filter(c => live(c) && teamTag(c) === t).length}</span></button>`).join('')
+      + `<span class="lhint">${HINT[v]}</span>`;
+    box.querySelectorAll('[data-line]').forEach(b => {
+      b.onclick = () => { if (b.dataset.line === curLine) return; curLine = b.dataset.line; try { localStorage.setItem('kj_line', curLine); } catch (_) {} ownerFilter.clear(); scOwnerFilter.clear(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); };
+      b.ondragover = e => { if (b.dataset.line === curLine) return; e.preventDefault(); b.classList.add('drop'); };
+      b.ondragleave = () => b.classList.remove('drop');
+      b.ondrop = async e => { e.preventDefault(); b.classList.remove('drop'); await moveLine(e.dataTransfer.getData('text/plain'), b.dataset.line); };
+    });
   });
 }
 async function moveLine(id, t){
+  id = String(id || '').split('|')[0];   // 캘린더 일정은 "카드id|종류"
   const c = cards.find(x => x.id === id); if (!c || teamTag(c) === t) return;
   const { error } = await sb.from('contents').update({ team_tag: t }).eq('id', id);
   if (error) return alert(cleanErr(error.message));
@@ -940,8 +950,8 @@ async function moveLine(id, t){
 }
 
 function buildScheduleChips(){
-  const pool = cards.filter(c =>
-    c.stage === '촬영' || c.stage === '편집' || c.stage === PLANNED || c.stage === DONE);
+  const pool = cards.filter(c => teamTag(c) === lineOf() && (
+    c.stage === '촬영' || c.stage === '편집' || c.stage === PLANNED || c.stage === DONE));
   buildChips('#sc-owner-chips', '#sc-owner-clear', ownerItems(pool), scOwnerFilter, renderSchedule);
   const chs = channels.filter(c => c.active).map(c => ({ key: c.label, label: c.label }));
   buildChips('#sc-channel-chips', '#sc-channel-clear', chs, scChannelFilter, renderSchedule);
@@ -1124,7 +1134,7 @@ function renderInsight(){
   const now = Date.now(), DAY = 864e5;
   const open = (k) => { try { return localStorage.getItem('kjins:' + k) !== '0'; } catch (_) { return true; } };
   // 성과: 최근 30일 게시완료 + 조회수 있음
-  const recent = cards.filter(c => c.stage === DONE && c.views && c.publish_date && now - new Date(c.publish_date) <= 30 * DAY);
+  const recent = cards.filter(c => teamTag(c) === lineOf() && c.stage === DONE && c.views && c.publish_date && now - new Date(c.publish_date) <= 30 * DAY);
   const src = c => /instagram/.test(c.publish_url || '') ? '인스타' : (/youtu/.test(c.publish_url || '') ? '유튜브' : '');
   const rate = c => c.views ? ((c.saves || 0) / c.views * 100) : 0;
   const top = [...recent].sort((a, b) => b.views - a.views).slice(0, 3);
@@ -1133,20 +1143,20 @@ function renderInsight(){
   const row = (c, rep) => `<tr><td class="ttl" data-insopen="${c.id}" title="${esc(c.title)}">${esc(c.title)}</td><td>${src(c)}</td>
     <td class="num">${fmtN(c.views)}</td><td class="num">${c.saves != null ? fmtN(c.saves) : '—'}</td><td class="num">${c.saves != null ? rate(c).toFixed(1) + '%' : '—'}</td>
     <td>${rep ? `<button class="mini-b" data-insrep="${c.id}" title="같은 틀로 다음 편 아이디어 카드 만들기">같은 틀로 +</button>` : ''}</td></tr>`;
-  const perf = `<details data-ins="perf" ${open('perf') ? 'open' : ''}><summary>📊 최근 30일 성과 — ${recent.length}개 · 평균 조회 ${fmtN(avgV)}</summary>
+  const perf = `<details data-ins="perf" ${open('perf') ? 'open' : ''}><summary>📊 ${TEAM_LABEL[curLine]} 라인 최근 30일 성과 — ${recent.length}개 · 평균 조회 ${fmtN(avgV)}</summary>
     ${recent.length ? `<table><tr><th>잘 된 콘텐츠</th><th>채널</th><th class="num">조회</th><th class="num">저장</th><th class="num">저장률</th><th></th></tr>${top.map(c => row(c, true)).join('')}
     <tr><th>아쉬운 콘텐츠</th><th></th><th></th><th></th><th></th><th></th></tr>${low.map(c => row(c, false)).join('')}</table>
     <p class="note" style="margin-top:6px">매일 아침 6:30 인스타·유튜브 게시물을 카드와 자동으로 짝지어 링크·조회·저장·공유를 채웁니다.</p>`
     : '<p class="note">최근 30일 성과가 아직 없습니다. 매일 아침 자동으로 채워집니다.</p>'}</details>`;
   // 정리 필요: 14일 넘게 안 움직인 제작 중·게시예정 카드
-  const stale = cards.filter(c => c.stage !== DONE && c.stage !== DROP && c.updated_at && now - new Date(c.updated_at) > 14 * DAY)
+  const stale = cards.filter(c => teamTag(c) === lineOf() && c.stage !== DONE && c.stage !== DROP && c.updated_at && now - new Date(c.updated_at) > 14 * DAY)
     .sort((a, b) => (a.updated_at || '').localeCompare(b.updated_at || ''));
   const groups = {};
   stale.forEach(c => { const k = (c.owner_ids || []).length ? ownerNames([c.owner_ids[0]]) : '담당 미정'; (groups[k] = groups[k] || []).push(c); });
   const srow = c => `<tr data-insrow="${c.id}" title="우클릭: 게시완료·단계 이동·삭제"><td class="ttl" data-insopen="${c.id}" title="${esc(c.title)}">${esc(c.title)}</td><td>${esc(c.stage)}</td>
     <td class="num">${Math.floor((now - new Date(c.updated_at)) / DAY)}일</td>
     <td style="white-space:nowrap"><button class="mini-b" data-inskeep="${c.id}" title="계속 진행 — 오늘 날짜로 갱신">계속</button><input type="date" class="mini-b" data-insdate="${c.id}" title="게시예정일 지정" style="padding:1px 3px"><button class="mini-b" data-insdrop="${c.id}">드랍</button></td></tr>`;
-  const clean = `<details data-ins="stale" ${open('stale') ? 'open' : ''}><summary>🧹 정리 필요 — 14일 넘게 안 움직인 카드 ${stale.length}개</summary>
+  const clean = `<details data-ins="stale" ${open('stale') ? 'open' : ''}><summary>🧹 ${TEAM_LABEL[curLine]} 라인 정리 필요 — 14일 넘게 안 움직인 카드 ${stale.length}개</summary>
     ${stale.length ? Object.entries(groups).sort((a, b) => b[1].length - a[1].length).map(([k, list]) => `<div class="owner">${esc(k)} · ${list.length}개</div>
       <table>${list.slice(0, 15).map(srow).join('')}</table>${list.length > 15 ? `<p class="note">… 외 ${list.length - 15}개</p>` : ''}`).join('')
     : '<p class="note">모두 잘 움직이고 있습니다.</p>'}</details>`;
@@ -1168,7 +1178,7 @@ function renderInsight(){
   $$('#kj-ins [data-insrep]').forEach(b => b.onclick = async () => {
     const c = cards.find(x => x.id === b.dataset.insrep); if (!c) return;
     const { error } = await sb.from('contents').insert({ title: '[같은 틀] ' + c.title, stage: IDEA, channels: c.channels || [], moat: c.moat || null,
-      reference_url: c.publish_url || null, next_action: `잘 된 형식(조회 ${fmtN(c.views)}) 그대로 다음 주제 정하기`, created_by: me.id });
+      reference_url: c.publish_url || null, next_action: `잘 된 형식(조회 ${fmtN(c.views)}) 그대로 다음 주제 정하기`, created_by: me.id, team_tag: teamTag(c) });
     if (error) return alert(cleanErr(error.message));
     await refresh(); alert('아이디어 칸에 "같은 틀" 카드를 만들었습니다.');
   });
@@ -1245,6 +1255,7 @@ const SC_KINDS = {
 function scheduleEvents(){
   const out = [];
   cards.forEach(c => {
+    if (teamTag(c) !== lineOf()) return;   // v38: 고른 라인만
     if (!matchOwner(c, scOwnerFilter)) return;
     if (!matchChannel(c, scChannelFilter)) return;
 
@@ -1432,7 +1443,7 @@ function newScheduleCard(dateStr){
   const preset = asShoot
     ? { stage: '촬영',  shoot_date: dateStr || null }
     : { stage: PLANNED, publish_date: dateStr || null };
-  openCard(null, preset);
+  openCard(null, { ...preset, team_tag: lineOf() });   // v38: 지금 라인에 추가
 }
 
 $('#sc-new').onclick = () => newScheduleCard(null);
