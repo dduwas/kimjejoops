@@ -628,7 +628,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v60</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v61</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1101,7 +1101,7 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
 let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo', opsUpSt = 'draft', opsThreadsReady = false;
 try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
 const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
-const PF_KO = { youtube:'유튜브', instagram:'인스타', instagram_global:'인스타 @jejo.rx', xiaohongshu:'샤오홍슈', douyin:'더우인', threads:'쓰레드', _summary:'요약' };
+const PF_KO = { youtube:'유튜브', instagram:'인스타', instagram_global:'인스타 @jejo.kpharmacist', xiaohongshu:'샤오홍슈', douyin:'더우인', threads:'쓰레드', _summary:'요약' };
 // Account history is read only in the browser; collection is handled by a DB trigger.
 let opsTrendAccount = 'all', opsTrendDays = '30';
 const trendKey = a => JSON.stringify([a.platform, a.handle || '']);
@@ -1306,8 +1306,8 @@ function renderOpsComments(body){
     { k:'instagram', label:'인스타 댓글 @kimjejo_pharma', on:true },
     { k:'instagram_dm', label:'인스타 DM', on:true, warn:'DM은 상대가 마지막 메시지를 보낸 뒤 24시간 안에만 답장할 수 있습니다(인스타 규칙).' },
     { k:'threads', label:'쓰레드 @kimjejo_pharma', on:true },
-    { k:'instagram_global', label:'인스타 댓글 @jejo.rx', on:true },
-    { k:'instagram_global_dm', label:'인스타 DM @jejo.rx', on:true, warn:'DM은 상대가 마지막 메시지를 보낸 뒤 24시간 안에만 답장할 수 있습니다(인스타 규칙).' },
+    { k:'instagram_global', label:'인스타 댓글 @jejo.kpharmacist', on:true },
+    { k:'instagram_global_dm', label:'인스타 DM @jejo.kpharmacist', on:true, warn:'DM은 상대가 마지막 메시지를 보낸 뒤 24시간 안에만 답장할 수 있습니다(인스타 규칙).' },
     { k:'xiaohongshu', label:'샤오홍수', on:true, warn:'샤오홍슈 로그인 후 연결됩니다(회사 휴대폰 샤오홍슈 앱으로 QR 스캔 1회). 답장은 중국어 기본.' },
     { k:'douyin', label:'더우인', on:true, warn:'하루 1회 AI 컴퓨터가 더우인 창작자센터에서 댓글을 모으고, 보내기 누른 답장을 올립니다. 답장은 중국어 기본.' }
   ];
