@@ -628,7 +628,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v59</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v60</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1308,8 +1308,8 @@ function renderOpsComments(body){
     { k:'threads', label:'쓰레드 @kimjejo_pharma', on:true },
     { k:'instagram_global', label:'인스타 댓글 @jejo.rx', on:true },
     { k:'instagram_global_dm', label:'인스타 DM @jejo.rx', on:true, warn:'DM은 상대가 마지막 메시지를 보낸 뒤 24시간 안에만 답장할 수 있습니다(인스타 규칙).' },
-    { k:'xiaohongshu', label:'샤오홍수', on:false, warn:'자동 댓글·DM 연결 확인 필요. 공식 운영 화면에서 로그인 후 답장할 수 있습니다.' },
-    { k:'douyin', label:'더우인', on:false, warn:'공식 댓글 API는 앱 권한·계정 승인이 필요합니다. 연결 전에는 공식 운영 화면에서 답장하세요.' }
+    { k:'xiaohongshu', label:'샤오홍수', on:true, warn:'샤오홍슈 로그인 후 연결됩니다(회사 휴대폰 샤오홍슈 앱으로 QR 스캔 1회). 답장은 중국어 기본.' },
+    { k:'douyin', label:'더우인', on:true, warn:'하루 1회 AI 컴퓨터가 더우인 창작자센터에서 댓글을 모으고, 보내기 누른 답장을 올립니다. 답장은 중국어 기본.' }
   ];
   const ST = { todo:['new','drafted'], sending:['sending'], replied:['replied'], skip:['skip','hidden'], all:null };
   const STL = { todo:'답장 필요', sending:'보내는 중', replied:'답장 완료', skip:'건너뜀', all:'전체' };
@@ -1332,6 +1332,7 @@ function renderOpsComments(body){
       : c.status === 'skip' ? `<div class="rv-sub">건너뜀 <button class="linkbtn" data-cmundo="${esc(c.id)}">되돌리기</button></div>`
       : `${c.send_error ? `<div class="rv-warn">⚠ ${esc(c.send_error)}</div>` : ''}
         <div class="cm-rec"><span class="cm-tag">추천 답장</span> ${c.reply_draft ? esc(c.reply_draft) : '<span class="rv-sub">아직 없음 — 🤖 추천 답장 더 만들기</span>'}</div>
+        <div class="cm-lang" style="display:flex;gap:4px;align-items:center;margin:4px 0;font-size:12px"><span class="rv-sub">답장 언어</span>${[['','자동'],['ko','한국어'],['en','English'],['zh','中文'],['ja','日本語']].map(([l,n]) => `<button class="chip ${(c.reply_lang || '') === l ? 'on' : ''}" style="padding:2px 8px;font-size:12px" data-cmlang="${esc(c.id)}" data-l="${l}" title="${l ? n + '로 다시 쓰기' : '채널 기본 언어(' + ({instagram:'한국어',youtube:'한국어',threads:'한국어',instagram_global:'English',douyin:'中文',xiaohongshu:'中文'}[c.platform] || '한국어') + ')로 다시 쓰기'}">${n}</button>`).join('')}</div>
         <div class="cm-act">${c.reply_draft && !/답장 안 함/.test(c.reply_draft) ? `<button class="btn sm" data-cmsend="${esc(c.id)}">이대로 보내기</button>` : ''}<button class="btn sm ghost" data-cmskip="${esc(c.id)}">건너뛰기</button></div>
         <div class="cm-my"><textarea rows="2" placeholder="추천 답장이 마음에 안 들면 여기에 직접 쓰고 확인" data-cmtxt="${esc(c.id)}"></textarea><button class="btn sm" data-cmmy="${esc(c.id)}">확인</button></div>`}
     </div>`).join('') : '<p class="lede">해당하는 댓글이 없습니다.</p>'}</div>`;
@@ -1348,6 +1349,7 @@ function renderOpsComments(body){
     if (!t) return alert('답장 내용을 적어 주세요.');
     b.disabled = true; if (await call({ action:'send', id, text:t })) set(id, { status:'sending', replied_text:t, send_error:null }); else b.disabled = false;
   });
+  body.querySelectorAll('[data-cmlang]').forEach(b => b.onclick = async () => { const id = b.dataset.cmlang; b.textContent = '…'; b.disabled = true; if (await call({ action:'draft', ids:[id], lang:b.dataset.l })) { await loadOps(); } renderOpsComments(body); });
   body.querySelectorAll('[data-cmskip]').forEach(b => b.onclick = async () => { if (await call({ action:'skip', id:b.dataset.cmskip })) set(b.dataset.cmskip, { status:'skip' }); });
   body.querySelectorAll('[data-cmundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.cmundo })) set(b.dataset.cmundo, { status:'drafted' }); });
   $('#cm-draft').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…'; const d = await call({ action:'draft' }); await loadOps(); renderOpsComments(body); if (d) alert(`추천 답장 ${d.drafted || 0}개를 만들었습니다.`); };
