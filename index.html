@@ -628,7 +628,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v61</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v62</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1308,7 +1308,7 @@ function renderOpsComments(body){
     { k:'threads', label:'쓰레드 @kimjejo_pharma', on:true },
     { k:'instagram_global', label:'인스타 댓글 @jejo.kpharmacist', on:true },
     { k:'instagram_global_dm', label:'인스타 DM @jejo.kpharmacist', on:true, warn:'DM은 상대가 마지막 메시지를 보낸 뒤 24시간 안에만 답장할 수 있습니다(인스타 규칙).' },
-    { k:'xiaohongshu', label:'샤오홍수', on:true, warn:'샤오홍슈 로그인 후 연결됩니다(회사 휴대폰 샤오홍슈 앱으로 QR 스캔 1회). 답장은 중국어 기본.' },
+    { k:'xiaohongshu', label:'샤오홍수', on:true, warn:'AI 컴퓨터의 샤오홍슈 전용 프로그램이 30분마다 댓글을 모으고, 보내기 누른 답장을 올립니다. 로그인이 풀리면 🔑 샤오홍슈 로그인(QR) → QR 만들기 → 앱 ≡ 扫一扫로 스캔. 김제조 계정은 다른 곳에서 샤오홍슈 웹 로그인 금지(웹 로그인은 한 곳만 유지). 답장은 중국어 기본.' },
     { k:'douyin', label:'더우인', on:true, warn:'하루 1회 AI 컴퓨터가 더우인 창작자센터에서 댓글을 모으고, 보내기 누른 답장을 올립니다. 답장은 중국어 기본.' }
   ];
   const ST = { todo:['new','drafted'], sending:['sending'], replied:['replied'], skip:['skip','hidden'], all:null };
@@ -1323,7 +1323,7 @@ function renderOpsComments(body){
     ${curAcc.warn ? `<div class="rv-warn" style="margin:0 0 10px">⚠ ${esc(curAcc.warn)}</div>` : ''}
     ${CHINA_CHANNELS[opsCmAcc] ? chinaChannelPanel(opsCmAcc) : ''}
     <div class="toolbar" style="padding:0 0 12px">${Object.keys(STL).map(s => `<button class="chip ${opsCmSt === s ? 'on' : ''}" data-cmst="${s}">${STL[s]} ${cnt(opsCmAcc, s)}</button>`).join('')}
-      <div class="sep"></div><button class="chip" id="cm-draft">🤖 추천 답장 더 만들기</button><button class="chip" id="cm-reload">↻ 새로고침</button></div>
+      <div class="sep"></div><button class="chip" id="cm-draft">🤖 추천 답장 더 만들기</button><button class="chip" id="cm-reload">↻ 새로고침</button>${opsCmAcc === 'xiaohongshu' ? '<button class="chip" id="cm-xhs-login">🔑 샤오홍슈 로그인(QR)</button>' : ''}</div>
     <div id="cm-list">${list.length ? list.slice(0, 120).map(c => `<div class="cm-card" data-cm="${esc(c.id)}">
       <div class="rv-sub">${esc(PF_KO[c.platform] || c.platform)}${c.kind === 'dm' ? ' DM' : ''} · ${c.post_url ? `<a href="${esc(c.post_url)}" target="_blank" rel="noopener">${esc(c.post_title || '게시물')}</a>` : esc(c.post_title || '')} · ${esc(fmtKst(c.created_at))}</div>
       <div class="cm-q"><b>${esc(c.author || '')}</b> ${esc(c.text || '')}</div>
@@ -1354,6 +1354,7 @@ function renderOpsComments(body){
   body.querySelectorAll('[data-cmundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.cmundo })) set(b.dataset.cmundo, { status:'drafted' }); });
   $('#cm-draft').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…'; const d = await call({ action:'draft' }); await loadOps(); renderOpsComments(body); if (d) alert(`추천 답장 ${d.drafted || 0}개를 만들었습니다.`); };
   $('#cm-reload').onclick = async () => { await loadOps(); renderOpsComments(body); };
+  if ($('#cm-xhs-login')) $('#cm-xhs-login').onclick = async () => { const w = window.open('about:blank', '_blank'); const { data } = await sb.from('app_settings').select('value').eq('key', 'xhs_login_url').maybeSingle(); if (data && data.value) { if (w) w.location = data.value; else location.href = data.value; } else { if (w) w.close(); alert('로그인 링크 설정이 없습니다(관리자만 사용 가능).'); } };
 }
 
 async function renderOpsUpload(body){
