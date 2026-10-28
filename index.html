@@ -628,7 +628,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v64</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v65</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1207,7 +1207,12 @@ async function loadOps(){
 }
 async function renderVideo(){
   const root = $('#vd-root'); if (!root || $('#view-video').classList.contains('hide')) return;
-  if (vdOpen === null) { const { data } = await sb.rpc('gate_status', { p_gate: 'video' }); vdOpen = !!data; }
+  if (vdOpen === null) {
+    // v65: 이 브라우저에 출입증이 있으면 비밀번호 없이 입장(잠그기·비밀번호 변경 시 무효)
+    let dt = null; try { dt = localStorage.getItem('kj_gate_video'); } catch (e) {}
+    if (dt) { const { data } = await sb.rpc('gate_device', { p_gate: 'video', p_token: dt }); vdOpen = !!data; if (!data) { try { localStorage.removeItem('kj_gate_video'); } catch (e) {} } }
+    if (!vdOpen) { const { data } = await sb.rpc('gate_status', { p_gate: 'video' }); vdOpen = !!data; }
+  }
   if (!vdOpen) {
     root.innerHTML = `<div class="vd-lock"><h3>🔐 운영관리</h3><p class="lede" style="margin:0">허가된 사람만 들어갈 수 있습니다.<br>입장 비밀번호를 넣어 주세요.</p>
       <form id="vd-form" autocomplete="off"><input type="password" id="vd-pw" placeholder="입장 비밀번호" autocomplete="new-password">
@@ -1217,6 +1222,7 @@ async function renderVideo(){
       const { data, error } = await sb.rpc('gate_enter', { p_gate: 'video', p_pw: $('#vd-pw').value });
       $('#vd-pw').value = '';
       if (error || !data?.ok) { $('#vd-msg').textContent = (data && data.msg) || error?.message || '확인 실패'; return; }
+      try { const { data: dt } = await sb.rpc('gate_remember', { p_gate: 'video', p_label: (navigator.userAgent || '').slice(0, 120) }); if (dt) localStorage.setItem('kj_gate_video', dt); } catch (e) {}
       vdOpen = true; opsData = null; renderVideo();
     };
     setTimeout(() => $('#vd-pw')?.focus(), 0);
@@ -1236,15 +1242,16 @@ async function renderVideo(){
     ${profile?.role === 'master' ? `<details class="vd-card" style="max-width:420px;margin-top:28px"><summary style="cursor:pointer;font-weight:800">입장 비밀번호 바꾸기 (대표만)</summary>
       <form id="vd-set" autocomplete="off" style="margin-top:10px"><input type="password" id="vd-new" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
       <button class="btn sm" style="margin-top:8px">바꾸기</button> <span class="vd-msg" id="vd-setmsg"></span></form>
-      <p class="rv-sub">바꾸면 다른 사람은 다시 입력해야 들어올 수 있습니다.</p></details>` : ''}`;
-  $('#vd-lockbtn').onclick = async () => { await sb.rpc('gate_lock', { p_gate: 'video' }); vdOpen = false; opsData = null; renderVideo(); };
+      <p class="rv-sub">한 번 들어간 브라우저는 기억되어 다음부터 바로 열립니다(잠그기를 누르면 그 브라우저만 해제). 비밀번호를 바꾸면 기억된 브라우저가 모두 해제됩니다.</p></details>` : ''}`;
+  $('#vd-lockbtn').onclick = async () => { let dt = null; try { dt = localStorage.getItem('kj_gate_video'); localStorage.removeItem('kj_gate_video'); } catch (e) {} if (dt) await sb.rpc('gate_forget', { p_gate: 'video', p_token: dt }); await sb.rpc('gate_lock', { p_gate: 'video' }); vdOpen = false; opsData = null; renderVideo(); };
   root.querySelectorAll('[data-opstab]').forEach(b => b.onclick = () => { opsTab = b.dataset.opstab; try { localStorage.setItem('kj_opstab', opsTab); } catch (e) {} renderVideo(); });
   const f = $('#vd-set');
   if (f) f.onsubmit = async e => {
     e.preventDefault();
     const { data, error } = await sb.rpc('gate_set', { p_gate: 'video', p_pw: $('#vd-new').value });
     $('#vd-new').value = '';
-    $('#vd-setmsg').textContent = (error || !data?.ok) ? ((data && data.msg) || error?.message || '실패') : '바뀌었습니다';
+    if (!error && data?.ok) { const { data: n } = await sb.rpc('gate_forget_all', { p_gate: 'video' }); try { localStorage.removeItem('kj_gate_video'); } catch (e) {} }
+    $('#vd-setmsg').textContent = (error || !data?.ok) ? ((data && data.msg) || error?.message || '실패') : '바뀌었습니다 (기억된 브라우저 모두 해제)';
   };
   const body = $('#ops-body');
   if (opsTab === 'sns') return renderOpsSns(body);
