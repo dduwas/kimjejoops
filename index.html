@@ -1791,7 +1791,7 @@ function anCard(p, tg){
       ${p.kj_angle ? `<div class="an-angle">💡 ${esc(p.kj_angle)}</div>` : ''}
       <div class="an-act">${p.status === 'mass' ? '<span class="an-st">🏭 양산 중</span>' : p.status === 'line' ? '<span class="an-st">✅ 생산 라인</span>' : `<label class="an-chk"><input type="checkbox" data-ansel ${sel ? 'checked' : ''}> 선택</label>
         <button class="chip sm" data-anmass>🏭 양산</button><button class="chip sm" data-anstar>${p.status === 'starred' ? '★' : '☆'}</button>
-        <button class="chip sm" data-anline title="생산 라인 아이디어로">→라인</button><button class="chip sm cd-del" data-androp>드랍</button>`}</div></div></div>`;
+        <button class="chip sm" data-anline="웰" title="웰니스박스 라인 아이디어로">→웰니스</button><button class="chip sm" data-anline="솔" title="솔루션즈 라인 아이디어로">→솔루션즈</button><button class="chip sm" data-anline="기타" title="롱폼/기타 라인 아이디어로">→롱폼</button><button class="chip sm cd-del" data-androp>드랍</button>`}</div></div></div>`;
 }
 async function renderOpsAnal(body){
   if (!anData) { body.innerHTML = '<p class="lede">불러오는 중…</p>'; await loadAnal(); }
@@ -1834,7 +1834,7 @@ async function renderOpsAnal(body){
   ab.querySelectorAll('[data-androp]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: 'dropped' })) { anSel.delete(p.id); re(); } });
   ab.querySelectorAll('[data-anmass]').forEach(b => b.onclick = () => kjMassModal([{ post_id: P(b).id, label: '@' + P(b).handle + ' ' + (P(b).topic || '') }]));
   ab.querySelectorAll('[data-anline]').forEach(b => b.onclick = async () => {
-    const p = P(b); const t = prompt('담당팀: 웰(웰니스박스) / 솔(솔루션즈) / 기타(롱폼/기타)', '솔'); if (!t) return; const team = /웰/.test(t) ? '웰' : /솔/.test(t) ? '솔' : '기타';
+    const p = P(b); const team = b.dataset.anline; if (!TEAM_LABEL[team] || b.disabled) return; ab.querySelectorAll('[data-anid="' + p.id + '"] [data-anline]').forEach(x => x.disabled = true);
     const title = (p.topic ? p.topic + ' — ' : '') + ((p.caption || '').split('\n').find(x => x.trim()) || '@' + p.handle);
     const { data, error } = await sb.from('contents').insert({ title: title.replace(/\s+/g, ' ').slice(0, 60), stage: IDEA, team_tag: team, reference_url: p.permalink,
       next_action: `🔎 분석 대상(@${p.handle}, 조회 ${opsN(p.views)}${p.ratio ? ', 평소의 ' + p.ratio + '배' : ''})에서 넘어옴${p.kj_angle ? ' · 각도: ' + p.kj_angle : ''}`.slice(0, 500) }).select('id').single();
