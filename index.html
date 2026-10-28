@@ -628,7 +628,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v63</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v64</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1704,7 +1704,7 @@ const cdDate = s => { if (!s) return ''; const d = new Date(s); return (d.getMon
 function cdCard(c){
   const t = c.title || (c.caption || '').split('\n').find(x => x.trim()) || '미리보기 준비 중 (최대 20분)';
   const acts = c.status === 'new'
-    ? `<div class="cd-mv"><span>생산 라인으로</span><button class="chip sm" data-cdmv="웰">웰니스박스</button><button class="chip sm" data-cdmv="솔">솔루션즈</button><button class="chip sm" data-cdmv="기타">기타</button></div>
+    ? `<div class="cd-mv"><span>생산 라인으로</span><button class="chip sm" data-cdmv="웰">웰니스박스</button><button class="chip sm" data-cdmv="솔">솔루션즈</button><button class="chip sm" data-cdmv="기타">롱폼/기타</button></div>
        <div class="cd-act"><button class="chip sm" data-cdmass>🏭 대본 양산</button><button class="chip sm" data-cddrop>드랍</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`
     : c.status === 'moved' ? `<div class="cd-done">✅ 생산 라인(${esc(TEAM_LABEL[c.team_tag] || c.team_tag || '')})으로 넘김 · ${cdDate(c.decided_at)}</div>`
     : `<div class="cd-act"><button class="chip sm" data-cdback>되살리기</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`;
@@ -1827,7 +1827,7 @@ async function renderOpsAnal(body){
   ab.querySelectorAll('[data-androp]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: 'dropped' })) { anSel.delete(p.id); re(); } });
   ab.querySelectorAll('[data-anmass]').forEach(b => b.onclick = () => kjMassModal([{ post_id: P(b).id, label: '@' + P(b).handle + ' ' + (P(b).topic || '') }]));
   ab.querySelectorAll('[data-anline]').forEach(b => b.onclick = async () => {
-    const p = P(b); const t = prompt('담당팀: 웰(웰니스박스) / 솔(솔루션즈) / 기타', '솔'); if (!t) return; const team = /웰/.test(t) ? '웰' : /솔/.test(t) ? '솔' : '기타';
+    const p = P(b); const t = prompt('담당팀: 웰(웰니스박스) / 솔(솔루션즈) / 기타(롱폼/기타)', '솔'); if (!t) return; const team = /웰/.test(t) ? '웰' : /솔/.test(t) ? '솔' : '기타';
     const title = (p.topic ? p.topic + ' — ' : '') + ((p.caption || '').split('\n').find(x => x.trim()) || '@' + p.handle);
     const { data, error } = await sb.from('contents').insert({ title: title.replace(/\s+/g, ' ').slice(0, 60), stage: IDEA, team_tag: team, reference_url: p.permalink,
       next_action: `🔎 분석 대상(@${p.handle}, 조회 ${opsN(p.views)}${p.ratio ? ', 평소의 ' + p.ratio + '배' : ''})에서 넘어옴${p.kj_angle ? ' · 각도: ' + p.kj_angle : ''}`.slice(0, 500) }).select('id').single();
@@ -1864,7 +1864,7 @@ async function kjMassModal(items, after){
     <div class="ms-items">${items.map(i => `<span>${esc(i.label || i.url || '')}</span>`).join('')}</div>
     <label>형식</label><select id="ms-fmt"><option value="">레퍼런스 구조 그대로 (형식 자유)</option>${grps.map(g => `<optgroup label="${esc(g)}">${fm.filter(f => f.grp === g).map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('')}</optgroup>`).join('')}</select>
     <label>레퍼런스마다 초안 수</label><select id="ms-n"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
-    <label>담당팀 (말투 예시를 이 팀 대본에서 가져옴)</label><select id="ms-team"><option value="솔">솔루션즈</option><option value="웰">웰니스박스</option><option value="기타">기타</option></select>
+    <label>담당팀 (말투 예시를 이 팀 대본에서 가져옴)</label><select id="ms-team"><option value="솔">솔루션즈</option><option value="웰">웰니스박스</option><option value="기타">롱폼/기타</option></select>
     <label>추가 지시 (선택)</label><input id="ms-note" placeholder="예: 40초 이내, 숫자 근거 1개 이상, 마지막에 댓글 유도 질문">
     <div class="row"><button class="btn sm" id="ms-go">🏭 양산 시작</button><button class="chip" id="ms-x">닫기</button><span id="ms-st" style="font-size:12.5px;color:var(--muted)"></span></div></div>`;
   document.body.appendChild(bg);
@@ -1897,7 +1897,7 @@ async function renderOpsMass(body){
       ${(j.drafts || []).length ? `<div class="ms-drafts">${j.drafts.map((d, i) => `<details ${i === 0 && j.status === 'done' ? 'open' : ''} class="${j.chosen === i ? 'chosen' : ''}"><summary><b>초안 ${i + 1}</b> ${esc(d.title || '')}${d.hook ? ` — <i>${esc(d.hook)}</i>` : ''}${j.chosen === i ? ' ✅' : ''}</summary>
         <table><tr><th style="width:40%">장면</th><th>대사/자막</th></tr>${(d.rows || []).map(r => `<tr><td>${esc(r.scene)}</td><td>${esc(r.line)}</td></tr>`).join('')}</table>
         ${d.notes ? `<div class="an-note">메모: ${esc(d.notes)}</div>` : ''}
-        ${j.status === 'done' ? `<div class="row"><span class="an-note">생산 라인(대본 단계)으로:</span><button class="chip sm" data-msline="${i}" data-team="웰">웰니스박스</button><button class="chip sm" data-msline="${i}" data-team="솔">솔루션즈</button><button class="chip sm" data-msline="${i}" data-team="기타">기타</button></div>` : ''}</details>`).join('')}</div>` : ''}
+        ${j.status === 'done' ? `<div class="row"><span class="an-note">생산 라인(대본 단계)으로:</span><button class="chip sm" data-msline="${i}" data-team="웰">웰니스박스</button><button class="chip sm" data-msline="${i}" data-team="솔">솔루션즈</button><button class="chip sm" data-msline="${i}" data-team="기타">롱폼/기타</button></div>` : ''}</details>`).join('')}</div>` : ''}
     </div>`).join('') || '<p class="lede">아직 양산한 대본이 없습니다.</p>'}</div>`;
   const J = el => (jobs || []).find(j => j.id === el.closest('[data-msid]').dataset.msid);
   body.querySelectorAll('[data-msline]').forEach(b => b.onclick = async () => { b.disabled = true; const r = await kjFn({ action: 'mass_line', id: J(b).id, idx: +b.dataset.msline, team: b.dataset.team });
@@ -2172,6 +2172,7 @@ function ownerNames(ids){
 // v33: 웰(웰니스박스 촬영, 김호준 담당) / 솔(김주성·채진병·강민형 담당) / 기타 — contents.team_tag, 비어 있으면 담당자로 추정
 const TEAM_TAGS = ['웰', '솔', '기타'];
 function teamTag(c){
+  if ((c.channels || []).some(ch => /롱폼/.test(ch))) return '기타'; // v64: 롱폼 카드는 모두 '롱폼/기타' 라인
   if (c.team_tag) return c.team_tag;
   const names = (c.owner_ids || []).map(nameOf).join(' ');
   if (/김호준|유현일/.test(names) || /\[웰/.test(c.title || '')) return '웰';
@@ -2179,7 +2180,7 @@ function teamTag(c){
   return '기타';
 }
 // v34: 화면 이름은 '담당팀' — 웰니스박스(웰) / 솔루션즈(솔) / 기타. 담당자를 고르면 자동으로 정해지고, 직접 바꿀 수 있다
-const TEAM_LABEL = { '웰': '웰니스박스', '솔': '솔루션즈', '기타': '기타' };
+const TEAM_LABEL = { '웰': '웰니스박스', '솔': '솔루션즈', '기타': '롱폼/기타' };
 const teamByOwners = ids => { const n = (ids || []).map(nameOf).join(' '); return /김호준|유현일/.test(n) ? '웰' : /김주성|채진병|강민형/.test(n) ? '솔' : null; };
 const tagHTML = c => { const t = teamTag(c); return `<span class="ttag ttag-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'}" title="담당팀: ${TEAM_LABEL[t]}">${t}</span>`; };
 
