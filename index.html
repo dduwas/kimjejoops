@@ -521,6 +521,10 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 .cd-mv{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:4px}.cd-mv span{font-size:11.5px;color:var(--navy);font-weight:700;margin-right:2px}
 .cd-act,.an-act{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:4px;align-items:center}.cd-del{color:#b42318}
 .cd-done{color:#16794a;font-size:12px;margin-top:4px}
+.cd-rooms{margin:12px 0 4px;gap:6px}
+.cd-rooms .chip{font-size:14.5px;padding:9px 18px}
+.cd-rooms .chip b{font-weight:800;margin-left:4px}
+.cd-room-h{font-size:12.5px;color:var(--muted);margin:0 0 6px}
 .an-head{margin:4px 0 8px;font-size:13.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .an-wait{background:#fff7e6;border:1px solid #f3d9a4;border-radius:10px;padding:9px 12px;font-size:13px;margin:6px 0 10px;color:#6b4300}
 .an-tabs{display:flex;gap:6px;margin:6px 0 10px}.an-filters{display:flex;flex-wrap:wrap;gap:4px;align-items:center;font-size:12px;margin-bottom:8px}.an-filters span{color:var(--muted);margin:0 2px 0 8px}
@@ -628,7 +632,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v65</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v66</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -802,7 +806,9 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 
   <section id="view-cands" class="hide wrap">
     <h3>콘텐츠 후보</h3>
-    <p class="lede">인스타연구소(인스타 DM방)에 공유한 레퍼런스가 20분마다 자동으로 카드가 됩니다. 쓸 만하면 담당팀을 골라 <b>생산 라인</b>으로, 대본을 여러 개 뽑아 보려면 <b>🏭 대본 양산</b>, 아니면 드랍·삭제. 각 영상의 ▶를 누르면 그 자리에서 바로 재생됩니다.</p>
+    <p class="lede">인스타 DM방에 공유한 레퍼런스가 20분마다 자동으로 카드가 됩니다. <b>방마다 탭</b>이 나뉩니다. 쓸 만하면 담당팀을 골라 <b>생산 라인</b>으로, 대본을 여러 개 뽑아 보려면 <b>🏭 대본 양산</b>, 아니면 드랍·삭제. 각 영상의 ▶를 누르면 그 자리에서 바로 재생됩니다.</p>
+    <div class="chips cd-rooms" id="cd-rooms"></div>
+    <p class="cd-room-h" id="cd-room-h"></p>
     <div class="fmt-top"><input id="cd-url" placeholder="릴스 링크로 직접 추가" style="max-width:340px"><button class="btn sm" id="cd-add">＋ 추가</button></div>
     <div class="chips" id="cd-chips" style="margin:8px 0 0"></div>
     <div id="cd-list"></div>
@@ -1701,6 +1707,13 @@ function kjReferenceMarkup(raw, title = '레퍼런스 영상') {
    인스타연구소(메인 계정 인스타 그룹 DM, 인스타팀)에 공유한 레퍼런스 릴스 → n8n 45가 20분마다 kj_candidates에 카드로 저장(미리보기·썸네일 포함).
    여기서 담당팀(웰니스박스/솔루션즈/기타)을 골라 생산 라인(아이디어)으로 넘기거나, 🏭 대본 양산(운영관리)으로 보내거나, 드랍(되살리기 가능)·삭제(숨김, 다시 수집되지 않음). */
 let CANDS = [], cdLoaded = false, cdBusy = false, cdTab = 'new', cdErrAt = 0;
+/* v66: DM방별 탭. 출처는 ext_key의 접두사로 구분한다 — 'newbiz:…' = 솔루션즈 신사업부 DM방,
+   그 밖(iglab:…·manual:… ·빈값) = 인스타연구소 DM방. n8n 45가 방에 맞는 접두사를 찍어 저장한다. */
+const CD_ROOMS = [['iglab', '웰니스박스', '인스타연구소 DM방'], ['newbiz', '신사업부', '솔루션즈 신사업부 DM방']];
+let cdRoom = 'iglab';
+try { const r0 = localStorage.getItem('kj_cdroom'); if (r0 && CD_ROOMS.some(x => x[0] === r0)) cdRoom = r0; } catch (e) {}
+const cdRoomOf = c => { const k = String(c.ext_key || ''), i = k.indexOf(':'); return (i > 0 && k.slice(0, i) === 'newbiz') ? 'newbiz' : 'iglab'; };
+const cdRoomRow = r => CD_ROOMS.find(x => x[0] === r) || CD_ROOMS[0];
 async function loadCands(){
   const { data, error } = await sb.from('kj_candidates').select('*').neq('status', 'deleted').order('shared_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false }).limit(600);
   if (error) { cdErrAt = Date.now(); return error; }
@@ -1732,21 +1745,30 @@ async function cdSet(c, patch){
 async function cdMove(c, team){
   const title = (c.title || (c.caption || '').split('\n').find(x => x.trim()) || '인스타 레퍼런스').replace(/\s+/g, ' ').trim().slice(0, 60);
   const { data, error } = await sb.from('contents').insert({ title, stage: IDEA, team_tag: team, reference_url: c.url,
-    next_action: `콘텐츠 후보(인스타연구소)에서 넘어옴 · ${c.account || ''}${c.note ? ' · 메모: ' + c.note : ''}`.slice(0, 500) }).select('id').single();
+    next_action: `콘텐츠 후보(${cdRoomRow(cdRoomOf(c))[2]})에서 넘어옴 · ${c.account || ''}${c.note ? ' · 메모: ' + c.note : ''}`.slice(0, 500) }).select('id').single();
   if (error) return alert(cleanErr(error.message));
   if (await cdSet(c, { status: 'moved', team_tag: team, content_id: data.id })) { await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); }
 }
 async function renderCands(){
   if (!cdLoaded) { if (cdBusy || Date.now() - cdErrAt < 30000) return; cdBusy = true; const e = await loadCands(); cdBusy = false; if (e) return; }
   const v = document.getElementById('view-cands'); if (!v || v.classList.contains('hide')) return;
-  const cnt = s => CANDS.filter(c => c.status === s).length;
+  const inRoom = CANDS.filter(c => cdRoomOf(c) === cdRoom);
+  const cnt = s => inRoom.filter(c => c.status === s).length;
+  const rooms = document.getElementById('cd-rooms');
+  if (rooms) {
+    rooms.innerHTML = CD_ROOMS.map(([k, l]) => { const n = CANDS.filter(c => cdRoomOf(c) === k && c.status === 'new').length;
+      return `<button class="chip ch ${k === cdRoom ? 'on' : ''}" data-cdroom="${k}">${l}${n ? ' <b>' + n + '</b>' : ''}</button>`; }).join('');
+    rooms.querySelectorAll('[data-cdroom]').forEach(b => b.onclick = () => { cdRoom = b.dataset.cdroom;
+      try { localStorage.setItem('kj_cdroom', cdRoom); } catch (e) {} renderCands(); });
+  }
+  const rh = document.getElementById('cd-room-h'); if (rh) rh.textContent = cdRoomRow(cdRoom)[2] + '에 공유된 레퍼런스입니다.';
   const chips = document.getElementById('cd-chips');
   chips.innerHTML = [['new', '새 후보'], ['moved', '넘김'], ['dropped', '드랍']].map(([k, l]) => `<button class="chip ${k === cdTab ? 'on' : ''}" data-cdtab="${k}">${l} ${cnt(k)}</button>`).join('') + '<button class="chip" id="cd-reload" title="새로 불러오기">↻</button>';
   chips.querySelectorAll('[data-cdtab]').forEach(b => b.onclick = () => { cdTab = b.dataset.cdtab; renderCands(); });
   chips.querySelector('#cd-reload').onclick = async () => { cdLoaded = false; await renderCands(); };
-  const list = CANDS.filter(c => c.status === cdTab);
+  const list = inRoom.filter(c => c.status === cdTab);
   const box = document.getElementById('cd-list');
-  box.innerHTML = list.length ? `<div class="cd-grid">${list.map(cdCard).join('')}</div>` : `<p class="lede" style="margin-top:14px">${cdTab === 'new' ? '새 후보가 없습니다. 인스타연구소 DM방에 릴스를 공유하면 20분 안에 여기 들어옵니다.' : '없습니다.'}</p>`;
+  box.innerHTML = list.length ? `<div class="cd-grid">${list.map(cdCard).join('')}</div>` : `<p class="lede" style="margin-top:14px">${cdTab === 'new' ? '새 후보가 없습니다. ' + cdRoomRow(cdRoom)[2] + '에 릴스를 공유하면 20분 안에 여기 들어옵니다.' : '없습니다.'}</p>`;
   const get = el => CANDS.find(c => c.id === el.closest('[data-cdid]').dataset.cdid);
   box.querySelectorAll('[data-cdmv]').forEach(b => b.onclick = async () => { b.disabled = true; await cdMove(get(b), b.dataset.cdmv); cdBadge(); renderCands(); });
   box.querySelectorAll('[data-cdmass]').forEach(b => b.onclick = () => { const c = get(b); kjMassModal([{ cand_id: c.id, label: c.title || c.account || '후보' }]); });
@@ -1757,9 +1779,9 @@ async function renderCands(){
 $('#cd-add') && ($('#cd-add').onclick = async () => {
   const u = $('#cd-url').value.trim().split('?')[0]; if (!/^https?:\/\//.test(u)) return alert('릴스·게시물 링크를 넣어 주세요.');
   const sc = (u.match(/\/(?:reel|reels|p|tv)\/([\w-]+)/) || [])[1] || null;
-  const { error } = await sb.from('kj_candidates').insert({ src: 'manual', url: u, shortcode: sc, ext_key: sc ? 'iglab:' + sc : 'manual:' + u, shared_at: new Date().toISOString() });
+  const { error } = await sb.from('kj_candidates').insert({ src: 'manual', url: u, shortcode: sc, ext_key: cdRoom + ':' + (sc || 'manual:' + u), shared_at: new Date().toISOString() });
   if (error) return alert(/duplicate|unique/i.test(error.message) ? '이미 후보에 있는 링크입니다.' : cleanErr(error.message));
-  $('#cd-url').value = ''; cdLoaded = false; cdTab = 'new'; await renderCands(); poToast('후보에 넣었습니다. 미리보기는 20분 안에 채워집니다.');
+  $('#cd-url').value = ''; cdLoaded = false; cdTab = 'new'; await renderCands(); poToast(`${cdRoomRow(cdRoom)[1]} 후보에 넣었습니다. 미리보기는 20분 안에 채워집니다.`);
 });
 
 
@@ -1915,9 +1937,9 @@ async function renderOpsMass(body){
     kjMassModal(ls.map(l => /^https?:\/\//.test(l) ? { url: l.split('?')[0], label: l.slice(0, 60) } : { text: l, title: l.slice(0, 60), label: l.slice(0, 60) })); };
   body.querySelector('#ms-fromanal').onclick = () => { opsTab = 'anal'; try { localStorage.setItem('kj_opstab', 'anal'); } catch (e) {} renderVideo(); };
   body.querySelector('#ms-fromcand').onclick = async () => {
-    const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb, url').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
+    const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb, url, ext_key').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
     const bg = document.createElement('div'); bg.className = 'aiw-bg';
-    bg.innerHTML = `<div class="aiw"><h3>📥 콘텐츠 후보에서 고르기</h3><div class="ms-pick">${(cs || []).map(c => `<label><input type="checkbox" value="${c.id}">${kjReferenceMarkup(c.url, c.title)}<span>${esc(c.title || '(미리보기 준비 중)')}<br><small>${esc(c.account || '')}</small></span></label>`).join('') || '<p class="lede">새 후보가 없습니다.</p>'}</div>
+    bg.innerHTML = `<div class="aiw"><h3>📥 콘텐츠 후보에서 고르기</h3><div class="ms-pick">${(cs || []).map(c => `<label><input type="checkbox" value="${c.id}">${kjReferenceMarkup(c.url, c.title)}<span>${esc(c.title || '(미리보기 준비 중)')}<br><small>${esc(c.account || '')} · ${cdRoomRow(cdRoomOf(c))[1]}</small></span></label>`).join('') || '<p class="lede">새 후보가 없습니다.</p>'}</div>
       <div class="row"><button class="btn sm" id="pk-go">다음</button><button class="chip" id="pk-x">닫기</button></div></div>`;
     document.body.appendChild(bg); const close = () => bg.remove(); bg.querySelector('#pk-x').onclick = close;
 
