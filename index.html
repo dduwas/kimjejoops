@@ -197,12 +197,12 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .tick{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .tick input{width:15px;height:15px;accent-color:var(--navy)}
 .tick.off{opacity:.5}
-.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:var(--line);
   border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .cal-h{background:var(--wash);padding:9px 6px;text-align:center;font-size:11.5px;font-weight:800;color:var(--muted)}
 .cal-h.sun{color:#C2410C}
 .cal-h.sat{color:var(--blue-2)}
-.cell{background:#fff;min-height:96px;padding:6px 6px 8px}
+.cell{background:#fff;min-height:96px;padding:6px 6px 8px;min-width:0;overflow:hidden}
 .cell.out{background:var(--wash)}
 .cell.today{background:var(--blue-50)}
 .cell-d{font-size:11.5px;font-weight:700;color:var(--muted);margin-bottom:5px;font-variant-numeric:tabular-nums}
