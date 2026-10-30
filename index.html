@@ -634,7 +634,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v67</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v68</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1832,11 +1832,12 @@ async function renderOpsAnal(body){
   const srcs = [...new Set(targets.flatMap(t => t.sources || []))];
   const chip = (attr, v, cur, l) => `<button class="chip sm ${String(v) === String(cur) ? 'on' : ''}" ${attr}="${esc(String(v))}">${esc(l)}</button>`;
   body.innerHTML = `<div class="an-head"><b>분석 대상 ${targets.length}계정</b> · 수집 ${fetched}${errs ? ` · 오류 ${errs}` : ''} · 영상 ${posts.length} · 🔥 ${posts.filter(p => p.hot).length}
-      <button class="chip sm" id="an-re">↻</button>${posts.some(p => p.hot && !p.ai_at) ? '<button class="chip sm" id="an-tag">🤖 AI 분류 지금</button>' : ''}</div>
+      <button class="chip sm" id="an-re">↻</button><button class="chip sm" id="an-addjump">＋ 계정 추가·삭제</button>${posts.some(p => p.hot && !p.ai_at) ? '<button class="chip sm" id="an-tag">🤖 AI 분류 지금</button>' : ''}</div>
     ${!fetched ? `<div class="an-wait">🔌 <b>조회수 수집 연결 대기</b> — 인스타 공식 API(Facebook 로그인) 토큰이 연결되면 1시간마다 20계정씩 최근 게시물·조회수를 모읍니다. 계정 목록은 준비됐습니다(아래 '👥 계정').</div>` : ''}
     <div class="an-tabs">${chip('data-antab', 'hot', anTab, '🔥 추천')}${chip('data-antab', 'all', anTab, '📊 전체 영상')}${chip('data-antab', 'targets', anTab, '👥 계정 ' + targets.length)}</div>
     <div id="an-body"></div>`;
   body.querySelector('#an-re').onclick = async () => { anData = null; renderOpsAnal(body); };
+  body.querySelector('#an-addjump').onclick = () => { anTab = 'targets'; renderOpsAnal(body); setTimeout(() => { const i = body.querySelector('#an-h'); if (i) i.focus(); }, 60); };
   const tb = body.querySelector('#an-tag'); if (tb) tb.onclick = async () => { tb.disabled = true; tb.textContent = '분류 중…'; const j = await kjFn({ action: 'tag_now' }); if (j.error) alert(j.error); anData = null; renderOpsAnal(body); };
   body.querySelectorAll('[data-antab]').forEach(b => b.onclick = () => { anTab = b.dataset.antab; renderOpsAnal(body); });
   const ab = body.querySelector('#an-body');
@@ -1871,22 +1872,42 @@ async function renderOpsAnal(body){
 }
 function renderAnTargets(ab, body){
   const ts = anData.targets;
-  ab.innerHTML = `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 (예: yakstory119)" style="max-width:240px"><input id="an-hm" placeholder="메모(선택)" style="max-width:240px"><button class="btn sm" id="an-hadd">＋ 분석 대상 추가</button></div>
-    <p class="an-note">출처: 약사 인플루언서 26.09 조사(109명) + kjs_ref 팔로잉(10-20, 132개 중 공개 프로필). 비즈니스·크리에이터 계정만 조회수 수집이 됩니다. 끄면 수집에서 빠집니다.</p>
-    <div class="tbl-wrap"><table class="an-tbl"><tr><th>계정</th><th>출처</th><th>팔로워</th><th>평소 조회</th><th>🔥</th><th>수집</th><th>사용</th></tr>
+  ab.innerHTML = `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 — 여러 개는 쉼표·줄바꿈, 인스타 링크도 됩니다" style="min-width:320px;flex:1"><input id="an-hm" placeholder="메모(선택)" style="max-width:200px"><button class="btn sm" id="an-hadd">＋ 추가</button></div>
+    <p class="an-note">출처: 약사 인플루언서 26.09 조사(109명) + kjs_ref 팔로잉(10-20, 132개 중 공개 프로필). 비즈니스·크리에이터 계정만 조회수 수집이 됩니다. <b>사용</b>을 끄면 수집에서만 빠지고 모아 둔 영상은 남습니다. <b>삭제</b>는 계정과 그 계정 영상까지 지웁니다.</p>
+    <div class="tbl-wrap"><table class="an-tbl"><tr><th>계정</th><th>출처</th><th>팔로워</th><th>평소 조회</th><th>🔥</th><th>수집</th><th>사용</th><th></th></tr>
     ${ts.map(t => `<tr class="${t.active ? '' : 'off'}"><td><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener">@${esc(t.handle)}</a>${t.name ? ' ' + esc(t.name) : ''}${t.lang === 'en' ? ' 🌐' : ''}${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</td>
       <td>${(t.sources || []).map(s => `<span class="an-src">${esc(s.replace(' 26.09', '').replace(' 팔로잉', ''))}</span>`).join('')}</td>
       <td>${t.followers ? opsN(t.followers) : (t.influence ? t.influence + '만*' : '-')}</td><td>${t.median_views ? opsN(t.median_views) : '-'}</td><td>${t.hot_n || ''}</td>
       <td>${t.fetch_error ? `<span title="${esc(t.fetch_error)}" style="color:#b42318">오류</span>` : t.last_fetch ? (new Date(t.last_fetch).getMonth() + 1) + '/' + new Date(t.last_fetch).getDate() : '대기'}</td>
-      <td><input type="checkbox" data-anact="${esc(t.handle)}" ${t.active ? 'checked' : ''}></td></tr>`).join('')}</table></div>
+      <td><input type="checkbox" data-anact="${esc(t.handle)}" ${t.active ? 'checked' : ''}></td>
+      <td><button class="chip sm cd-del" data-andel="${esc(t.handle)}" title="계정과 그 계정 영상까지 지웁니다">삭제</button></td></tr>`).join('')}</table></div>
     <p class="an-note">* 팔로워 칸의 '만*'은 26.09 조사 당시 영향력 수치입니다.</p>`;
   ab.querySelectorAll('[data-anact]').forEach(c => c.onchange = async () => { const { error } = await sb.from('kj_targets').update({ active: c.checked }).eq('handle', c.dataset.anact); if (error) alert(cleanErr(error.message)); else anData.targets.find(t => t.handle === c.dataset.anact).active = c.checked; });
-  ab.querySelector('#an-hadd').onclick = async () => {
-    const h = $('#an-h').value.trim().replace(/^@/, '').replace(/.*instagram\.com\//, '').replace(/[/?].*$/, '').toLowerCase(); if (!h) return;
-    const { error } = await sb.from('kj_targets').insert({ handle: h, sources: ['직접 추가'], info: $('#an-hm').value.trim() || null });
-    if (error) return alert(/duplicate/i.test(error.message) ? '이미 있는 계정입니다.' : cleanErr(error.message));
-    anData = null; renderOpsAnal(body); poToast('@' + h + ' 추가. 다음 수집 때 조회수를 모읍니다.');
+  ab.querySelectorAll('[data-andel]').forEach(b => b.onclick = async () => {
+    const h = b.dataset.andel;
+    if (!confirm('@' + h + ' 을(를) 분석 대상에서 지울까요?\n모아 둔 그 계정 영상도 같이 지워집니다. (수집만 멈추려면 「사용」 체크를 끄세요)')) return;
+    b.disabled = true;
+    await sb.from('kj_tposts').delete().eq('handle', h);
+    const { error } = await sb.from('kj_targets').delete().eq('handle', h);
+    if (error) { b.disabled = false; return alert(cleanErr(error.message)); }
+    anData = null; renderOpsAnal(body); poToast('@' + h + ' 지웠습니다.');
+  });
+  const anAdd = async () => {
+    const raw = $('#an-h').value;
+    const hs = [...new Set(raw.split(/[\s,·]+/).map(x => x.trim().replace(/^@/, '').replace(/^https?:\/\//, '').replace(/.*instagram\.com\//, '').replace(/[/?#].*$/, '').toLowerCase()).filter(x => /^[a-z0-9._]{2,30}$/.test(x)))];
+    if (!hs.length) return alert('계정 아이디를 적어 주세요. 여러 개면 쉼표나 줄바꿈으로 나눠 적으면 됩니다.');
+    const have = new Set(anData.targets.map(t => t.handle));
+    const neu = hs.filter(h => !have.has(h));
+    if (!neu.length) return alert('이미 모두 들어 있는 계정입니다.');
+    const memo = $('#an-hm').value.trim() || null;
+    const { error } = await sb.from('kj_targets').insert(neu.map(h => ({ handle: h, sources: ['직접 추가'], info: memo })));
+    if (error) return alert(cleanErr(error.message));
+    $('#an-h').value = ''; $('#an-hm').value = '';
+    anData = null; renderOpsAnal(body);
+    poToast(neu.length + '개 추가(' + neu.slice(0, 3).map(h => '@' + h).join(', ') + (neu.length > 3 ? ' 외' : '') + '). 다음 수집 때 조회수를 모읍니다.' + (hs.length > neu.length ? ' 이미 있던 ' + (hs.length - neu.length) + '개는 건너뜀.' : ''));
   };
+  ab.querySelector('#an-hadd').onclick = anAdd;
+  ab.querySelector('#an-h').onkeydown = e => { if (e.key === 'Enter') anAdd(); };
 }
 async function kjMassModal(items, after){
   const { data: fm } = await sb.from('kj_formats').select('id, grp, name').order('sort');
