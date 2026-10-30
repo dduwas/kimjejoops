@@ -148,6 +148,10 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .scbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 24px 0;padding:9px 12px;background:#FFF7E6;border:1px solid #F5D08A;border-radius:10px;font-size:13px}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
 .ttag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-right:6px;vertical-align:1px;line-height:18px}.ttag-w{background:#E6F4EA;color:#1E7B3A}.ttag-s{background:#E8F0FE;color:#1A56C4}.ttag-e{background:#F1F1EF;color:#787774}.ttag-g{background:#FDECEF;color:#B42318}
+.pt-badge{display:inline-block;background:#FFF3CD;color:#8A6100;font-size:11px;font-weight:800;border-radius:5px;padding:1px 6px;margin-right:4px;vertical-align:1px}
+#pt-list input,#pt-list select{border:1px solid var(--line);border-radius:6px;padding:6px;font:inherit;font-size:13.5px}
+#pt-list input[data-ptk],#pt-list input[data-ptg]{width:100%;margin:2px 0 8px}
+#pt-list .cm-card.off{opacity:.55}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
 .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--wash);color:var(--muted)}
 .badge.b-none{background:var(--warn-bg);color:var(--warn)}
@@ -640,7 +644,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v70</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v71</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -649,6 +653,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
         <button data-view="insight">성과·정리</button>
         <button data-view="posts">글쓰기</button>
         <button data-view="formats">형식</button>
+        <button data-view="push">🎯 밀기 소재</button>
         <button data-view="review">최종검수<span class="nbadge hide" id="rv-badge"></span></button>
         <button data-view="drops">드랍</button>
         <button data-view="team" class="admin-only">팀 관리</button>
@@ -820,6 +825,13 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
     <div class="fmt-top"><input id="cd-url" placeholder="릴스 링크로 직접 추가" style="max-width:340px"><button class="btn sm" id="cd-add">＋ 추가</button></div>
     <div class="chips" id="cd-chips" style="margin:8px 0 0"></div>
     <div id="cd-list"></div>
+  </section>
+  <section id="view-push" class="hide wrap">
+    <h3>🎯 밀기 소재</h3>
+    <p class="lede">지금 <b>밀고 싶은 소재</b>를 적어 두면 AI가 도는 모든 길목에 반영됩니다 — 분석 대상·콘텐츠 후보에서 해당 소재가 <b>🎯</b>로 표시되고, 매일 만드는 <b>쓰레드 초안</b>과 주 1회 <b>캐러셀 초안</b>이 세기만큼 이 소재를 가져갑니다.
+      전부 밀기 소재로 채우면 광고처럼 보여 도달이 죽기 때문에, <b>세기</b>만큼만 가져갑니다 — 세게=초안 3개 중 2개, 보통=3개 중 1개, 가볍게=가끔. 기간이 지나면 자동으로 빠집니다.</p>
+    <div class="fmt-top"><button class="btn sm" id="pt-add">＋ 소재 추가</button></div>
+    <div id="pt-list"></div>
   </section>
   <section id="view-formats" class="hide wrap">
     <h3>형식</h3>
@@ -1037,7 +1049,7 @@ $$('nav button').forEach(b => b.onclick = async () => {
   }
   $$('nav button').forEach(x => x.classList.remove('on'));
   b.classList.add('on');
-  ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','cands','team','settings'].forEach(v =>
+  ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','push','cands','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   render();
 });
@@ -1820,7 +1832,7 @@ function cdCard(c){
     : `<div class="cd-act"><button class="chip sm" data-cdback>되살리기</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`;
   return `<div class="cd-card" data-cdid="${c.id}">
     ${kjReferenceMarkup(c.url, t)}
-    <div class="cd-b"><div class="cd-acc">${esc(c.account || '인스타그램')}</div>
+    <div class="cd-b">${pushBadge(pushHit(c.title, c.caption, c.account))}<div class="cd-acc">${esc(c.account || '인스타그램')}</div>
       <div class="cd-ti">${esc(t)}</div>
       ${c.caption ? `<div class="cd-cap">${esc(c.caption.slice(0, 220))}</div>` : ''}
       ${c.note ? `<div class="cd-note">💬 ${esc(c.note)}</div>` : ''}
@@ -1842,6 +1854,7 @@ async function cdMove(c, team){
 async function renderCands(){
   if (!cdLoaded) { if (cdBusy || Date.now() - cdErrAt < 30000) return; cdBusy = true; const e = await loadCands(); cdBusy = false; if (e) return; }
   const v = document.getElementById('view-cands'); if (!v || v.classList.contains('hide')) return;
+  await loadPush();
   const inRoom = CANDS.filter(c => cdRoomOf(c) === cdRoom);
   const cnt = s => inRoom.filter(c => c.status === s).length;
   const rooms = document.getElementById('cd-rooms');
@@ -1879,7 +1892,7 @@ $('#cd-add') && ($('#cd-add').onclick = async () => {
    분석 대상: kj_targets(약사 인플루언서 26.09 109명 + kjs_ref 팔로잉) 최근 게시물 조회수를 n8n 46이 인스타 공식 API로 수집(kj_tposts)
      → 계정 평소(중앙값) 대비 2.5배↑·2만↑ 또는 30만↑ = 🔥 터진 영상 → AI가 주제·형식·훅·김제조 각도 태깅
    대본 양산: 고른 영상·콘텐츠 후보·링크 → 형식(kj_formats) + 김제조 대본 스킬로 초안 N개(kj-anal 함수) → 하나 골라 생산 라인(대본 단계)으로 */
-let anTab = 'hot', anSel = new Set(), anSrc = 'all', anDays = 90, anFmt = '', anSort = 'score', anData = null, msTimer = null;
+let anTab = 'hot', anSel = new Set(), anSrc = 'all', anDays = 90, anFmt = '', anSort = 'score', anData = null, msTimer = null, anPush = false;
 const kjFnUrl = () => String(window.SUPABASE_URL).replace(/\/+$/, '') + '/functions/v1/kj-anal';
 async function kjFn(body){
   const { data: { session } } = await sb.auth.getSession();
@@ -1892,12 +1905,12 @@ async function loadAnal(){
     sb.from('kj_tposts').select('*').order('views', { ascending: false, nullsFirst: false }).limit(1500)]);
   anData = { targets: t.data || [], posts: p.data || [], err: t.error || p.error };
 }
-const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10));
+const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10)) * (pushHit(p.topic, p.caption, p.hook, p.kj_angle) ? 2 : 1);   // v71: 밀기 소재는 추천순에서 위로
 function anCard(p, tg){
   const sel = anSel.has(p.id);
   return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
     ${kjReferenceMarkup(p.permalink, p.topic || p.handle)}<div class="an-acc">조회 ${opsN(p.views)}${p.ratio ? ` · 평소의 ${p.ratio}배` : ''}</div>
-    <div class="an-b"><div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
+    <div class="an-b">${pushBadge(pushHit(p.topic, p.caption, p.hook, p.kj_angle))}<div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
       ${p.topic ? `<div class="an-ti">${esc(p.topic)}${p.fmt_guess ? ` <span class="an-fmt">${esc(p.fmt_guess)}</span>` : ''}</div>` : ''}
       ${p.hook ? `<div class="an-hook">“${esc(p.hook)}”</div>` : `<div class="an-cap">${esc((p.caption || '').slice(0, 110))}</div>`}
       ${p.kj_angle ? `<div class="an-angle">💡 ${esc(p.kj_angle)}</div>` : ''}
@@ -1907,12 +1920,14 @@ function anCard(p, tg){
 }
 async function renderOpsAnal(body){
   if (!anData) { body.innerHTML = '<p class="lede">불러오는 중…</p>'; await loadAnal(); }
+  await loadPush();
   const { targets, posts } = anData; const T = new Map(targets.map(t => [t.handle, t]));
   const fetched = targets.filter(t => t.last_fetch && !t.fetch_error).length, errs = targets.filter(t => t.fetch_error).length;
   const since = anDays ? Date.now() - anDays * 86400000 : 0;
   let list = posts.filter(p => p.status !== 'dropped' && (!since || !p.posted_at || new Date(p.posted_at).getTime() >= since) && (anSrc === 'all' || (T.get(p.handle)?.sources || []).includes(anSrc)));
   if (anTab === 'hot') list = list.filter(p => p.hot);
   if (anFmt) list = list.filter(p => p.fmt_guess === anFmt);
+  if (anPush) list = list.filter(p => pushHit(p.topic, p.caption, p.hook, p.kj_angle));
   list.sort(anSort === 'views' ? (a, b) => (b.views || 0) - (a.views || 0) : anSort === 'new' ? (a, b) => String(b.posted_at).localeCompare(String(a.posted_at)) : (a, b) => anScore(b) - anScore(a));
   const fmts = [...new Set(posts.filter(p => p.hot && p.fmt_guess).map(p => p.fmt_guess))];
   const srcs = [...new Set(targets.flatMap(t => t.sources || []))];
@@ -1931,6 +1946,7 @@ async function renderOpsAnal(body){
   ab.innerHTML = `<div class="an-filters"><span>기간</span>${[[30, '30일'], [90, '90일'], [0, '전체']].map(([v, l]) => chip('data-andays', v, anDays, l)).join('')}
       <span>출처</span>${chip('data-ansrc', 'all', anSrc, '전체')}${srcs.map(s => chip('data-ansrc', s, anSrc, s)).join('')}
       <span>정렬</span>${chip('data-ansort', 'score', anSort, '추천순')}${chip('data-ansort', 'views', anSort, '조회수')}${chip('data-ansort', 'new', anSort, '최신')}
+      ${pushLive().length ? `<span>밀기</span><button class="chip sm ${anPush ? 'on' : ''}" id="an-pushf">🎯 ${pushLive().map(p => esc(p.name)).join('·')}만</button>` : ''}
       ${fmts.length ? `<br><span>형식</span>${chip('data-anfmt', '', anFmt, '전체')}${fmts.map(f => chip('data-anfmt', f, anFmt, f)).join('')}` : ''}</div>
     ${anTab === 'hot' ? '<p class="an-note">🔥 = 그 계정 평소(최근 영상 중앙값) 대비 2.5배 이상이면서 2만 회 이상, 또는 30만 회 이상. 추천순 = 배수 × 조회수 규모.</p>' : ''}
     <div class="an-grid">${list.slice(0, 240).map(p => anCard(p, T.get(p.handle))).join('') || '<p class="lede">아직 없습니다.</p>'}</div>
@@ -1940,6 +1956,7 @@ async function renderOpsAnal(body){
   ab.querySelectorAll('[data-ansrc]').forEach(b => b.onclick = () => { anSrc = b.dataset.ansrc; re(); });
   ab.querySelectorAll('[data-ansort]').forEach(b => b.onclick = () => { anSort = b.dataset.ansort; re(); });
   ab.querySelectorAll('[data-anfmt]').forEach(b => b.onclick = () => { anFmt = b.dataset.anfmt; re(); });
+  const pf = ab.querySelector('#an-pushf'); if (pf) pf.onclick = () => { anPush = !anPush; re(); };
   const P = el => posts.find(p => p.id === el.closest('[data-anid]').dataset.anid);
   const upd = async (p, patch) => { const { data, error } = await sb.from('kj_tposts').update({ ...patch, decided_at: new Date().toISOString() }).eq('id', p.id).select('id'); if (error || !data?.length) { alert(error ? cleanErr(error.message) : '저장 안 됨'); return false; } Object.assign(p, patch); return true; };
   ab.querySelectorAll('[data-ansel]').forEach(c => c.onchange = () => { const p = P(c); c.checked ? anSel.add(p.id) : anSel.delete(p.id); re(); });
@@ -2295,7 +2312,68 @@ function visible(){
 }
 
 /* ---------------- 렌더 ---------------- */
-function render(){ renderCands(); renderFormats(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
+/* ---------------- v71 🎯 밀기 소재 (kj_push_topics) ----------------
+   밀고 싶은 소재를 적어 두면 ① 분석 대상·콘텐츠 후보에 🎯 배지·필터 ② 쓰레드·캐러셀 초안 프롬프트(ops-threads pushBlock)에 세기만큼 반영된다. */
+let PUSH = [], pushLoaded = false;
+const PUSH_W = { 1: '가볍게', 2: '보통', 3: '세게' };
+async function loadPush(force){
+  if (pushLoaded && !force) return;
+  const { data } = await sb.from('kj_push_topics').select('*').order('active', { ascending: false }).order('created_at', { ascending: false });
+  PUSH = data || []; pushLoaded = true;
+}
+const pushLive = () => { const t = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); return PUSH.filter(p => p.active && (!p.until || String(p.until) >= t)); };
+const pushWords = p => [p.name].concat(p.keywords || []).map(w => String(w || '').trim().toLowerCase()).filter(w => w.length > 1);
+function pushHit(...texts){
+  const s = texts.filter(Boolean).join(' ').toLowerCase();
+  if (!s) return null;
+  for (const p of pushLive()) if (pushWords(p).some(w => s.includes(w))) return p;
+  return null;
+}
+const pushBadge = p => p ? `<span class="pt-badge" title="밀기 소재: ${esc(p.name)}${p.angle ? ' — ' + esc(p.angle) : ''}">🎯 ${esc(p.name)}</span>` : '';
+async function renderPush(){
+  const v = document.getElementById('view-push'); if (!v || v.classList.contains('hide')) return;
+  await loadPush(true);
+  const box = document.getElementById('pt-list');
+  box.innerHTML = PUSH.length ? PUSH.map(p => `<div class="cm-card ${p.active ? '' : 'off'}" data-ptid="${p.id}">
+      <div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+        <input data-ptname value="${esc(p.name)}" style="font-weight:800;font-size:15px;max-width:200px">
+        <label class="rv-sub">세기 <select data-ptw>${[3, 2, 1].map(w => `<option value="${w}" ${(+p.weight || 2) === w ? 'selected' : ''}>${PUSH_W[w]}</option>`).join('')}</select></label>
+        <label class="rv-sub">언제까지 <input type="date" data-ptu value="${p.until || ''}"></label>
+        <label class="rv-sub"><input type="checkbox" data-pta ${p.active ? 'checked' : ''}> 켜짐</label>
+        <div class="sep"></div><button class="chip sm cd-del" data-ptdel>삭제</button>
+      </div>
+      <label class="rv-sub">같이 볼 말 — 쉼표로 (제목·캡션에 이 말이 있으면 🎯로 잡습니다)</label>
+      <input data-ptk value="${esc((p.keywords || []).join(', '))}" placeholder="예: 크레아틴, creatine, 근손실, 근력">
+      <label class="rv-sub">김제조 각도 — 왜 미는지·어떻게 풀지 한 줄 (AI가 이 각도로 씁니다)</label>
+      <input data-ptg value="${esc(p.angle || '')}" placeholder="예: 운동하는 사람만 먹는 걸로 아는데, 나이 들수록 더 챙길 이유가 있다는 쪽으로">
+    </div>`).join('') : '<p class="lede">아직 등록한 소재가 없습니다. <b>＋ 소재 추가</b>로 시작하세요.</p>';
+  box.querySelectorAll('[data-ptid]').forEach(card => {
+    const id = card.dataset.ptid;
+    const save = async patch => { const { error } = await sb.from('kj_push_topics').update(patch).eq('id', id); if (error) alert(cleanErr(error.message)); else { Object.assign(PUSH.find(x => x.id === id) || {}, patch); poToast('저장했습니다.', 1200); } };
+    card.querySelector('[data-ptname]').onchange = e => { const n = e.target.value.trim(); if (n) save({ name: n }); };
+    card.querySelector('[data-ptw]').onchange = e => save({ weight: +e.target.value });
+    card.querySelector('[data-ptu]').onchange = e => save({ until: e.target.value || null });
+    card.querySelector('[data-pta]').onchange = e => { save({ active: e.target.checked }); card.classList.toggle('off', !e.target.checked); };
+    card.querySelector('[data-ptk]').onchange = e => save({ keywords: e.target.value.split(/[,·]/).map(x => x.trim()).filter(Boolean) });
+    card.querySelector('[data-ptg]').onchange = e => save({ angle: e.target.value.trim() || null });
+    card.querySelector('[data-ptdel]').onclick = async () => {
+      if (!confirm('"' + (PUSH.find(x => x.id === id) || {}).name + '" 을(를) 밀기 소재에서 지울까요?\n잠시 쉬게 하려면 「켜짐」 체크만 끄면 됩니다.')) return;
+      const { error } = await sb.from('kj_push_topics').delete().eq('id', id);
+      if (error) return alert(cleanErr(error.message));
+      await loadPush(true); renderPush();
+    };
+  });
+  const add = document.getElementById('pt-add');
+  add.onclick = async () => {
+    const n = prompt('밀고 싶은 소재 이름 (예: K뷰티, 크레아틴)', '');
+    if (!n || !n.trim()) return;
+    const { error } = await sb.from('kj_push_topics').insert({ name: n.trim(), created_by: me.id });
+    if (error) return alert(/duplicate|unique/i.test(error.message) ? '이미 있는 소재입니다.' : cleanErr(error.message));
+    await loadPush(true); renderPush();
+  };
+}
+
+function render(){ renderCands(); renderFormats(); renderPush(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
 
 /* ---------------- 공용 숫자 도우미 ---------------- */
 const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
