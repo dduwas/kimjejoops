@@ -107,7 +107,7 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .linetabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:14px 24px 2px}
 .ltab{border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:8px 16px;font-size:14px;cursor:pointer;color:var(--muted)}
 .ltab b{color:var(--ink)} .ltab span{font-weight:800;margin-left:5px}
-.ltab.on.ltab-w{background:#E6F4EA;border-color:#1E7B3A;color:#1E7B3A}.ltab.on.ltab-s{background:#E8F0FE;border-color:#1A56C4;color:#1A56C4}.ltab.on.ltab-e{background:#F1F1EF;border-color:#787774;color:#555}
+.ltab.on.ltab-w{background:#E6F4EA;border-color:#1E7B3A;color:#1E7B3A}.ltab.on.ltab-s{background:#E8F0FE;border-color:#1A56C4;color:#1A56C4}.ltab.on.ltab-e{background:#F1F1EF;border-color:#787774;color:#555}.ltab.on.ltab-g{background:#FDECEF;border-color:#B42318;color:#B42318}
 .ltab.on b{color:inherit}.ltab.drop{outline:2px dashed #F59E0B;outline-offset:2px;background:#FFF7E6}
 .lhint{font-size:12px;color:var(--muted);margin-left:4px}
 .toolbar.second{padding:12px 24px 15px;border-bottom:1px solid var(--line)}
@@ -147,7 +147,7 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .aiw .aiw-sec{border:1px solid var(--line);border-radius:10px;padding:4px 14px 14px;margin-top:12px;background:#FAFBFD}.aiw .aiw-h{font-weight:800;font-size:14px;margin:10px 0 2px}.aiw .aiw-hint{font-weight:400;color:var(--muted);font-size:12px}.aiw .aiw-fmts{display:flex;flex-wrap:wrap;gap:6px}.aiw select,.aiw input,.aiw textarea{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:13.5px}.aiw textarea{min-height:84px;resize:vertical}
 .scbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 24px 0;padding:9px 12px;background:#FFF7E6;border:1px solid #F5D08A;border-radius:10px;font-size:13px}
 .card h4{margin:0 0 7px;font-size:14px;font-weight:700;line-height:1.42;letter-spacing:-.01em}
-.ttag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-right:6px;vertical-align:1px;line-height:18px}.ttag-w{background:#E6F4EA;color:#1E7B3A}.ttag-s{background:#E8F0FE;color:#1A56C4}.ttag-e{background:#F1F1EF;color:#787774}
+.ttag{display:inline-block;font-size:11px;font-weight:800;border-radius:5px;padding:0 6px;margin-right:6px;vertical-align:1px;line-height:18px}.ttag-w{background:#E6F4EA;color:#1E7B3A}.ttag-s{background:#E8F0FE;color:#1A56C4}.ttag-e{background:#F1F1EF;color:#787774}.ttag-g{background:#FDECEF;color:#B42318}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
 .badge{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px;background:var(--wash);color:var(--muted)}
 .badge.b-none{background:var(--warn-bg);color:var(--warn)}
@@ -640,7 +640,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v69</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v70</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1677,7 +1677,7 @@ function buildLineTabs(){
     const v = box.dataset.ltview || 'board';
     const sel = v === 'sc' ? scLine : curLine;
     box.innerHTML = (v === 'sc' ? `<button class="ltab ltab-e ${scLine === 'all' ? 'on' : ''}" data-line="all"><b>전체</b> 보기</button>` : '')
-      + TEAM_TAGS.map(t => `<button class="ltab ltab-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'} ${t === sel ? 'on' : ''}" data-line="${t}"><b>${TEAM_LABEL[t]}</b> 라인<span>${cards.filter(c => live(c) && teamTag(c) === t).length}</span></button>`).join('')
+      + TEAM_TAGS.map(t => `<button class="ltab ltab-${teamCls(t)} ${t === sel ? 'on' : ''}" data-line="${t}"><b>${TEAM_LABEL[t]}</b> 라인<span>${cards.filter(c => live(c) && teamTag(c) === t).length}</span></button>`).join('')
       + `<span class="lhint">${HINT[v]}</span>`;
     box.querySelectorAll('[data-line]').forEach(b => {
       if (v === 'sc') {
@@ -1814,7 +1814,7 @@ const cdDate = s => { if (!s) return ''; const d = new Date(s); return (d.getMon
 function cdCard(c){
   const t = c.title || (c.caption || '').split('\n').find(x => x.trim()) || '미리보기 준비 중 (최대 20분)';
   const acts = c.status === 'new'
-    ? `<div class="cd-mv"><span>생산 라인으로</span><button class="chip sm" data-cdmv="웰">웰니스박스</button><button class="chip sm" data-cdmv="솔">솔루션즈</button><button class="chip sm" data-cdmv="기타">롱폼/기타</button></div>
+    ? `<div class="cd-mv"><span>생산 라인으로</span><button class="chip sm" data-cdmv="웰">웰니스박스</button><button class="chip sm" data-cdmv="솔">솔루션즈</button><button class="chip sm" data-cdmv="기타">롱폼/기타</button><button class="chip sm" data-cdmv="외">외국어</button></div>
        <div class="cd-act"><button class="chip sm" data-cdmass>🏭 대본 양산</button><button class="chip sm" data-cddrop>드랍</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`
     : c.status === 'moved' ? `<div class="cd-done">✅ 생산 라인(${esc(TEAM_LABEL[c.team_tag] || c.team_tag || '')})으로 넘김 · ${cdDate(c.decided_at)}</div>`
     : `<div class="cd-act"><button class="chip sm" data-cdback>되살리기</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`;
@@ -1903,7 +1903,7 @@ function anCard(p, tg){
       ${p.kj_angle ? `<div class="an-angle">💡 ${esc(p.kj_angle)}</div>` : ''}
       <div class="an-act">${p.status === 'mass' ? '<span class="an-st">🏭 양산 중</span>' : p.status === 'line' ? '<span class="an-st">✅ 생산 라인</span>' : `<label class="an-chk"><input type="checkbox" data-ansel ${sel ? 'checked' : ''}> 선택</label>
         <button class="chip sm" data-anmass>🏭 양산</button><button class="chip sm" data-anstar>${p.status === 'starred' ? '★' : '☆'}</button>
-        <button class="chip sm" data-anline="웰" title="웰니스박스 라인 아이디어로">→웰니스</button><button class="chip sm" data-anline="솔" title="솔루션즈 라인 아이디어로">→솔루션즈</button><button class="chip sm" data-anline="기타" title="롱폼/기타 라인 아이디어로">→롱폼</button><button class="chip sm cd-del" data-androp>드랍</button>`}</div></div></div>`;
+        <button class="chip sm" data-anline="웰" title="웰니스박스 라인 아이디어로">→웰니스</button><button class="chip sm" data-anline="솔" title="솔루션즈 라인 아이디어로">→솔루션즈</button><button class="chip sm" data-anline="기타" title="롱폼/기타 라인 아이디어로">→롱폼</button><button class="chip sm" data-anline="외" title="외국어 라인 아이디어로">→외국어</button><button class="chip sm cd-del" data-androp>드랍</button>`}</div></div></div>`;
 }
 async function renderOpsAnal(body){
   if (!anData) { body.innerHTML = '<p class="lede">불러오는 중…</p>'; await loadAnal(); }
@@ -2004,7 +2004,7 @@ async function kjMassModal(items, after){
     <div class="ms-items">${items.map(i => `<span>${esc(i.label || i.url || '')}</span>`).join('')}</div>
     <label>형식</label><select id="ms-fmt"><option value="">레퍼런스 구조 그대로 (형식 자유)</option>${grps.map(g => `<optgroup label="${esc(g)}">${fm.filter(f => f.grp === g).map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('')}</optgroup>`).join('')}</select>
     <label>레퍼런스마다 초안 수</label><select id="ms-n"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
-    <label>담당팀 (말투 예시를 이 팀 대본에서 가져옴)</label><select id="ms-team"><option value="솔">솔루션즈</option><option value="웰">웰니스박스</option><option value="기타">롱폼/기타</option></select>
+    <label>담당팀 (말투 예시를 이 팀 대본에서 가져옴)</label><select id="ms-team"><option value="솔">솔루션즈</option><option value="웰">웰니스박스</option><option value="기타">롱폼/기타</option><option value="외">외국어</option></select>
     <label>추가 지시 (선택)</label><input id="ms-note" placeholder="예: 40초 이내, 숫자 근거 1개 이상, 마지막에 댓글 유도 질문">
     <div class="row"><button class="btn sm" id="ms-go">🏭 양산 시작</button><button class="chip" id="ms-x">닫기</button><span id="ms-st" style="font-size:12.5px;color:var(--muted)"></span></div></div>`;
   document.body.appendChild(bg);
@@ -2037,7 +2037,7 @@ async function renderOpsMass(body){
       ${(j.drafts || []).length ? `<div class="ms-drafts">${j.drafts.map((d, i) => `<details ${i === 0 && j.status === 'done' ? 'open' : ''} class="${j.chosen === i ? 'chosen' : ''}"><summary><b>초안 ${i + 1}</b> ${esc(d.title || '')}${d.hook ? ` — <i>${esc(d.hook)}</i>` : ''}${j.chosen === i ? ' ✅' : ''}</summary>
         <table><tr><th style="width:40%">장면</th><th>대사/자막</th></tr>${(d.rows || []).map(r => `<tr><td>${esc(r.scene)}</td><td>${esc(r.line)}</td></tr>`).join('')}</table>
         ${d.notes ? `<div class="an-note">메모: ${esc(d.notes)}</div>` : ''}
-        ${j.status === 'done' ? `<div class="row"><span class="an-note">생산 라인(대본 단계)으로:</span><button class="chip sm" data-msline="${i}" data-team="웰">웰니스박스</button><button class="chip sm" data-msline="${i}" data-team="솔">솔루션즈</button><button class="chip sm" data-msline="${i}" data-team="기타">롱폼/기타</button></div>` : ''}</details>`).join('')}</div>` : ''}
+        ${j.status === 'done' ? `<div class="row"><span class="an-note">생산 라인(대본 단계)으로:</span><button class="chip sm" data-msline="${i}" data-team="웰">웰니스박스</button><button class="chip sm" data-msline="${i}" data-team="솔">솔루션즈</button><button class="chip sm" data-msline="${i}" data-team="기타">롱폼/기타</button><button class="chip sm" data-msline="${i}" data-team="외">외국어</button></div>` : ''}</details>`).join('')}</div>` : ''}
     </div>`).join('') || '<p class="lede">아직 양산한 대본이 없습니다.</p>'}</div>`;
   const J = el => (jobs || []).find(j => j.id === el.closest('[data-msid]').dataset.msid);
   body.querySelectorAll('[data-msline]').forEach(b => b.onclick = async () => { b.disabled = true; const r = await kjFn({ action: 'mass_line', id: J(b).id, idx: +b.dataset.msline, team: b.dataset.team });
@@ -2310,7 +2310,7 @@ function ownerNames(ids){
 }
 
 // v33: 웰(웰니스박스 촬영, 김호준 담당) / 솔(김주성·채진병·강민형 담당) / 기타 — contents.team_tag, 비어 있으면 담당자로 추정
-const TEAM_TAGS = ['웰', '솔', '기타'];
+const TEAM_TAGS = ['웰', '솔', '기타', '외'];   // v70: 외 = 외국어(글로벌 계정용) 라인
 function teamTag(c){
   if ((c.channels || []).some(ch => /롱폼/.test(ch))) return '기타'; // v64: 롱폼 카드는 모두 '롱폼/기타' 라인
   if (c.team_tag) return c.team_tag;
@@ -2320,9 +2320,10 @@ function teamTag(c){
   return '기타';
 }
 // v34: 화면 이름은 '담당팀' — 웰니스박스(웰) / 솔루션즈(솔) / 기타. 담당자를 고르면 자동으로 정해지고, 직접 바꿀 수 있다
-const TEAM_LABEL = { '웰': '웰니스박스', '솔': '솔루션즈', '기타': '롱폼/기타' };
+const TEAM_LABEL = { '웰': '웰니스박스', '솔': '솔루션즈', '기타': '롱폼/기타', '외': '외국어' };
+const teamCls = t => t === '웰' ? 'w' : t === '솔' ? 's' : t === '외' ? 'g' : 'e';
 const teamByOwners = ids => { const n = (ids || []).map(nameOf).join(' '); return /김호준|유현일/.test(n) ? '웰' : /김주성|채진병|강민형/.test(n) ? '솔' : null; };
-const tagHTML = c => { const t = teamTag(c); return `<span class="ttag ttag-${t === '웰' ? 'w' : t === '솔' ? 's' : 'e'}" title="담당팀: ${TEAM_LABEL[t]}">${t}</span>`; };
+const tagHTML = c => { const t = teamTag(c); return `<span class="ttag ttag-${teamCls(t)}" title="담당팀: ${TEAM_LABEL[t] || t}">${t}</span>`; };
 
 function cardHTML(c){
   const badges = [];
@@ -2342,8 +2343,8 @@ function cardHTML(c){
     <div class="meta"><span>${esc(ownerNames(c.owner_ids))}</span>
       ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}</div>
     ${(c.publish_url || c.reference_url) ? `<div class="cardlinks">
-      ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" data-nolink="1">게시 링크</a>` : ''}
-      ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}">레퍼런스</a>` : ''}
+      ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '게시물')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 게시물</a>` : ''}
+      ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 레퍼런스</a>` : ''}
     </div>` : ''}
     ${doneBtn}</div>`;
 }
@@ -4430,6 +4431,7 @@ function openCard(c, preset){
       <input id="f-url" value="${esc(d.publish_url)}" placeholder="https://"></div>
     <div class="field"><label>레퍼런스 링크 — 참고 자료·벤치마크</label>
       <input id="f-ref" value="${esc(d.reference_url)}" placeholder="https://"></div>
+    ${(d.publish_url || d.reference_url) ? `<div class="field"><label>미리보기 — ${d.publish_url ? '게시물' : '레퍼런스'}</label>${kjReferenceMarkup(d.publish_url || d.reference_url, d.title || '콘텐츠')}</div>` : ''}
     ${!isNew && d.publish_url ? `<button class="btn ghost sm" id="f-sync">게시 링크에서 불러오기</button>
     <div id="f-sync-msg" style="margin-top:9px"></div>
     <p class="note">유튜브·인스타 게시 링크가 있으면 조회수·좋아요·댓글을 자동으로 채웁니다.
