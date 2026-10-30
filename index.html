@@ -76,6 +76,8 @@ nav button.opsbtn.on{background:linear-gradient(135deg,#E8590C,#C92A2A);color:#f
 .ops-tabs{display:flex;gap:6px;margin:6px 0 16px;flex-wrap:wrap}
 .ops-tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 15px;font-weight:700;font-size:13.5px;color:var(--navy)}
 .ops-tabs button.on{background:#E8590C;border-color:#E8590C;color:#fff}
+.ops-tabs a.ops-ext{border:1px solid #0E6B50;background:#E3F1EB;border-radius:999px;padding:8px 15px;font-weight:700;font-size:13.5px;color:#0E6B50;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.ops-tabs a.ops-ext:hover{background:#0E6B50;color:#fff}
 .ops-acc{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin:8px 0 18px}
 .ops-acc .a{border:1px solid var(--line);border-radius:var(--r);background:#fff;padding:12px 14px}
 .ops-acc .a b{display:block;font-size:13.5px}.ops-acc .a .n{font-size:22px;font-weight:800;margin-top:4px}
@@ -1244,6 +1246,7 @@ async function renderVideo(){
       <button data-opstab="mass" class="${opsTab === 'mass' ? 'on' : ''}">🏭 대본 양산</button>
       <button data-opstab="video" class="${opsTab === 'video' ? 'on' : ''}">🎬 AI 영상편집</button>
       <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
+      <a class="ops-ext" href="https://works.npksol.space/mcp/beauty/" target="_blank" rel="noopener" title="미모미약국 벤치마킹(새 창)">💊 미모미 벤치마킹 ↗</a>
     </div><div id="ops-body"></div>
     ${profile?.role === 'master' ? `<details class="vd-card" style="max-width:420px;margin-top:28px"><summary style="cursor:pointer;font-weight:800">입장 비밀번호 바꾸기 (대표만)</summary>
       <form id="vd-set" autocomplete="off" style="margin-top:10px"><input type="password" id="vd-new" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
