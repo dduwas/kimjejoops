@@ -634,7 +634,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v66</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v67</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1108,6 +1108,7 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
 // 비밀번호 통과(gate 'video', 12시간) 뒤 3칸: 댓글·DM / AI 영상편집 / SNS 성과
 let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo', opsUpSt = 'draft', opsThreadsReady = false;
 try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
+if (opsTab === 'video') opsTab = 'sns';   // v67: 🎬 AI 영상편집 탭 내림
 const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
 const PF_KO = { youtube:'유튜브', instagram:'인스타', instagram_global:'인스타 @jejo.kpharmacist', xiaohongshu:'샤오홍슈', douyin:'더우인', threads:'쓰레드', _summary:'요약' };
 // Account history is read only in the browser; collection is handled by a DB trigger.
@@ -1244,7 +1245,6 @@ async function renderVideo(){
       <button data-opstab="upload" class="${opsTab === 'upload' ? 'on' : ''}">📤 업로드 자동화</button>
       <button data-opstab="anal" class="${opsTab === 'anal' ? 'on' : ''}">🔎 분석 대상</button>
       <button data-opstab="mass" class="${opsTab === 'mass' ? 'on' : ''}">🏭 대본 양산</button>
-      <button data-opstab="video" class="${opsTab === 'video' ? 'on' : ''}">🎬 AI 영상편집</button>
       <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
       <a class="ops-ext" href="https://works.npksol.space/mcp/beauty/" target="_blank" rel="noopener" title="미모미약국 벤치마킹(새 창)">💊 미모미 벤치마킹 ↗</a>
     </div><div id="ops-body"></div>
@@ -1268,7 +1268,7 @@ async function renderVideo(){
   if (opsTab === 'upload') return renderOpsUpload(body);
   if (opsTab === 'anal') return renderOpsAnal(body);
   if (opsTab === 'mass') return renderOpsMass(body);
-  return renderOpsVideo(body);
+  return renderOpsSns(body);
 }
 const CHINA_CHANNELS = {
   xiaohongshu:{label:'샤오홍수',profile:'https://www.xiaohongshu.com/user/profile/6a587659000000000f038c02',manage:'https://creator.xiaohongshu.com/'},
@@ -1383,10 +1383,10 @@ async function renderOpsUpload(body){
   const next = (() => { const d = new Date(Date.now() + 9 * 36e5); const h = d.getUTCHours(); if (h >= 12) d.setUTCDate(d.getUTCDate() + 1); d.setUTCHours(12, 30, 0, 0); return d.toISOString().slice(0, 16); })();
   const kstLocal = iso => iso ? new Date(new Date(iso).getTime() + 9 * 36e5).toISOString().slice(0, 16) : next;
   body.innerHTML = `<div class="ops-tabs" style="margin-top:0"><button class="on">🧵 쓰레드 @kimjejo_pharma</button><button disabled style="opacity:.5">＋ 다른 업로드(예정)</button></div>
-    <p class="lede">매일 아침 AI가 지금까지 콘텐츠 중 <b>조회수가 높고 결이 맞는 것</b>(영양제·화장품·성분 꿀팁)을 골라(일부만 뽑거나 섞거나 새로 써서) 쓰레드 글 초안 3개를 만듭니다. 대표가 <b>고친 글·승인한 글·반려한 글(이유)</b>을 보고 다음 초안의 말투와 주제를 맞춰 갑니다. 고쳐서 <b>승인</b>하면 정한 시각에 AI 컴퓨터가 올립니다. 승인 안 한 글은 올라가지 않습니다.</p>
+    <p class="lede">매일 아침 AI가 지금까지 콘텐츠 중 <b>조회수가 높고 결이 맞는 것</b>(영양제·화장품·성분 꿀팁)을 골라(일부만 뽑거나 섞거나 새로 써서) 쓰레드 글 초안 3개를 만듭니다. 대표가 <b>고친 글·승인한 글·반려한 글(이유)</b>을 보고 다음 초안의 말투와 주제를 맞춰 갑니다. 고쳐서 <b>승인</b>하면 정한 시각에 AI 컴퓨터가 올립니다. 승인 안 한 글은 올라가지 않습니다. 올릴 시각을 <b>비워 두면</b> 이미 예약된 글 다음으로 자동으로 잡힙니다 — 하루 한 개씩, 대기가 20일치를 넘으면 하루 두 개(아침·저녁)로 늘어납니다.</p>
     ${opsThreadsReady ? '' : '<div class="rv-warn" style="margin:0 0 10px">⚠ 쓰레드 계정 연결 전입니다. 승인해 두면 연결되는 대로 예약 시각 순서로 올라갑니다.</div>'}
     <div class="toolbar" style="padding:0 0 12px">${Object.keys(G).filter(k => k !== 'posting').map(k => `<button class="chip ${st === k ? 'on' : ''}" data-upst="${k}">${G[k]} ${all.filter(t => k === 'approved' ? ['approved','posting'].includes(t.status) : t.status === k).length}</button>`).join('')}
-      <div class="sep"></div><button class="chip" id="up-gen">🤖 초안 더 만들기</button></div>
+      <div class="sep"></div><button class="chip" id="up-gen">🤖 초안 더 만들기</button><button class="chip" id="up-restyle">🧵 말투 다시 쓰기</button></div>
     <div>${list.length ? list.map(t => `<div class="cm-card">
       <div class="rv-sub">원본: <b>${esc(t.source_title || '-')}</b>${t.source_views ? ' · 조회 ' + opsN(t.source_views) : ''}${t.why ? ' · ' + esc(t.why) : ''}${t.reject_reason ? ' · <b>반려 이유:</b> ' + esc(t.reject_reason) : ''}</div>
       ${['posted','posting'].includes(t.status) ? `<div class="cm-q" style="white-space:pre-wrap">${esc(t.text)}</div><div class="cm-done">${t.status === 'posted' ? '✓ ' + esc(fmtKst(t.posted_at)) + ' 올라감' + (t.views != null ? ` · 조회 ${opsN(t.views)} · 좋아요 ${opsN(t.likes)} · 답글 ${opsN(t.replies_n)}` : '') + (t.permalink ? ` · <a href="${esc(t.permalink)}" target="_blank" rel="noopener">쓰레드에서 보기</a>` : '') : '⏳ 올리는 중'}</div>`
@@ -1394,7 +1394,7 @@ async function renderOpsUpload(body){
         <div class="rv-sub" data-upcnt="${t.id}">${(t.text || '').length}/500자</div>
         ${t.error ? `<div class="rv-warn">⚠ ${esc(t.error)}</div>` : ''}
         <div class="cm-act" style="align-items:center;flex-wrap:wrap">
-          <label class="rv-sub">올릴 시각 <input type="datetime-local" data-upat="${t.id}" value="${kstLocal(t.scheduled_at)}" style="border:1px solid var(--line);border-radius:6px;padding:4px"></label>
+          <label class="rv-sub">올릴 시각 <input type="datetime-local" data-upat="${t.id}" value="${t.scheduled_at ? kstLocal(t.scheduled_at) : ''}" style="border:1px solid var(--line);border-radius:6px;padding:4px"> <span class="rv-sub">비워 두면 자동</span></label>
           ${t.status === 'rejected' ? `<button class="btn sm ghost" data-upundo="${t.id}">되살리기</button>`
           : `<button class="btn sm" data-upok="${t.id}">${t.status === 'approved' ? '수정 저장' : '승인·예약'}</button>
              <button class="btn sm ghost" data-upsave="${t.id}">글만 저장</button>
@@ -1411,6 +1411,7 @@ async function renderOpsUpload(body){
   body.querySelectorAll('[data-upno]').forEach(b => b.onclick = async () => { const why = prompt('반려 이유를 짧게 적어 주세요(선택) — AI가 다음 초안부터 반영합니다.\n예) 너무 광고 같음 / 말투 과함 / 주제 겹침', ''); if (why === null) return; if (await call({ action:'reject', id:b.dataset.upno, reason:why })) renderOpsUpload(body); });
   body.querySelectorAll('[data-upundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.upundo })) renderOpsUpload(body); });
   $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:3 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) alert(`초안 ${d.made || 0}개를 만들었습니다.`); };
+  $('#up-restyle').onclick = async e => { if (!confirm('아직 안 올라간 글(승인 대기·예약됨·실패)을 지금 말투 기준으로 다시 씁니다. 올라간 글은 그대로 둡니다. 진행할까요?')) return; e.target.disabled = true; e.target.textContent = '🧵 다시 쓰는 중…(30초쯤)'; const d = await call({ action:'restyle' }); renderOpsUpload(body); if (d) alert(`${d.changed || 0}개를 다시 썼습니다.`); };
 }
 
 // v48 🎬 AI 영상편집 — 요청 → 대표 승인 → AI 컴퓨터(Codex) 작업 → 검수(승인/재작업). 실제 편집은 Codex, 발행은 하지 않음.
