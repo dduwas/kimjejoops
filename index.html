@@ -523,6 +523,12 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 .cd-mv{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:4px}.cd-mv span{font-size:11.5px;color:var(--navy);font-weight:700;margin-right:2px}
 .cd-act,.an-act{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto;padding-top:4px;align-items:center}.cd-del{color:#b42318}
 .cd-done{color:#16794a;font-size:12px;margin-top:4px}
+.car-slides{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:8px 0}
+.car-sl{border:1px solid var(--line);border-radius:8px;padding:8px}
+.car-sl input,.car-sl textarea{width:100%;border:1px solid var(--line);border-radius:6px;padding:6px;font:inherit;font-size:13px;margin-top:4px}
+.car-im{margin-top:6px;font-size:12px}
+.car-im img{width:100%;border-radius:6px;display:block;margin-bottom:4px}
+.car-im input[type=file]{font-size:11px;width:100%}
 .cd-rooms{margin:12px 0 4px;gap:6px}
 .cd-rooms .chip{font-size:14.5px;padding:9px 18px}
 .cd-rooms .chip b{font-weight:800;margin-left:4px}
@@ -634,7 +640,7 @@ input[type=color].mini{padding:2px;width:44px;height:30px}
 <div id="screen-app" class="hide">
   <header>
     <div class="hrow">
-      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v68</span></div>
+      <div class="hbrand">약공장 김제조 <span>워크스페이스</span> <span class="vtag">v69</span></div>
       <nav>
         <button data-view="video" class="opsbtn">🔐 운영관리</button>
         <button data-view="cands">콘텐츠 후보<span class="nbadge hide" id="cd-badge"></span></button>
@@ -1106,7 +1112,8 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
 
 /* ---------------- 운영관리 (v44, 입장 비밀번호) ---------------- */
 // 비밀번호 통과(gate 'video', 12시간) 뒤 3칸: 댓글·DM / AI 영상편집 / SNS 성과
-let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo', opsUpSt = 'draft', opsThreadsReady = false;
+let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo', opsUpSt = 'draft', opsThreadsReady = false, opsUp = 'threads', opsCarSt = 'draft';
+try { opsUp = localStorage.getItem('kj_opsup') || 'threads'; } catch (e) {}
 try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
 if (opsTab === 'video') opsTab = 'sns';   // v67: 🎬 AI 영상편집 탭 내림
 const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
@@ -1374,7 +1381,13 @@ function renderOpsComments(body){
   if ($('#cm-xhs-login')) $('#cm-xhs-login').onclick = async () => { const w = window.open('about:blank', '_blank'); const { data } = await sb.from('app_settings').select('value').eq('key', 'xhs_login_url').maybeSingle(); if (data && data.value) { if (w) w.location = data.value; else location.href = data.value; } else { if (w) w.close(); alert('로그인 링크 설정이 없습니다(관리자만 사용 가능).'); } };
 }
 
+const UP_TABS = () => `<div class="ops-tabs" style="margin-top:0"><button class="${opsUp === 'threads' ? 'on' : ''}" data-upkind="threads">🧵 쓰레드 @kimjejo_pharma</button><button class="${opsUp === 'carousel' ? 'on' : ''}" data-upkind="carousel">🖼 캐러셀 @kimjejo_pharma</button></div>`;
+const upTabBind = body => body.querySelectorAll('[data-upkind]').forEach(b => b.onclick = () => { opsUp = b.dataset.upkind; try { localStorage.setItem('kj_opsup', opsUp); } catch (e) {} renderOpsUpload(body); });
 async function renderOpsUpload(body){
+  if (opsUp === 'carousel') return renderOpsUpCarousel(body);
+  return renderOpsUpThreads(body);
+}
+async function renderOpsUpThreads(body){
   const { data } = await sb.from('ops_threads').select('*').order('created_at', { ascending:false }).limit(200);
   const all = data || [];
   const G = { draft:'승인 대기', approved:'예약됨', posting:'올리는 중', posted:'올라감', failed:'실패', rejected:'반려' };
@@ -1382,7 +1395,7 @@ async function renderOpsUpload(body){
   const list = all.filter(t => st === 'draft' ? t.status === 'draft' : st === 'approved' ? ['approved','posting'].includes(t.status) : t.status === st);
   const next = (() => { const d = new Date(Date.now() + 9 * 36e5); const h = d.getUTCHours(); if (h >= 12) d.setUTCDate(d.getUTCDate() + 1); d.setUTCHours(12, 30, 0, 0); return d.toISOString().slice(0, 16); })();
   const kstLocal = iso => iso ? new Date(new Date(iso).getTime() + 9 * 36e5).toISOString().slice(0, 16) : next;
-  body.innerHTML = `<div class="ops-tabs" style="margin-top:0"><button class="on">🧵 쓰레드 @kimjejo_pharma</button><button disabled style="opacity:.5">＋ 다른 업로드(예정)</button></div>
+  body.innerHTML = UP_TABS() + `
     <p class="lede">매일 아침 AI가 지금까지 콘텐츠 중 <b>조회수가 높고 결이 맞는 것</b>(영양제·화장품·성분 꿀팁)을 골라(일부만 뽑거나 섞거나 새로 써서) 쓰레드 글 초안 3개를 만듭니다. 대표가 <b>고친 글·승인한 글·반려한 글(이유)</b>을 보고 다음 초안의 말투와 주제를 맞춰 갑니다. 고쳐서 <b>승인</b>하면 정한 시각에 AI 컴퓨터가 올립니다. 승인 안 한 글은 올라가지 않습니다. 올릴 시각을 <b>비워 두면</b> 이미 예약된 글 다음으로 자동으로 잡힙니다 — 하루 한 개씩, 대기가 20일치를 넘으면 하루 두 개(아침·저녁)로 늘어납니다.</p>
     ${opsThreadsReady ? '' : '<div class="rv-warn" style="margin:0 0 10px">⚠ 쓰레드 계정 연결 전입니다. 승인해 두면 연결되는 대로 예약 시각 순서로 올라갑니다.</div>'}
     <div class="toolbar" style="padding:0 0 12px">${Object.keys(G).filter(k => k !== 'posting').map(k => `<button class="chip ${st === k ? 'on' : ''}" data-upst="${k}">${G[k]} ${all.filter(t => k === 'approved' ? ['approved','posting'].includes(t.status) : t.status === k).length}</button>`).join('')}
@@ -1401,6 +1414,7 @@ async function renderOpsUpload(body){
              ${t.status === 'approved' ? `<button class="btn sm ghost" data-upundo="${t.id}">승인 취소</button>` : `<button class="btn sm danger" data-upno="${t.id}">반려</button>`}`}
         </div>`}
     </div>`).join('') : `<p class="lede">${G[st]} 글이 없습니다.</p>`}</div>`;
+  upTabBind(body);
   const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-threads', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
   const txt = id => body.querySelector(`[data-uptxt="${id}"]`).value;
   const at = id => { const v = body.querySelector(`[data-upat="${id}"]`)?.value; return v ? new Date(v + ':00+09:00').toISOString() : null; };
@@ -1412,6 +1426,78 @@ async function renderOpsUpload(body){
   body.querySelectorAll('[data-upundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.upundo })) renderOpsUpload(body); });
   $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:3 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) alert(`초안 ${d.made || 0}개를 만들었습니다.`); };
   $('#up-restyle').onclick = async e => { if (!confirm('아직 안 올라간 글(승인 대기·예약됨·실패)을 지금 말투 기준으로 다시 씁니다. 올라간 글은 그대로 둡니다. 진행할까요?')) return; e.target.disabled = true; e.target.textContent = '🧵 다시 쓰는 중…(30초쯤)'; const d = await call({ action:'restyle' }); renderOpsUpload(body); if (d) alert(`${d.changed || 0}개를 다시 썼습니다.`); };
+}
+
+// v69 🖼 캐러셀 — AI가 문구·캡션 초안 → 대표 승인 → 장표 이미지 올리면 수요일마다 자동 게시
+const CAR_G = { draft:'승인 대기', ready:'디자인 대기', approved:'예약됨', posted:'올라감', failed:'실패', rejected:'반려' };
+function carCard(c, kstLocal){
+  const sl = Array.isArray(c.slides) ? c.slides : [];
+  const im = Array.isArray(c.images) ? c.images : [];
+  const done = ['posted', 'posting'].includes(c.status);
+  return `<div class="cm-card" data-carid="${c.id}">
+    <div class="rv-sub">원본: <b>${esc(c.source_title || '-')}</b>${c.source_views ? ' · 조회 ' + opsN(c.source_views) : ''}${c.scheduled_at && !done ? ' · 올릴 때: ' + esc(fmtKst(c.scheduled_at)) : ''}${c.reject_reason ? ' · <b>반려 이유:</b> ' + esc(c.reject_reason) : ''}</div>
+    <div style="font-weight:800;margin:4px 0;font-size:15px">${esc(c.topic || '(제목 없음)')}</div>
+    ${c.design_note ? `<div class="an-angle">🎨 ${esc(c.design_note)}</div>` : ''}
+    ${done ? `<div class="cm-done">${c.status === 'posted' ? '✓ ' + esc(fmtKst(c.posted_at)) + ' 올라감' + (c.permalink ? ` · <a href="${esc(c.permalink)}" target="_blank" rel="noopener">인스타에서 보기</a>` : '') : '⏳ 올리는 중'}</div>` : ''}
+    <div class="car-slides">${sl.map((s, i) => `<div class="car-sl">
+      <div class="rv-sub">${i === 0 ? '표지' : i === sl.length - 1 ? '마지막 장' : (i + 1) + '장'}</div>
+      <input data-carh="${i}" value="${esc(s.headline || '')}" ${done ? 'disabled' : ''} placeholder="큰 글씨">
+      <textarea data-carb="${i}" rows="3" ${done ? 'disabled' : ''} placeholder="작은 글씨">${esc(s.body || '')}</textarea>
+      <div class="car-im">${im[i] ? `<img src="${esc(im[i])}" alt="">` : '<span class="rv-sub">장표 없음</span>'}${done ? '' : `<input type="file" accept="image/*" data-carf="${i}">`}</div>
+    </div>`).join('')}</div>
+    <label class="rv-sub">캡션</label>
+    <textarea data-carcap rows="7" ${done ? 'disabled' : ''} style="width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;font-size:14px;line-height:1.6;margin:4px 0">${esc(c.caption || '')}</textarea>
+    ${c.error ? `<div class="rv-warn">⚠ ${esc(c.error)}</div>` : ''}
+    ${done ? '' : `<div class="cm-act" style="align-items:center;flex-wrap:wrap">
+      <label class="rv-sub">올릴 시각 <input type="datetime-local" data-carat value="${kstLocal(c.scheduled_at)}" style="border:1px solid var(--line);border-radius:6px;padding:4px"> <span class="rv-sub">비워 두면 다음 수요일</span></label>
+      ${c.status === 'rejected' ? '<button class="btn sm ghost" data-carundo>되살리기</button>'
+        : `<button class="btn sm" data-carok>${c.status === 'draft' ? '문구 승인·예약' : '수정 저장·예약'}</button>
+           <button class="btn sm ghost" data-carsave>문구만 저장</button>
+           ${c.status === 'draft' ? '<button class="btn sm danger" data-carno>반려</button>' : '<button class="btn sm ghost" data-carundo>승인 취소</button>'}`}
+    </div>`}
+  </div>`;
+}
+async function renderOpsUpCarousel(body){
+  const { data } = await sb.from('ops_carousels').select('*').order('created_at', { ascending:false }).limit(120);
+  const all = data || [];
+  const st = opsCarSt;
+  const list = all.filter(c => st === 'approved' ? ['approved', 'posting'].includes(c.status) : c.status === st);
+  const kstLocal = iso => iso ? new Date(new Date(iso).getTime() + 9 * 36e5).toISOString().slice(0, 16) : '';
+  body.innerHTML = UP_TABS() + `
+    <p class="lede">메인 인스타(@kimjejo_pharma) <b>캐러셀</b>입니다. AI가 지금까지 콘텐츠에서 소재를 골라 <b>표지부터 마지막 장까지 문구와 캡션</b>을 짭니다. 문구를 고쳐 <b>승인</b>하면 <b>다음 수요일</b>부터 한 주에 하나씩 자리가 잡힙니다(시각은 바꿀 수 있습니다). 장표 이미지를 모두 올리면 그때부터 예약 게시 대상이 됩니다. 🎨 메모는 'AI가 찍어낸 느낌'을 피하려고 AI가 적어 둔 디자인 지침입니다.</p>
+    <div class="toolbar" style="padding:0 0 12px">${Object.keys(CAR_G).map(k => `<button class="chip ${st === k ? 'on' : ''}" data-carst="${k}">${CAR_G[k]} ${all.filter(c => k === 'approved' ? ['approved', 'posting'].includes(c.status) : c.status === k).length}</button>`).join('')}
+      <div class="sep"></div><button class="chip" id="car-gen">🤖 캐러셀 초안 만들기</button></div>
+    <div>${list.length ? list.map(c => carCard(c, kstLocal)).join('') : `<p class="lede">${CAR_G[st]} 캐러셀이 없습니다.</p>`}</div>`;
+  upTabBind(body);
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-threads', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const re = () => renderOpsUpCarousel(body);
+  body.querySelectorAll('[data-carst]').forEach(b => b.onclick = () => { opsCarSt = b.dataset.carst; re(); });
+  body.querySelector('#car-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(40초쯤)'; const d = await call({ action:'car_generate', n:2 }); opsCarSt = 'draft'; re(); if (d) alert(`캐러셀 초안 ${d.made || 0}개를 만들었습니다.`); };
+  body.querySelectorAll('[data-carid]').forEach(card => {
+    const id = card.dataset.carid;
+    const slides = () => [...card.querySelectorAll('[data-carh]')].map((h, i) => ({ headline: h.value, body: card.querySelector(`[data-carb="${i}"]`).value }));
+    const cap = () => card.querySelector('[data-carcap]').value;
+    const at = () => { const v = card.querySelector('[data-carat]') ? card.querySelector('[data-carat]').value : ''; return v ? new Date(v + ':00+09:00').toISOString() : null; };
+    const sv = card.querySelector('[data-carsave]');
+    if (sv) sv.onclick = async () => { if (await call({ action:'car_save', id, slides: slides(), caption: cap() })) { sv.textContent = '저장됨'; setTimeout(() => sv.textContent = '문구만 저장', 1500); } };
+    const ok = card.querySelector('[data-carok]');
+    if (ok) ok.onclick = async () => { ok.disabled = true; await call({ action:'car_save', id, slides: slides(), caption: cap() });
+      const d = await call({ action:'car_approve', id, scheduled_at: at() });
+      if (!d) { ok.disabled = false; return; }
+      re(); alert(d.status === 'approved' ? '예약했습니다 — ' + fmtKst(d.scheduled_at) : `문구를 확정했습니다 (${fmtKst(d.scheduled_at)} 예정).\n장표 이미지 ${d.need}장을 올리면 그때부터 자동 게시 대상이 됩니다.`); };
+    const no = card.querySelector('[data-carno]');
+    if (no) no.onclick = async () => { const why = prompt('반려 이유를 짧게 적어 주세요(선택) — AI가 다음 초안부터 반영합니다.', ''); if (why === null) return; if (await call({ action:'car_reject', id, reason: why })) re(); };
+    const un = card.querySelector('[data-carundo]');
+    if (un) un.onclick = async () => { if (await call({ action:'car_undo', id })) re(); };
+    card.querySelectorAll('[data-carf]').forEach(f => f.onchange = async () => {
+      const file = f.files && f.files[0]; if (!file) return;
+      if (file.size > 4000000) return alert('이미지가 너무 큽니다. 4MB 이하로 줄여 주세요.');
+      const data64 = await new Promise(res => { const rd = new FileReader(); rd.onload = () => res(rd.result); rd.readAsDataURL(file); });
+      f.disabled = true;
+      const d = await call({ action:'car_img', id, i: +f.dataset.carf, data: data64 });
+      if (d) re(); else f.disabled = false;
+    });
+  });
 }
 
 // v48 🎬 AI 영상편집 — 요청 → 대표 승인 → AI 컴퓨터(Codex) 작업 → 검수(승인/재작업). 실제 편집은 Codex, 발행은 하지 않음.
