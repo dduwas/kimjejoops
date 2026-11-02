@@ -126,18 +126,21 @@ function cardHTML(c){
       <button class="cardbtn alt" data-done="${c.id}">게시 완료</button>
     </div>` : '';
 
+  /* v94 카드 정리 — 삭제는 오른쪽 위 아이콘으로 빼고, 담당·날짜·링크를 한 줄로 합쳤다 */
   return `<div class="card" draggable="true" data-id="${c.id}">
+    <button class="cddel" data-cddrop="${c.id}" aria-label="이 카드 드랍" title="한 번 눌러 바로 드랍합니다. 토스트의 「되돌리기」나 드랍 게시판에서 되돌릴 수 있습니다">🗑</button>
     <h4>${tagHTML(c)}${esc(c.title)}</h4>
     <div class="badges">${badges.join('')}</div>
     ${c.next_action ? `<div class="next">${esc(c.next_action)}</div>` : ''}
-    <div class="meta"><span>${esc(ownerNames(c.owner_ids))}</span>
-      ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}</div>
-    ${(c.publish_url || c.reference_url) ? `<div class="cardlinks">
+    <div class="cardfoot"><span>${esc(ownerNames(c.owner_ids))}</span>
+      ${c.publish_date ? `<span>게시 ${c.publish_date.slice(5)}</span>` : ''}
+      <span class="sp"></span>
+    ${(c.publish_url || c.reference_url) ? `<span class="cardlinks">
       ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '게시물')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 게시물</a>` : ''}
       ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 레퍼런스</a>` : ''}
-    </div>` : ''}
+    </span>` : ''}</div>
     ${doneBtn}
-    <div class="cardmv"><button class="mvtoggle" data-mvt="${c.id}" title="단계와 생산 라인을 버튼으로 옮깁니다">⇄ 단계·라인</button><button class="mvtoggle cddel" data-cddrop="${c.id}" title="한 번 눌러 바로 드랍합니다. 확인창 없이 지워지고, 아래 「되돌리기」나 드랍 게시판에서 되돌릴 수 있습니다">🗑 삭제</button></div></div>`;
+    <div class="cardmv"><button class="mvtoggle" data-mvt="${c.id}" title="단계와 생산 라인을 버튼으로 옮깁니다">⇄ 단계·라인</button></div></div>`;
 }
 
 // 단계가 어느 칼럼에 속하는지
