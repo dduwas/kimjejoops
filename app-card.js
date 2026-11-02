@@ -171,10 +171,8 @@ function openCard(c, preset){
   };
 
   if ($('#dr-drop')) $('#dr-drop').onclick = async () => {
-    if (!confirm(`"${c.title}" 을(를) 드랍합니다.\n지워지지 않고 드랍 게시판에 보관되며, 언제든 아이디어 단계로 복구할 수 있습니다.`)) return;
-    const { error } = await sb.from('contents').update({ stage: DROP }).eq('id', c.id);
-    if (error) return alert(cleanErr(error.message));
-    forceClose(); await refresh();
+    forceClose();            // v92 확인창 없이 한 번에 드랍 — 토스트의 「되돌리기」로 되돌린다
+    await dropNow(c.id);
   };
 
   if ($('#dr-restore')) $('#dr-restore').onclick = async () => {
@@ -337,7 +335,7 @@ document.addEventListener('contextmenu', e => {
   m.querySelectorAll('[data-cs]').forEach(b => b.onclick = async () => {
     const s = b.dataset.cs; closeCtx();
     if (s === obj.stage) return;
-    if (s === DROP && !confirm(`"${obj.title}" 을(를) 드랍합니다. 드랍 게시판에 보관되며 복구할 수 있습니다.`)) return;
+    if (s === DROP) return dropNow(obj.id);
     await moveStage(obj.id, s);
   });
   m.querySelectorAll('[data-ct]').forEach(b => b.onclick = async () => {
