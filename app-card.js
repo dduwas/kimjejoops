@@ -30,6 +30,10 @@ function openCard(c, preset){
         || '<span style="font-size:12.5px;color:var(--muted)">설정 탭에서 채널을 먼저 추가하세요</span>'}
     </div></div>
 
+    ${hasStyles() ? `<div class="field"><label>스타일 — 여러 개 선택 가능</label><div class="chgroup" id="f-styles">
+      ${STYLES.map(s => `<label><input type="checkbox" value="${esc(s)}" ${styleList(d).includes(s) ? 'checked' : ''}>${esc(s)}</label>`).join('')}
+    </div></div>` : ''}
+
     <div class="sect">담당과 일정</div>
     <div class="field"><label>담당자 — 여러 명 선택 가능</label><div class="chgroup tall" id="f-owners">
       ${team.filter(t => t.status === 'approved')
@@ -101,6 +105,7 @@ function openCard(c, preset){
       team_tag: $('#f-tag').value || null,
       key_message: $('#f-key').value.trim() || null,
       channels: [...document.querySelectorAll('#f-channels input:checked')].map(i => i.value),
+      ...(hasStyles() ? { styles: [...document.querySelectorAll('#f-styles input:checked')].map(i => i.value) } : {}),
       owner_ids: [...document.querySelectorAll('#f-owners input:checked')].map(i => i.value),
       cta_keyword: $('#f-cta').value.trim() || null,
       cta_post_id: $('#f-ctapost').value || null,
