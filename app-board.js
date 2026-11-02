@@ -118,6 +118,7 @@ async function dropNow(id){
 function cardHTML(c){
   const badges = [];
   (c.channels || []).slice(0,3).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
+  styleList(c).forEach(s => badges.push(`<span class="badge b-style">${esc(s)}</span>`));   // v97 스타일
   if (c.cta_keyword) badges.push(`<span class="badge b-cta">CTA ${esc(c.cta_keyword)}</span>`);
   if (c.cta_post_id) { const lp = posts.find(p => p.id === c.cta_post_id); if (lp) badges.push(`<span class="badge b-lead" title="CTA로 보내는 글 열람 수">🔗 ${lp.view_count || 0}</span>`); }
 
