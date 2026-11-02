@@ -13,6 +13,13 @@ const AI_FMT = [
 ];
 /* v74 외국어 라인 — 영어 대본. PD 확정 현지화 규칙(직역 금지·구어체·발화 길이 85~100%·번역표)을 추가 지시로 붙인다. */
 const EN_NOTE = "[영어판으로 쓴다 — 외국어 라인]\n- 결과물은 미국 영어로 쓴다. rows 의 line(대사·자막)은 영어로, scene(장면 설명)은 한국어로 둔다.\n- 직역하지 않는다. 미국 소비자가 실제로 쓰는 구어체로 다시 쓴다(예: 속건조 → dehydrated skin).\n- 핵심 주장, 김제조 캐릭터(약사이자 제조사 대표), 입증 가능한 사실은 그대로 유지한다.\n- 현지에서 안 통하는 농담·약어·비유는 바꾼다. 한국 브랜드(다이소·올리브영 등)는 짧은 설명을 붙이거나 현지 대응물로 바꾼다.\n- 발화 길이는 한국어 기준 분량의 85~100%로 맞춘다(영상 길이를 못 바꾸기 때문).\n- 미국 FDA·FTC 건강 표시 규제는 확인 전 통과를 단정하지 않는다. 걸릴 만한 문장은 [확인 필요]로 표시하고 대체 문장을 제안한다.\n- 마지막 줄 자막은 한국어 대신 영어로: [자막] Supplement truths — follow Kim Jejo!\n- notes 맨 끝에 「번역표」를 붙인다. 한 줄에 '한국어 | English' 로, 화면 자막까지 포함한다.";
+/* v89 「🔁 같은 내용 · 쉽게」 — 레퍼런스 내용은 그대로 두고 표현만 쉽게 바꿔 다시 쓰는 버튼의 지시문 */
+const SAME_NOTE = "[같은 내용 · 쉽게 다시 쓰기]\n"  + "- 레퍼런스와 같은 내용을 쓴다. 소재·주장·근거·순서를 바꾸지 않는다. 새 정보를 보태지도, 있는 정보를 빼지도 않는다.\n"
+  + "- 바꾸는 것은 표현뿐이다. 어려운 말은 쉬운 말로, 긴 문장은 짧게, 전문 용어는 한 번 풀어서. 중학생이 한 번에 알아듣게 쓴다.\n"
+  + "- 문장을 그대로 베끼지 않는다. 같은 뜻을 김제조 말투로 다시 쓴다. '같은 내용인데 다르게 말했네' 정도면 충분하다.\n"
+  + "- 레퍼런스의 장면 순서와 분량을 그대로 따른다. 형식을 새로 짜지 않는다. 훅도 레퍼런스 첫마디와 같은 뜻으로, 표현만 쉽게.\n"
+  + "- 레퍼런스에 없는 수치·임상·후기·사례는 만들지 않는다. 레퍼런스에 있는 숫자는 그대로 둔다.\n"
+  + "- 김제조 확정 규칙(마지막 자막, 길이, 규제 표현)은 그대로 지킨다.";
 async function aiScript(card){
   if (!card) return;
   const withScript = cards.filter(c => c.script && c.id !== card.id).sort((a, b) => (b.views || 0) - (a.views || 0));
@@ -20,7 +27,7 @@ async function aiScript(card){
   let enMode = (card.team_tag === '외');
   const bg = document.createElement('div'); bg.className = 'aiw-bg';
   bg.innerHTML = `<div class="aiw"><h3>🤖 AI 대본 쓰기 — ${esc(card.title)}</h3>
-    <div class="sub">① 무엇을 말할지(내용) ② 어떤 틀로 말할지(형식)를 정하면 김제조 말투로 초안을 씁니다. 결과를 보고 <b>카드 대본에 넣기</b>를 눌러야 저장됩니다.</div>
+    <div class="sub">① 무엇을 말할지(내용) ② 어떤 틀로 말할지(형식)를 정하면 김제조 말투로 초안을 씁니다. 결과를 보고 <b>카드 대본에 넣기</b>를 눌러야 저장됩니다.<br><b>🔁 같은 내용 · 쉽게</b>는 레퍼런스와 <b>같은 내용</b>을 그대로 두고 <b>표현만 쉽게</b> 바꿔 씁니다(형식 선택은 무시).</div>
     <div class="aiw-sec"><div class="aiw-h">① 내용 레퍼런스</div>
       <label>링크</label><input id="aw-url" value="${esc(card.reference_url || '')}" placeholder="https://www.instagram.com/p/…">
       <label>내용 붙여넣기 <span class="aiw-hint">영상 자막·캡션·기사 본문. 인스타·유튜브는 링크로 캡션만 읽혀서, 말하는 내용은 여기 붙여 주세요</span></label><textarea id="aw-reftext"></textarea>
@@ -38,7 +45,7 @@ async function aiScript(card){
     <div class="aiw-fmts"><button type="button" class="chip ${enMode ? '' : 'on'}" data-awen="0">🇰🇷 한국어</button><button type="button" class="chip ${enMode ? 'on' : ''}" data-awen="1">🌐 영어 대본</button>
       <span class="aiw-hint">영어로 하면 직역 대신 현지 구어체로 다시 쓰고, 메모 끝에 번역표가 붙습니다 (외국어 라인 카드는 자동으로 켜집니다)</span></div>
     <label>추가 지시 (선택)</label><input id="aw-note" placeholder="예: 40초 이내, 네/아니요 형식, TTS 질문 + 약사 답">
-    <div class="row"><button class="btn sm" id="aw-go">✍️ 초안 쓰기</button><button class="chip" id="aw-x">닫기</button><span id="aw-st" style="font-size:12.5px;color:var(--muted)"></span></div>
+    <div class="row"><button class="btn sm" id="aw-go">✍️ 초안 쓰기</button><button class="btn sm" id="aw-same" style="background:#6B3FA0;border-color:#6B3FA0" title="레퍼런스와 같은 내용 그대로, 표현만 쉽게 바꿔 다시 씁니다. 위의 형식 선택은 쓰지 않습니다">🔁 같은 내용 · 쉽게</button><button class="chip" id="aw-x">닫기</button><span id="aw-st" style="font-size:12.5px;color:var(--muted)"></span></div>
     <div id="aw-out"></div></div>`;
   document.body.appendChild(bg);
   const $b = s => bg.querySelector(s);
@@ -55,25 +62,31 @@ async function aiScript(card){
   bg.querySelectorAll('[data-awen]').forEach(b => b.onclick = () => { enMode = b.dataset.awen === '1'; bg.querySelectorAll('[data-awen]').forEach(x => x.classList.toggle('on', (x.dataset.awen === '1') === enMode)); });
   const close = () => bg.remove();
   $b('#aw-x').onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
-  const call = async () => {
+  const call = async (mode) => {
     const { data: { session } } = await sb.auth.getSession();
     const f = AI_FMT.find(x => x.k === fmtK) || AI_FMT[0];
+    const same = mode === 'same';   // v89: 레퍼런스 구조를 그대로 따르므로 형식 지정은 끈다
+    const body = { card_id: card.id, ref_url: $b('#aw-url').value.trim(), ref_text: $b('#aw-reftext').value,
+      format_text: same ? '' : $b('#aw-fmttext').value,
+      format_card_id: same ? null : ($b('#aw-fmttext').value.trim() ? null : ($b('#aw-fmtcard').value || null)),
+      format_type: same ? '' : (fmtK ? `${f.label} — ${f.desc}` : ''),
+      note: (same ? SAME_NOTE + '\n' : '') + (enMode ? EN_NOTE + '\n' : '') + $b('#aw-note').value };
     const r = await fetch(String(window.SUPABASE_URL).replace(/\/+$/, '') + '/functions/v1/write-script', { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token, apikey: window.SUPABASE_ANON_KEY, 'content-type': 'application/json' },
-      body: JSON.stringify({ card_id: card.id, ref_url: $b('#aw-url').value.trim(), ref_text: $b('#aw-reftext').value, format_text: $b('#aw-fmttext').value,
-        format_card_id: $b('#aw-fmttext').value.trim() ? null : ($b('#aw-fmtcard').value || null), format_type: fmtK ? `${f.label} — ${f.desc}` : '', note: (enMode ? EN_NOTE + '\n' : '') + $b('#aw-note').value }) });
+      body: JSON.stringify(body) });
     return r.json();
   };
-  $b('#aw-go').onclick = async () => {
-    const st = $b('#aw-st'), out = $b('#aw-out'), go = $b('#aw-go');
-    go.disabled = true; st.textContent = '쓰는 중… (20~60초)'; out.innerHTML = '';
+  const run = async (mode) => {
+    const st = $b('#aw-st'), out = $b('#aw-out'), go = $b('#aw-go'), sm = $b('#aw-same');
+    go.disabled = true; sm.disabled = true;
+    st.textContent = (mode === 'same' ? '같은 내용으로 쉽게 쓰는 중… ' : '쓰는 중… ') + '(20~60초)'; out.innerHTML = '';
     try {
-      const j = await call();
+      const j = await call(mode);
       if (j.error) { out.innerHTML = `<div class="msg">⚠ ${esc(j.error)}</div>`; return; }
       if (j.need_key) { out.innerHTML = `<div class="msg">⚠ AI 키가 아직 설정되지 않았습니다.</div>`; return; }
       out.innerHTML = `<div class="msg">내용: ${esc(j.ref_how || '-')} · 형식: ${esc(j.fmt_how || '-')} · 스킬 v${j.skill_version}${j.hook ? `<br><b>훅:</b> ${esc(j.hook)}` : ''}${j.notes ? `<br><b>메모:</b> ${esc(j.notes)}` : ''}</div>
         <table><tr><th style="width:42%">장면 설명</th><th>대사/자막</th></tr>${(j.rows || []).map(r => `<tr><td>${esc(r.scene || '')}</td><td>${esc(r.line || '')}</td></tr>`).join('')}</table>
         <div class="row"><button class="btn sm" id="aw-apply">카드 대본에 넣기</button><button class="chip" id="aw-again">다시 쓰기</button><span style="font-size:12.5px;color:var(--muted)">${card.script ? '지금 대본은 AI 작업 기록에 남기고 바꿉니다' : ''}</span></div>`;
-      out.querySelector('#aw-again').onclick = () => $b('#aw-go').click();
+      out.querySelector('#aw-again').onclick = () => run(mode);
       out.querySelector('#aw-apply').onclick = async e => {
         const cur = cards.find(x => x.id === card.id) || card;
         if (cur.script && !confirm('카드에 있는 대본·메모를 이 초안으로 바꿉니다. (이전 대본은 AI 작업 기록에 남습니다)')) return;
@@ -87,8 +100,10 @@ async function aiScript(card){
         close(); await refresh(); poToast(fs ? 'AI 초안을 카드 대본에 저장했고, 편집창 대본 칸에도 넣었습니다.' : 'AI 초안을 카드 대본에 넣었습니다. 📝 대본 저장으로 docx를 받을 수 있습니다.', 3500);
       };
     } catch (err) { out.innerHTML = `<div class="msg">⚠ ${esc(err.message || String(err))}</div>`; }
-    finally { go.disabled = false; st.textContent = ''; }
+    finally { go.disabled = false; sm.disabled = false; st.textContent = ''; }
   };
+  $b('#aw-go').onclick = () => run('');
+  $b('#aw-same').onclick = () => run('same');
 }
 
 /* ---------- v73 🤖 AI 대본 일괄 작성 (대기열) ----------
