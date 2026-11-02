@@ -13,13 +13,19 @@ const AI_FMT = [
 ];
 /* v74 외국어 라인 — 영어 대본. PD 확정 현지화 규칙(직역 금지·구어체·발화 길이 85~100%·번역표)을 추가 지시로 붙인다. */
 const EN_NOTE = "[영어판으로 쓴다 — 외국어 라인]\n- 결과물은 미국 영어로 쓴다. rows 의 line(대사·자막)은 영어로, scene(장면 설명)은 한국어로 둔다.\n- 직역하지 않는다. 미국 소비자가 실제로 쓰는 구어체로 다시 쓴다(예: 속건조 → dehydrated skin).\n- 핵심 주장, 김제조 캐릭터(약사이자 제조사 대표), 입증 가능한 사실은 그대로 유지한다.\n- 현지에서 안 통하는 농담·약어·비유는 바꾼다. 한국 브랜드(다이소·올리브영 등)는 짧은 설명을 붙이거나 현지 대응물로 바꾼다.\n- 발화 길이는 한국어 기준 분량의 85~100%로 맞춘다(영상 길이를 못 바꾸기 때문).\n- 미국 FDA·FTC 건강 표시 규제는 확인 전 통과를 단정하지 않는다. 걸릴 만한 문장은 [확인 필요]로 표시하고 대체 문장을 제안한다.\n- 마지막 줄 자막은 한국어 대신 영어로: [자막] Supplement truths — follow Kim Jejo!\n- notes 맨 끝에 「번역표」를 붙인다. 한 줄에 '한국어 | English' 로, 화면 자막까지 포함한다.";
-/* v89 「🔁 같은 내용 · 쉽게」 — 레퍼런스 내용은 그대로 두고 표현만 쉽게 바꿔 다시 쓰는 버튼의 지시문 */
-const SAME_NOTE = "[같은 내용 · 쉽게 다시 쓰기]\n"  + "- 레퍼런스와 같은 내용을 쓴다. 소재·주장·근거·순서를 바꾸지 않는다. 새 정보를 보태지도, 있는 정보를 빼지도 않는다.\n"
-  + "- 바꾸는 것은 표현뿐이다. 어려운 말은 쉬운 말로, 긴 문장은 짧게, 전문 용어는 한 번 풀어서. 중학생이 한 번에 알아듣게 쓴다.\n"
-  + "- 문장을 그대로 베끼지 않는다. 같은 뜻을 김제조 말투로 다시 쓴다. '같은 내용인데 다르게 말했네' 정도면 충분하다.\n"
-  + "- 레퍼런스의 장면 순서와 분량을 그대로 따른다. 형식을 새로 짜지 않는다. 훅도 레퍼런스 첫마디와 같은 뜻으로, 표현만 쉽게.\n"
-  + "- 레퍼런스에 없는 수치·임상·후기·사례는 만들지 않는다. 레퍼런스에 있는 숫자는 그대로 둔다.\n"
-  + "- 김제조 확정 규칙(마지막 자막, 길이, 규제 표현)은 그대로 지킨다.";
+/* v90 「🔁 거의 그대로 따라 쓰기」 — 레퍼런스를 최대한 그대로 따라가되 항목 1~2개 교체·순서 바꾸기로만 변주한다 */
+const SAME_NOTE = "[거의 그대로 따라 쓰기 — 조금만 바꾼 변주판]\n"
+  + "- 목표는 레퍼런스와 거의 같은 영상이다. 구성·장면 순서·호흡·길이·훅의 종류를 그대로 가져온다. 새로 기획하지 않는다.\n"
+  + "- 다만 아래 세 가지는 일부러 바꾼다. 바꿀 수 있는 자리가 있으면 반드시 바꾼다.\n"
+  + "  (1) 나열되는 항목이 3개 이상이면 그중 1~2개를 같은 급의 다른 것으로 갈아 끼운다. 제품 5개면 1~2개 교체, 신호 7가지면 1~2개 교체.\n"
+  + "      바꾼 항목도 약사·제조자로서 말이 되는 것으로 고르고, 설명 길이는 원래 항목과 비슷하게 맞춘다.\n"
+  + "  (2) 나열 순서를 바꾼다. 특히 맨 처음과 맨 마지막은 자리를 옮긴다. 순위형이면 1위와 2~3위를 바꿔도 된다.\n"
+  + "  (3) 예시·비유·상황 중 한두 개를 한국 소비자에게 더 익숙한 것으로 갈아 끼운다.\n"
+  + "- 말은 새로 쓴다. 뜻이 같아도 문장은 레퍼런스와 다르게 쓴다. 같은 문장을 그대로 옮기면 안 된다(인스타 오리지널리티 정책·김제조 대본 규칙).\n"
+  + "- 표현은 레퍼런스보다 쉽게. 어려운 말은 쉬운 말로, 긴 문장은 짧게, 전문 용어는 한 번 풀어서.\n"
+  + "- 레퍼런스에 없는 수치·임상·후기는 만들지 않는다. 그대로 쓰는 항목의 숫자는 레퍼런스 값을 유지한다.\n"
+  + "- 김제조 확정 규칙(마지막 자막, 길이, 규제 표현)은 그대로 지킨다.\n"
+  + "- notes 맨 끝에 「바꾼 곳」을 붙인다. 무엇을 무엇으로 바꿨는지, 순서를 어떻게 돌렸는지 한 줄씩 적는다.";
 async function aiScript(card){
   if (!card) return;
   const withScript = cards.filter(c => c.script && c.id !== card.id).sort((a, b) => (b.views || 0) - (a.views || 0));
@@ -27,7 +33,7 @@ async function aiScript(card){
   let enMode = (card.team_tag === '외');
   const bg = document.createElement('div'); bg.className = 'aiw-bg';
   bg.innerHTML = `<div class="aiw"><h3>🤖 AI 대본 쓰기 — ${esc(card.title)}</h3>
-    <div class="sub">① 무엇을 말할지(내용) ② 어떤 틀로 말할지(형식)를 정하면 김제조 말투로 초안을 씁니다. 결과를 보고 <b>카드 대본에 넣기</b>를 눌러야 저장됩니다.<br><b>🔁 같은 내용 · 쉽게</b>는 레퍼런스와 <b>같은 내용</b>을 그대로 두고 <b>표현만 쉽게</b> 바꿔 씁니다(형식 선택은 무시).</div>
+    <div class="sub">① 무엇을 말할지(내용) ② 어떤 틀로 말할지(형식)를 정하면 김제조 말투로 초안을 씁니다. 결과를 보고 <b>카드 대본에 넣기</b>를 눌러야 저장됩니다.<br><b>🔁 거의 그대로 따라 쓰기</b>는 레퍼런스를 <b>구성·순서까지 그대로</b> 따라가되, <b>나열 항목 1~2개를 바꾸고 순서를 돌려</b> 변주판을 만듭니다. 문장은 새로 씁니다(형식 선택은 무시). 메모 끝에 <b>바꾼 곳</b>이 정리됩니다.</div>
     <div class="aiw-sec"><div class="aiw-h">① 내용 레퍼런스</div>
       <label>링크</label><input id="aw-url" value="${esc(card.reference_url || '')}" placeholder="https://www.instagram.com/p/…">
       <label>내용 붙여넣기 <span class="aiw-hint">영상 자막·캡션·기사 본문. 인스타·유튜브는 링크로 캡션만 읽혀서, 말하는 내용은 여기 붙여 주세요</span></label><textarea id="aw-reftext"></textarea>
@@ -45,7 +51,7 @@ async function aiScript(card){
     <div class="aiw-fmts"><button type="button" class="chip ${enMode ? '' : 'on'}" data-awen="0">🇰🇷 한국어</button><button type="button" class="chip ${enMode ? 'on' : ''}" data-awen="1">🌐 영어 대본</button>
       <span class="aiw-hint">영어로 하면 직역 대신 현지 구어체로 다시 쓰고, 메모 끝에 번역표가 붙습니다 (외국어 라인 카드는 자동으로 켜집니다)</span></div>
     <label>추가 지시 (선택)</label><input id="aw-note" placeholder="예: 40초 이내, 네/아니요 형식, TTS 질문 + 약사 답">
-    <div class="row"><button class="btn sm" id="aw-go">✍️ 초안 쓰기</button><button class="btn sm" id="aw-same" style="background:#6B3FA0;border-color:#6B3FA0" title="레퍼런스와 같은 내용 그대로, 표현만 쉽게 바꿔 다시 씁니다. 위의 형식 선택은 쓰지 않습니다">🔁 같은 내용 · 쉽게</button><button class="chip" id="aw-x">닫기</button><span id="aw-st" style="font-size:12.5px;color:var(--muted)"></span></div>
+    <div class="row"><button class="btn sm" id="aw-go">✍️ 초안 쓰기</button><button class="btn sm" id="aw-same" style="background:#6B3FA0;border-color:#6B3FA0" title="레퍼런스를 구성·순서까지 거의 그대로 따라가되 나열 항목 1~2개 교체·순서 바꾸기로 변주합니다. 문장은 새로 씁니다. 위의 형식 선택은 쓰지 않습니다">🔁 거의 그대로 따라 쓰기</button><button class="chip" id="aw-x">닫기</button><span id="aw-st" style="font-size:12.5px;color:var(--muted)"></span></div>
     <div id="aw-out"></div></div>`;
   document.body.appendChild(bg);
   const $b = s => bg.querySelector(s);
@@ -78,7 +84,7 @@ async function aiScript(card){
   const run = async (mode) => {
     const st = $b('#aw-st'), out = $b('#aw-out'), go = $b('#aw-go'), sm = $b('#aw-same');
     go.disabled = true; sm.disabled = true;
-    st.textContent = (mode === 'same' ? '같은 내용으로 쉽게 쓰는 중… ' : '쓰는 중… ') + '(20~60초)'; out.innerHTML = '';
+    st.textContent = (mode === 'same' ? '거의 그대로 따라 쓰는 중… ' : '쓰는 중… ') + '(20~60초)'; out.innerHTML = '';
     try {
       const j = await call(mode);
       if (j.error) { out.innerHTML = `<div class="msg">⚠ ${esc(j.error)}</div>`; return; }
