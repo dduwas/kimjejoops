@@ -16,6 +16,11 @@ const BOARD_COLS = [
   { name: '편집',   stages: ['편집'],   drop: '편집',   wide: true },
   { name: '검수·승인', stages: ['검수·승인'], drop: '검수·승인' }
 ];
+// v97 콘텐츠 스타일(복수 선택) — 채널과 다른 축이다. contents.styles(text[]) 에 담는다.
+// DB 열이 아직 없을 수도 있어, 카드 객체에 styles 키가 있는지로 판정해 없으면 화면에 아예 안 띄운다.
+const STYLES = ['오가닉','인터뷰','강의/페이퍼'];
+const hasStyles = () => Array.isArray(cards) && cards.length > 0 && Object.prototype.hasOwnProperty.call(cards[0], 'styles');
+const styleList = c => Array.isArray(c && c.styles) ? c.styles : [];
 const IDEA = '아이디어';
 const REVIEW = '검수·승인';
 const PLANNED = '게시예정';
