@@ -243,7 +243,9 @@ async function cdSet(c, patch){
   Object.assign(c, patch); return true;
 }
 async function cdMove(c, team){
-  const title = (c.title || (c.caption || '').split('\n').find(x => x.trim()) || '인스타 레퍼런스').replace(/\s+/g, ' ').trim().slice(0, 60);
+  // v93 미리보기가 아직 안 온 후보도 카드 제목이 겹치지 않게 — 계정이나 코드를 붙인다
+  const fb = '인스타 레퍼런스' + (c.account ? ' · ' + c.account : c.shortcode ? ' · ' + c.shortcode : '');
+  const title = (c.title || (c.caption || '').split('\n').find(x => x.trim()) || fb).replace(/\s+/g, ' ').trim().slice(0, 60);
   const { data, error } = await sb.from('contents').insert({ title, stage: IDEA, team_tag: team, reference_url: c.url,
     next_action: `콘텐츠 후보(${cdRoomRow(cdRoomOf(c))[2]})에서 넘어옴 · ${c.account || ''}${c.note ? ' · 메모: ' + c.note : ''}`.slice(0, 500) }).select('id').single();
   if (error) return alert(cleanErr(error.message));
