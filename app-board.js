@@ -92,6 +92,29 @@ const teamCls = t => t === '웰' ? 'w' : t === '솔' ? 's' : t === '외' ? 'g' :
 const teamByOwners = ids => { const n = (ids || []).map(nameOf).join(' '); return /김호준|유현일/.test(n) ? '웰' : /김주성|채진병|강민형/.test(n) ? '솔' : null; };
 const tagHTML = c => { const t = teamTag(c); return `<span class="ttag ttag-${teamCls(t)}" title="담당팀: ${TEAM_LABEL[t] || t}">${t}</span>`; };
 
+/* v92 한 번 클릭 드랍 — 확인창 없이 바로 드랍하고, 토스트의 「되돌리기」로 즉시 되돌린다.
+   영구 삭제가 아니라 드랍 게시판으로 보내는 것이므로 되돌릴 수 있다. */
+function poUndo(t, fn){
+  const old = document.querySelector('.po-toast'); if (old) old.remove();
+  const el = document.createElement('div'); el.className = 'po-toast';
+  el.innerHTML = `<span>${esc(t)}</span><button class="po-undo">되돌리기</button>`;
+  document.body.appendChild(el);
+  const kill = setTimeout(() => el.remove(), 9000);
+  el.querySelector('.po-undo').onclick = async () => { clearTimeout(kill); el.remove(); await fn(); };
+}
+async function dropNow(id){
+  const c = cards.find(x => x.id === id); if (!c || c.stage === DROP) return;
+  const was = c.stage, name = c.title || '카드';
+  const { error } = await sb.from('contents').update({ stage: DROP, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) return alert(cleanErr(error.message));
+  await refresh();
+  poUndo('드랍: ' + name.slice(0, 28) + ' · 드랍 게시판에 보관됩니다', async () => {
+    const { error: e2 } = await sb.from('contents').update({ stage: was, updated_at: new Date().toISOString() }).eq('id', id);
+    if (e2) return alert(cleanErr(e2.message));
+    await refresh(); poToast('되돌렸습니다.', 2000);
+  });
+}
+
 function cardHTML(c){
   const badges = [];
   (c.channels || []).slice(0,3).forEach(ch => badges.push(`<span class="badge">${esc(ch)}</span>`));
@@ -114,7 +137,7 @@ function cardHTML(c){
       ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 레퍼런스</a>` : ''}
     </div>` : ''}
     ${doneBtn}
-    <div class="cardmv"><button class="mvtoggle" data-mvt="${c.id}" title="단계와 생산 라인을 버튼으로 옮깁니다">⇄ 단계·라인</button></div></div>`;
+    <div class="cardmv"><button class="mvtoggle" data-mvt="${c.id}" title="단계와 생산 라인을 버튼으로 옮깁니다">⇄ 단계·라인</button><button class="mvtoggle cddel" data-cddrop="${c.id}" title="한 번 눌러 바로 드랍합니다. 확인창 없이 지워지고, 아래 「되돌리기」나 드랍 게시판에서 되돌릴 수 있습니다">🗑 삭제</button></div></div>`;
 }
 
 // 단계가 어느 칼럼에 속하는지
@@ -198,13 +221,18 @@ function renderBoard(){
     p.querySelectorAll('[data-mvs]').forEach(x => x.onclick = async ev => {
       ev.stopPropagation(); const s = x.dataset.mvs;
       if (s === c.stage) return;
-      if (s === DROP && !confirm(`"${c.title}" 을(를) 드랍합니다. 드랍 게시판에 보관되며 되돌릴 수 있습니다.`)) return;
+      if (s === DROP) return dropNow(c.id);
       await moveStage(c.id, s);
     });
     p.querySelectorAll('[data-mvl]').forEach(x => x.onclick = async ev => {
       ev.stopPropagation(); if (teamTag(c) === x.dataset.mvl) return;
       await moveLine(c.id, x.dataset.mvl);
     });
+  });
+
+  $$('#line [data-cddrop]').forEach(b => b.onclick = async e => {
+    e.stopPropagation();
+    await dropNow(b.dataset.cddrop);
   });
 
   $$('#line [data-pub]').forEach(b => b.onclick = async e => {
@@ -275,8 +303,7 @@ function renderInsight(){
   $$('#kj-ins [data-inskeep]').forEach(b => b.onclick = () => touch(b.dataset.inskeep));
   $$('#kj-ins [data-insdate]').forEach(i => i.onchange = () => i.value && touch(i.dataset.insdate, { publish_date: i.value }));
   $$('#kj-ins [data-insdrop]').forEach(b => b.onclick = () => {
-    const c = cards.find(x => x.id === b.dataset.insdrop);
-    if (c && confirm(`"${c.title}" 을(를) 드랍합니다. 드랍 게시판에 보관되며 복구할 수 있습니다.`)) touch(c.id, { stage: DROP });
+    dropNow(b.dataset.insdrop);
   });
   $$('#kj-ins [data-insrep]').forEach(b => b.onclick = async () => {
     const c = cards.find(x => x.id === b.dataset.insrep); if (!c) return;
