@@ -153,26 +153,28 @@ function kjReferenceSource(raw) {
   if (/\.(?:mp4|webm|mov)$/i.test(u.pathname)) return { kind: 'video', src: u.href, provider: '영상' };
   return null;
 }
-/* v96 인스타 레퍼런스는 창 안에서 재생되지 않는다.
-   인스타그램이 로그인 세션이 없는 창에는 /embed/ 를 내주지 않고 「링크가 잘못되었거나 삭제됨」을 돌려준다(11-03 확인).
-   그래서 우리가 콘텐츠 후보 수집 때 저장해 둔 썸네일·계정·캡션을 보여주고, 재생은 인스타에서 열게 한다. */
+/* v98 인스타 레퍼런스 — 팝업 안에서 바로 재생하는 원래 방식으로 되돌렸다(대표 요청 11-04).
+   인스타에 로그인된 브라우저에서는 임베드가 잘 뜬다. 로그아웃 상태에서는 빈 화면이 나오므로,
+   재생 화면 바로 아래에 「인스타에서 열기」 버튼과, 접어 둔 그림·글(우리가 수집 때 저장해 둔 것)을 같이 붙인다. */
 const IG_SC = u => { const m = String(u || '').match(/\/(?:reel|reels|p|tv)\/([\w-]+)/); return m ? m[1] : null; };
-async function kjIgCard(raw, screen, note){
-  const sc = IG_SC(raw);
-  screen.innerHTML = '<div class="kj-ig-none">미리보기 불러오는 중…</div>';
-  let info = null;
-  if (sc) { try { const { data } = await sb.from('kj_candidates').select('thumb,account,title,caption').eq('shortcode', sc).limit(1); info = (data || [])[0] || null; } catch (e) {} }
-  const cap = info && info.caption ? String(info.caption).trim() : '';
-  screen.innerHTML = '<div class="kj-ig">'
-    + (info && info.thumb ? '<img src="' + esc(info.thumb) + '" alt="레퍼런스 미리보기">' : '<div class="kj-ig-none">저장해 둔 미리보기 그림이 없습니다.<br>아래 버튼으로 인스타에서 보세요.</div>')
-    + '<div class="kj-ig-side">'
-    + (info && info.account ? '<div class="kj-ig-acct">' + esc(info.account) + '</div>' : '')
-    + (cap ? '<p class="kj-ig-cap">' + esc(cap.slice(0, 900)) + (cap.length > 900 ? '…' : '') + '</p>' : '')
-    + '<div class="kj-ig-btns"><a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a>'
-    + '<button class="chip sm" data-ref-copy>주소 복사</button></div></div></div>';
-  const cp = screen.querySelector('[data-ref-copy]');
+async function kjIgFallback(raw, screen){
+  const box = document.createElement('div'); box.className = 'kj-ig-side';
+  box.innerHTML = '<div class="kj-ig-btns"><a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a>'
+    + '<button class="chip sm" data-ref-copy>주소 복사</button></div>';
+  screen.appendChild(box);
+  const cp = box.querySelector('[data-ref-copy]');
   if (cp) cp.onclick = async () => { cp.textContent = (await copyText(raw)) ? '복사함 ✓' : '복사 실패'; setTimeout(() => { cp.textContent = '주소 복사'; }, 2000); };
-  note.textContent = '인스타그램은 로그인하지 않은 창에 영상을 내주지 않습니다. 여기서는 그림과 글만 보고, 영상은 「인스타그램에서 열기」로 보세요.';
+  const sc = IG_SC(raw); if (!sc) return;
+  let info = null;
+  try { const { data } = await sb.from('kj_candidates').select('thumb,account,caption').eq('shortcode', sc).limit(1); info = (data || [])[0] || null; } catch (e) {}
+  if (!info || (!info.thumb && !info.caption)) return;
+  const cap = String(info.caption || '').trim();
+  const d = document.createElement('details'); d.className = 'kj-ig-more';
+  d.innerHTML = '<summary>위 화면이 비어 있으면 — 그림·글로 보기</summary>'
+    + (info.account ? '<div class="kj-ig-acct">' + esc(info.account) + '</div>' : '')
+    + (info.thumb ? '<img src="' + esc(info.thumb) + '" alt="레퍼런스 미리보기">' : '')
+    + (cap ? '<p class="kj-ig-cap">' + esc(cap.slice(0, 900)) + (cap.length > 900 ? '…' : '') + '</p>' : '');
+  box.insertBefore(d, box.firstChild);
 }
 function kjOpenProductionReference(raw, title = '레퍼런스 영상') {
   const source = kjReferenceSource(raw);
@@ -183,8 +185,7 @@ function kjOpenProductionReference(raw, title = '레퍼런스 영상') {
   dialog.setAttribute('aria-labelledby', 'kj-ref-title');
   dialog.innerHTML = `<div class="kj-ref-head"><b id="kj-ref-title">${esc(title || '레퍼런스 영상')}</b><button class="chip sm" data-ref-close autofocus aria-label="영상 닫기">닫기 ✕</button></div><div class="kj-ref-screen"></div><p class="kj-ref-note"></p>`;
   const screen = dialog.querySelector('.kj-ref-screen'), note = dialog.querySelector('.kj-ref-note');
-  if (source && source.provider === 'Instagram') { kjIgCard(raw, screen, note); }
-  else if (source) {
+  if (source) {
     const media = document.createElement(source.kind);
     media.src = source.src;
     if (source.kind === 'video') {
@@ -198,6 +199,7 @@ function kjOpenProductionReference(raw, title = '레퍼런스 영상') {
       media.addEventListener('error', () => { note.textContent = '서비스에서 미리보기를 불러오지 못했습니다. 잠시 뒤 다시 시도해 주세요.'; });
     }
     screen.appendChild(media);
+    if (source.provider === 'Instagram') kjIgFallback(raw, screen);   // v98 아래에 열기 버튼·그림 접어서 같이
     note.textContent = source.provider === 'Instagram'
       ? '영상 안의 ▶를 눌러 재생하세요. 비공개·삭제·임베드 제한·로그인 요구 영상은 Instagram 정책상 여기서 재생되지 않을 수 있습니다.'
       : '이 화면에서 재생됩니다. 원본 제공자가 임베드를 제한한 영상은 재생되지 않을 수 있습니다.';
@@ -219,13 +221,12 @@ function kjReferenceMarkup(raw, title = '레퍼런스 영상') {
   const source = kjReferenceSource(raw);
   if (!source) return '<span class="kj-ref-inline kj-ref-unavailable">이 링크는 화면 안 재생을 지원하지 않습니다.</span>';
   const label = esc(title || '레퍼런스 영상');
-  if (source.provider === 'Instagram')   // v96 인스타는 창 안 재생이 막혀 있다
-    return '<span class="kj-ref-inline kj-ref-unavailable"><a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a>'
-         + '<small>인스타그램은 로그인하지 않은 창에 영상을 내주지 않아 여기서는 재생되지 않습니다.</small></span>';
   const media = source.kind === 'video'
     ? '<video controls playsinline preload="none" src="' + esc(source.src) + '" aria-label="' + label + '"></video>'
     : '<iframe loading="lazy" title="' + label + '" src="' + esc(source.src) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
-  return '<span class="kj-ref-inline">' + media + '<small>영상 안의 ▶로 바로 재생 · 비공개·삭제·임베드 제한 영상은 재생되지 않을 수 있습니다.</small></span>';
+  const go = source.provider === 'Instagram'   // v98 비어 보이면 바로 열 수 있게
+    ? '<a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a>' : '';
+  return '<span class="kj-ref-inline">' + media + go + '<small>영상 안의 ▶로 바로 재생 · 비공개·삭제·임베드 제한 영상은 재생되지 않을 수 있습니다.</small></span>';
 }
 
 /* ---------- v53 📥 콘텐츠 후보 (생산 라인 앞단, 10-25 대표 요청) ----------
