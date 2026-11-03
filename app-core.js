@@ -187,3 +187,41 @@ $$('nav button').forEach(b => b.onclick = async () => {
   render();
 });
 
+
+/* v100 폰에서 표가 화면을 통째로 밀지 않게 — 표를 .tblwrap 으로 감싸 표만 좌우로 움직이고,
+   720px 이하에서는 칸마다 머리글을 붙여 카드로 접는다(CSS). 화면 코드를 하나씩 고치는 대신
+   다 그려진 뒤 한 번 훑는 방식이라 앞으로 새로 만드는 표에도 그대로 적용된다. */
+(function () {
+  function headRow(t) { return t.querySelector('thead tr') || [...t.rows].find(r => r.querySelector('th')) || null; }
+  function stamp(t) {
+    const hr = headRow(t); if (!hr) return;
+    const labels = [...hr.children].map(c => (c.textContent || '').replace(/\s+/g, ' ').trim());
+    if (!labels.some(x => x)) return;
+    hr.classList.add('tfold-h');
+    [...t.rows].forEach(r => {
+      if (r === hr) return;
+      let i = 0;
+      [...r.children].forEach(c => {
+        if (c.tagName === 'TD' && !c.hasAttribute('data-l')) c.setAttribute('data-l', labels[i] || '');
+        i += (parseInt(c.getAttribute('colspan'), 10) || 1);
+      });
+    });
+    t.classList.add('tfold');
+  }
+  function sweep() {
+    document.querySelectorAll('table').forEach(t => {
+      if (!t.closest('.tblwrap') && !t.closest('.tbl-wrap') && !t.classList.contains('no-fold')) {
+        const w = document.createElement('div'); w.className = 'tblwrap';
+        t.parentNode.insertBefore(w, t); w.appendChild(t);
+      }
+      stamp(t);
+    });
+  }
+  const run = () => { try { sweep(); } catch (e) {} };
+  run();
+  let timer = null;
+  try {
+    new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(run, 60); })
+      .observe(document.body, { childList: true, subtree: true });
+  } catch (e) {}
+})();
