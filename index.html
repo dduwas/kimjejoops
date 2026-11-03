@@ -668,8 +668,9 @@ img,video,iframe,pre{max-width:100%}
   .tblwrap table.tfold{min-width:0;font-size:13px}
   .tblwrap table.tfold tr.tfold-h{display:none}
   .tblwrap table.tfold tr{display:block;border:1px solid var(--line);border-radius:10px;background:#fff;margin:0 0 8px;padding:4px 0}
-  .tblwrap table.tfold td{display:flex;gap:10px;align-items:flex-start;border:0;padding:6px 12px;line-height:1.5;text-align:left}
-  .tblwrap table.tfold td::before{content:attr(data-l);flex:0 0 76px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:0;white-space:nowrap}
+  .tblwrap table.tfold td{display:block;border:0;padding:6px 12px 6px 92px;position:relative;line-height:1.5;text-align:left}
+  .tblwrap table.tfold td::before{content:attr(data-l);position:absolute;left:12px;top:6px;width:72px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tblwrap table.tfold td[data-l=""]{padding-left:12px}
   .tblwrap table.tfold td[data-l=""]::before{display:none}
   .tblwrap table.tfold tr:hover td{background:transparent}
   nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-left:0;padding-bottom:2px;scrollbar-width:none}
