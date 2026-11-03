@@ -26,13 +26,17 @@ async function loadSchedAuto(){
 }
 function autoEvHTML(e){
   const a = e.auto, k = e.kind === 'planned' ? 'k-plan' : 'k-done';
-  const lab = (SA_CH[a.platform] || a.platform) + (e.kind === 'planned' ? ' 예약' : '');
-  const tip = `🤖 자동 · ${lab} · ${a.title || ''}${a.exact === false ? ' (게시일 = 처음 확인된 날)' : ''}`;
+  // v99 한 플랫폼에 계정이 둘 이상이면(인스타 김제조/글로벌) 달력에도 계정을 같이 보여 준다
+  const multi = (schedAuto || []).some(x => x.platform === a.platform && (x.account || '') !== (a.account || ''));
+  const lab = (SA_CH[a.platform] || a.platform) + (multi && a.account ? ' ' + String(a.account).replace(/^@/, '') : '') + (e.kind === 'planned' ? ' 예약' : '');
+  const tip = `🤖 자동 · ${lab}${a.account ? ' · ' + a.account : ''} · ${a.title || ''}${a.exact === false ? ' (게시일 = 처음 확인된 날)' : ''}`;
   return `<a class="ev ev-auto" ${a.url ? `href="${esc(a.url)}" target="_blank" rel="noopener"` : ''} title="${esc(tip)}"><span class="dotmark ${k}"></span>🤖${esc(lab)} ${esc(a.title || '(제목 없음)')}</a>`;
 }
 function scheduleEvents(){
   const out = [];
+  const accOn = scAccFilter.size > 0;   // v99 계정으로 보는 중에는 계정 구분이 없는 수동 카드는 빼고 그 계정 글만 본다
   cards.forEach(c => {
+    if (accOn) return;
     if (!scLineOk(c)) return;   // v39: 전체 또는 고른 라인
     if (!matchOwner(c, scOwnerFilter)) return;
     if (!matchChannel(c, scChannelFilter)) return;
@@ -53,18 +57,19 @@ function scheduleEvents(){
     else if (c.stage === DONE) push('done');
   });
 
-  if (!scOwnerFilter.size && (scLine === 'all' || scLine === '솔')) schedAuto.forEach(a => {
-    if (scChannelFilter.size && ![...scChannelFilter].some(ch => String(ch).includes(SA_CH[a.platform] || a.platform))) return;
+  if (accOn || (!scOwnerFilter.size && (scLine === 'all' || scLine === '솔'))) schedAuto.forEach(a => {
+    if (accOn && !scAccFilter.has((a.platform || '') + '|' + (a.account || ''))) return;
+    if (!accOn && scChannelFilter.size && ![...scChannelFilter].some(ch => String(ch).includes(SA_CH[a.platform] || a.platform))) return;
     out.push({ card: null, auto: a, kind: a.kind === 'planned' ? 'planned' : 'done', date: a.date });
   });
   return out.filter(e => scCat === 'all' || e.kind === scCat);
 }
 
 function renderSchedule(){
-  if (!schedAutoAt) { loadSchedAuto().then(() => renderSchedule()).catch(() => {}); }
+  if (!schedAutoAt) { loadSchedAuto().then(() => { buildScheduleChips(); renderSchedule(); }).catch(() => {}); }
   const evs = scheduleEvents();
   const n = k => evs.filter(e => e.kind === k).length;
-  const filtered = scOwnerFilter.size || scChannelFilter.size;
+  const filtered = scOwnerFilter.size || scChannelFilter.size || scAccFilter.size;
 
   const parts = [];
   ['shoot','edit','planned','done'].forEach(k => {
