@@ -279,7 +279,8 @@ function renderInsight(){
     <td class="num">${fmtN(c.views)}</td><td class="num">${c.saves != null ? fmtN(c.saves) : '—'}</td><td class="num">${c.saves != null ? rate(c).toFixed(1) + '%' : '—'}</td>
     <td>${rep ? `<button class="mini-b" data-insrep="${c.id}" title="같은 틀로 다음 편 아이디어 카드 만들기">같은 틀로 +</button>` : ''}</td></tr>`;
   const perf = `<details data-ins="perf" ${open('perf') ? 'open' : ''}><summary>📊 ${TEAM_LABEL[curLine]} 라인 최근 30일 성과 — ${recent.length}개 · 평균 조회 ${fmtN(avgV)}</summary>
-    ${recent.length ? `<table><tr><th>잘 된 콘텐츠</th><th>채널</th><th class="num">조회</th><th class="num">저장</th><th class="num">저장률</th><th></th></tr>${top.map(c => row(c, true)).join('')}
+    ${recent.length ? `<table><tr><th>콘텐츠</th><th>채널</th><th class="num">조회</th><th class="num">저장</th><th class="num">저장률</th><th></th></tr>
+    <tr><th>잘 된 콘텐츠</th><th></th><th></th><th></th><th></th><th></th></tr>${top.map(c => row(c, true)).join('')}
     <tr><th>아쉬운 콘텐츠</th><th></th><th></th><th></th><th></th><th></th></tr>${low.map(c => row(c, false)).join('')}</table>
     <p class="note" style="margin-top:6px">매일 아침 6:30 인스타·유튜브 게시물을 카드와 자동으로 짝지어 링크·조회·저장·공유를 채웁니다.</p>`
     : '<p class="note">최근 30일 성과가 아직 없습니다. 매일 아침 자동으로 채워집니다.</p>'}</details>`;
