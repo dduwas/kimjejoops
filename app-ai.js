@@ -192,6 +192,16 @@ function buildScheduleChips(){
   buildChips('#sc-owner-chips', '#sc-owner-clear', ownerItems(pool), scOwnerFilter, renderSchedule);
   const chs = channels.filter(c => c.active).map(c => ({ key: c.label, label: c.label }));
   buildChips('#sc-channel-chips', '#sc-channel-clear', chs, scChannelFilter, renderSchedule);
+
+  // v99 계정별 보기 — 실제로 올라간 글이 있는 계정만 칩으로 (🤖 자동 일정 기준)
+  const accMap = new Map();
+  (schedAuto || []).forEach(a => {
+    const key = (a.platform || '') + '|' + (a.account || '');
+    if (!accMap.has(key)) accMap.set(key, { key, name: (SA_CH[a.platform] || a.platform) + (a.account ? ' ' + a.account : ''), n: 0 });
+    accMap.get(key).n++;
+  });
+  const accs = [...accMap.values()].sort((x, y) => y.n - x.n).map(x => ({ key: x.key, label: x.name + ' ' + x.n }));
+  buildChips('#sc-acc-chips', '#sc-acc-clear', accs, scAccFilter, renderSchedule);
 }
 
 function buildChannelChips(){
