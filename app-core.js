@@ -58,6 +58,7 @@ let scLine = (() => { try { return localStorage.getItem('kj_scline') || 'all'; }
 const scLineOk = c => scLine === 'all' || teamTag(c) === scLine;
 let scOwnerFilter = new Set();        // 게시 일정 담당자 필터
 let scChannelFilter = new Set();      // 게시 일정 채널 필터
+let scAccFilter = new Set();          // v99 게시 일정 계정 필터 (플랫폼|핸들) — 🤖 자동 일정에만 걸린다
 
 const isAdmin  = () => profile && (profile.role === 'master' || profile.role === 'admin');
 const isMaster = () => profile && profile.role === 'master';
