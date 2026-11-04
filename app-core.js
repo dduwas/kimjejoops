@@ -225,3 +225,76 @@ $$('nav button').forEach(b => b.onclick = async () => {
       .observe(document.body, { childList: true, subtree: true });
   } catch (e) {}
 })();
+
+/* v101 브라우저 기본 팝업(alert·confirm·prompt) 대신 쓰는 화면 안 알림·확인창.
+   폰에서 기본 팝업은 화면 한가운데를 덮고 손가락 위치가 안 맞는다. 알림은 아래쪽 토스트로,
+   확인·입력은 웍스 안 창으로 띄운다. 되돌릴 수 있는 일은 애초에 묻지 않고 바로 하고 「되돌리기」를 준다. */
+const UI_BAD = /오류|실패|없습니다|못[ ]?|할 수 없|안 됩니다|잘못|초과|필요합니다/;
+function uiToast(msg, opt) {
+  const o = opt || {};
+  const old = document.querySelector('.po-toast'); if (old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'po-toast' + (o.bad ? ' bad' : '');
+  const sp = document.createElement('span'); sp.textContent = String(msg == null ? '' : msg); el.appendChild(sp);
+  if (o.action) {
+    const b = document.createElement('button'); b.className = 'po-undo'; b.textContent = o.action.label;
+    b.onclick = () => { el.remove(); o.action.run(); };
+    el.appendChild(b);
+  }
+  document.body.appendChild(el);
+  const t = setTimeout(() => el.remove(), o.ms || (o.action ? 9000 : o.bad ? 5000 : 3200));
+  el.onclick = e => { if (e.target === el || e.target === sp) { clearTimeout(t); el.remove(); } };
+  return el;
+}
+function uiAlert(msg, ms) { return uiToast(msg, { bad: UI_BAD.test(String(msg || '')), ms }); }
+function uiErr(msg, ms) { return uiToast(msg, { bad: true, ms }); }
+
+function uiModal(build) {
+  return new Promise(resolve => {
+    const back = document.createElement('div'); back.className = 'uim-back';
+    const box = document.createElement('div'); box.className = 'uim';
+    back.appendChild(box);
+    let done = false;
+    const close = v => { if (done) return; done = true; document.removeEventListener('keydown', key, true); back.remove(); resolve(v); };
+    const key = e => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(null); }
+      if (e.key === 'Enter' && !e.shiftKey && box.dataset.enter === 'ok') { e.preventDefault(); box.querySelector('.uim-yes').click(); }
+    };
+    document.addEventListener('keydown', key, true);
+    back.onclick = e => { if (e.target === back) close(null); };
+    build(box, close);
+    document.body.appendChild(back);
+    const f = box.querySelector('input,textarea') || box.querySelector('.uim-yes');
+    if (f) setTimeout(() => { try { f.focus(); if (f.select) f.select(); } catch (e) {} }, 30);
+  });
+}
+/* 확인창 — 되돌릴 수 없는 일에만 쓴다. opt: {ok,cancel,danger,title} */
+function uiConfirm(msg, opt) {
+  const o = opt || {};
+  return uiModal((box, close) => {
+    box.dataset.enter = 'ok';
+    const t = document.createElement('div'); t.className = 'uim-msg'; t.textContent = String(msg == null ? '' : msg);
+    const row = document.createElement('div'); row.className = 'uim-btns';
+    const no = document.createElement('button'); no.className = 'btn ghost uim-no'; no.textContent = o.cancel || '취소';
+    const ok = document.createElement('button'); ok.className = 'btn uim-yes' + (o.danger ? ' danger' : ''); ok.textContent = o.ok || '확인';
+    no.onclick = () => close(false); ok.onclick = () => close(true);
+    row.appendChild(no); row.appendChild(ok);
+    box.appendChild(t); box.appendChild(row);
+  }).then(v => v === true);
+}
+/* 입력창 — prompt 대신. 취소하면 null */
+function uiPrompt(msg, def, opt) {
+  const o = opt || {};
+  return uiModal((box, close) => {
+    box.dataset.enter = 'ok';
+    const t = document.createElement('div'); t.className = 'uim-msg'; t.textContent = String(msg == null ? '' : msg);
+    const inp = document.createElement('input'); inp.className = 'uim-input'; inp.type = 'text';
+    inp.value = def == null ? '' : String(def); if (o.placeholder) inp.placeholder = o.placeholder;
+    const row = document.createElement('div'); row.className = 'uim-btns';
+    const no = document.createElement('button'); no.className = 'btn ghost uim-no'; no.textContent = '취소';
+    const ok = document.createElement('button'); ok.className = 'btn uim-yes'; ok.textContent = o.ok || '확인';
+    no.onclick = () => close(null); ok.onclick = () => close(inp.value);
+    row.appendChild(no); row.appendChild(ok);
+    box.appendChild(t); box.appendChild(inp); box.appendChild(row);
+  });
+}
