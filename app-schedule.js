@@ -214,16 +214,18 @@ function wireScheduleButtons(){
 
       const patch = {}; patch[field] = newDate;
       const { error } = await sb.from('contents').update(patch).eq('id', id);
-      if (error) return alert(cleanErr(error.message));
+      if (error) return uiAlert(cleanErr(error.message));
       await refresh();
     };
   });
   $$('#schedule-body [data-sdone]').forEach(b => b.onclick = () => moveStage(b.dataset.sdone, DONE));
   $$('#schedule-body [data-splan]').forEach(b => b.onclick = () => moveStage(b.dataset.splan, PLANNED));
   $$('#schedule-body [data-cancel]').forEach(b => b.onclick = async () => {
-    const c = cards.find(x => x.id === b.dataset.cancel);
-    if (!confirm(`"${c.title}" 의 게시를 취소하고 아이디어 단계로 되돌립니다.`)) return;
+    const c = cards.find(x => x.id === b.dataset.cancel);   // v101 되돌릴 수 있는 일은 묻지 않는다
+    const was = c.stage;
     await moveStage(c.id, IDEA);
+    uiToast('게시 취소: ' + String(c.title || '').slice(0, 24) + ' · 아이디어로 보냈습니다',
+      { action: { label: '되돌리기', run: () => moveStage(c.id, was) } });
   });
 }
 
@@ -301,19 +303,15 @@ function mountDrawer({ body, collect, save }){
     forceClose(); await refresh(); return true;
   };
 
-  const discard = () => {
-    if (dirty() && !confirm('작성하던 내용을 버리고 닫습니다.\n계속할까요?')) return;
+  const discard = async () => {
+    if (dirty() && !await uiConfirm('작성하던 내용을 버리고 닫습니다.', { ok: '버리고 닫기', cancel: '계속 편집', danger: true })) return;
     forceClose();
   };
 
   // 닫기 시도 — 변경사항이 있으면 물어본다. next 는 닫힌 뒤 실행할 동작.
   const tryClose = async (next) => {
     if (!dirty()) { forceClose(); if (next) next(); return; }
-    const yes = confirm(
-      '저장하지 않은 내용이 있습니다.\n\n' +
-      '[확인] 저장하고 닫기\n' +
-      '[취소] 계속 편집하기'
-    );
+    const yes = await uiConfirm('저장하지 않은 내용이 있습니다.', { ok: '저장하고 닫기', cancel: '계속 편집' });
     if (!yes) return;
     if (await saveAndClose()) { if (next) next(); }
   };
