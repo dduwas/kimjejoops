@@ -188,64 +188,17 @@ $$('nav button').forEach(b => b.onclick = async () => {
   render();
 });
 
-/* v102 탭 묶음 — 상위 탭 12개를 5묶음으로 접는다. 화면(view)은 그대로 두고 nav 버튼만 묶음별로 보여준다.
-   자주 쓰는 생산 라인·최종검수를 각 묶음의 첫 칸에 뒀다. 묶음 안에서 마지막에 본 화면을 기억한다. */
-const NAVG = {
-  ops:  ['video'],
-  make: ['board', 'cands', 'posts', 'formats'],
-  up:   ['review', 'schedule', 'push'],
-  see:  ['insight'],
-  more: ['drops', 'team', 'settings']
-};
-const NAVG_HINT = {
-  ops: '댓글 답장 · 업로드 자동화 · AI 영상편집 — 아래 탭에서 고릅니다',
-  see: '최근 30일 게시 성과와, 14일 넘게 안 움직인 카드를 모아 봅니다'
-};
-const navGroupOf = v => Object.keys(NAVG).find(g => NAVG[g].includes(v)) || 'make';
-let navLast = {};
-try { navLast = JSON.parse(localStorage.getItem('kjnavlast') || '{}') || {}; } catch (e) { navLast = {}; }
-
+/* v105 메뉴 복구 — v102 탭 묶음(navg)을 걷어냈다. 상위 탭 12개를 다시 한 줄에 모두 둔다.
+   navSync 는 app-board.js 등에서도 부르므로 이름은 남기고, 접힘 흔적만 지우는 일만 한다. */
 function navSync(view, quiet) {
-  const g = navGroupOf(view);
-  if (!quiet) {
-    navLast[g] = view;
-    try { localStorage.setItem('kjnavlast', JSON.stringify(navLast)); } catch (e) {}
-  }
-  $$('#navg .gtab').forEach(x => x.classList.toggle('on', x.dataset.g === g));
-  $$('nav button').forEach(x => x.classList.toggle('gout', navGroupOf(x.dataset.view) !== g));
-  const nav = document.querySelector('nav');
-  const shown = $$('nav button').filter(x => !x.classList.contains('gout') && !x.classList.contains('hide')).length;
-  // 한 칸짜리 묶음은 아랫줄에 같은 버튼을 또 띄우지 않고, 그 화면이 뭘 하는 곳인지 한 줄로 적는다.
-  // 줄 자체는 없애지 않는다 — 높이가 바뀌면 메뉴가 흔들려 보인다.
-  const hint = document.querySelector('.hsub-hint');
-  if (hint) { hint.textContent = shown < 2 ? (NAVG_HINT[g] || '') : ''; hint.classList.toggle('hide', shown >= 2); }
-  if (nav) nav.classList.toggle('gout', shown < 2);
-  navBadges();
+  try {
+    document.querySelectorAll('nav button.gout').forEach(x => x.classList.remove('gout'));
+    const nav = document.querySelector('nav');
+    if (nav) nav.classList.remove('gout', 'onesub');
+    const hint = document.querySelector('.hsub-hint');
+    if (hint) { hint.textContent = ''; hint.classList.add('hide'); }
+  } catch (e) {}
 }
-/* 묶음이 접혀 있을 때도 숫자가 보이게 — 자식 배지를 묶음 버튼에 합산한다 */
-function navBadges() {
-  const read = id => { const el = document.getElementById(id); return el && !el.classList.contains('hide') ? (parseInt(el.textContent, 10) || 0) : 0; };
-  const sum = { make: read('cd-badge'), up: read('rv-badge') };
-  Object.entries(sum).forEach(([g, n]) => {
-    const b = document.querySelector(`#navg [data-gb="${g}"]`);
-    if (!b) return;
-    const active = document.querySelector(`#navg .gtab[data-g="${g}"]`);
-    const open = active && active.classList.contains('on');
-    b.textContent = n;
-    b.classList.toggle('hide', !n || open);   // 펼쳐져 있으면 아래 칸에 이미 보인다
-  });
-}
-$$('#navg .gtab').forEach(b => b.onclick = () => {
-  const g = b.dataset.g;
-  const list = (NAVG[g] || []).filter(v => {
-    const btn = document.querySelector(`nav button[data-view="${v}"]`);
-    return btn && !btn.classList.contains('hide');
-  });
-  const v = list.includes(navLast[g]) ? navLast[g] : list[0];
-  const btn = v && document.querySelector(`nav button[data-view="${v}"]`);
-  if (btn) btn.click();
-});
-
 
 /* v100 폰에서 표가 화면을 통째로 밀지 않게 — 표를 .tblwrap 으로 감싸 표만 좌우로 움직이고,
    720px 이하에서는 칸마다 머리글을 붙여 카드로 접는다(CSS). 화면 코드를 하나씩 고치는 대신
