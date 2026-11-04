@@ -772,17 +772,20 @@ nav button{flex:0 0 auto;white-space:nowrap;min-height:36px}
 .hbrand{flex:0 0 auto}
 .hright{flex:0 0 auto;white-space:nowrap}
 @media (max-width:1400px){ nav{gap:2px} nav button{padding:7px 10px} }
-@media (max-width:720px){
-  .hrow{height:52px;gap:8px}
-  nav{gap:1px}
-  .hbrand span{display:none}      /* 폰에서는 로고만 — 글자 자리를 메뉴에 준다 */
-  .hbrand{margin:0}
-  .hbrand .hlogo{height:28px;padding:2px 6px;margin:0}
+/* 좁은 화면에서는 메뉴가 아랫줄을 통째로 쓴다 — 12개를 그대로 두고 좌우로만 민다.
+   윗줄 52 + 아랫줄 46 으로 높이가 늘 똑같아 메뉴가 흔들리지 않는다 */
+@media (max-width:860px){
+  header{padding:0}
+  .hrow{height:auto;flex-wrap:wrap;padding:0;gap:0}
+  .hbrand{display:flex;align-items:center;height:52px;padding:0 12px;margin:0}
+  .hbrand span{display:none}      /* 폰에서는 로고만 */
   .hbrand .vtag{display:none}
-  nav button{font-size:13.5px;padding:7px 11px;min-height:40px}
-  .hright{font-size:12px;gap:8px}
-  .hright #btn-me{max-width:92px;overflow:hidden;text-overflow:ellipsis}
-  header{padding:0 12px}
+  .hbrand .hlogo{height:28px;padding:2px 6px;margin:0}
+  .hright{display:flex;align-items:center;height:52px;padding:0 12px;font-size:12px;gap:8px}
+  .hright #btn-me{max-width:120px;overflow:hidden;text-overflow:ellipsis}
+  nav{order:3;flex:0 0 100%;width:100%;height:46px;align-items:center;gap:1px;padding:0 10px;
+      border-top:1px solid rgba(255,255,255,.10)}
+  nav button{font-size:13.5px;padding:0 11px;height:38px;min-height:38px}
 }
 </style>
 </head>
