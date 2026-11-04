@@ -344,13 +344,13 @@ function openPost(p){
     <p class="note" style="margin-bottom:14px">
       저장할 때 미리보기가 자동으로 만들어집니다. 반영까지 1~2분 걸립니다.<br>
       제목이나 요약을 고쳤으면 다시 저장하면 갱신됩니다.
-      <button class="btn ghost sm" id="po-refresh" style="margin-left:6px">지금 갱신</button>
+      <button class="btn sm ghost" id="po-refresh" style="margin-left:6px">지금 갱신</button>
     </p>
     <details style="margin-bottom:6px">
       <summary style="cursor:pointer;font-size:12.5px;color:var(--muted)">워크스페이스 안에서 보는 주소</summary>
       <div style="margin-top:8px">
         <a href="${esc(u)}" target="_blank" rel="noopener" style="word-break:break-all;font-size:13px">${esc(u)}</a><br>
-        <button class="btn ghost sm" id="po-copy" style="margin-top:7px">이 주소 복사</button>
+        <button class="btn sm ghost" id="po-copy" style="margin-top:7px">이 주소 복사</button>
       </div>
     </details>`;
 
