@@ -194,7 +194,7 @@ async function copyPostLink(p){
   if (!p) return;
   let fresh = false;
   if (p.status !== 'published' || !p.slug) {
-    if (p.status !== 'published' && !confirm('이 글은 팀 전용입니다.\n링크를 만들면 링크를 아는 사람은 누구나 볼 수 있습니다. 만들까요?')) return;
+    if (p.status !== 'published' && !await uiConfirm('이 글은 팀 전용입니다.\n링크를 만들면 링크를 아는 사람은 누구나 볼 수 있습니다.', { ok: '링크 만들기' })) return;
     const upd = { status: 'published', slug: p.slug || slugify() };
     const { data, error } = await sb.from('posts').update(upd).eq('id', p.id).select().maybeSingle();
     if (error) { poToast('링크를 만들지 못했습니다: ' + cleanErr(error.message), 5000); return; }
@@ -316,7 +316,7 @@ function openPost(p){
   $('#po-save').onclick = () => ctl.saveAndClose();
   $('#po-cancel').onclick = () => ctl.discard();
   if ($('#po-del')) $('#po-del').onclick = async () => {
-    if (!confirm('이 글을 삭제합니다. 되돌릴 수 없습니다.')) return;
+    if (!await uiConfirm('이 글을 삭제합니다. 되돌릴 수 없습니다.', { ok: '삭제', danger: true })) return;
     const { error } = await sb.from('posts').delete().eq('id', p.id);
     if (error) return msg(cleanErr(error.message));
     ctl.forceClose(); await refresh();
@@ -390,13 +390,13 @@ function wireEditor(sel, msg){
   $$('#po-tools [data-act]').forEach(b => b.onmousedown = async e => {
     e.preventDefault();
     if (b.dataset.act === 'link') {
-      const u = prompt('링크 주소를 넣으세요', 'https://');
+      const u = await uiPrompt('링크 주소를 넣으세요', 'https://');
       if (u) exec('createLink', u);
     }
     if (b.dataset.act === 'image') pickImage();
     if (b.dataset.act === 'clear') exec('removeFormat');
     if (b.dataset.act === 'tidy') {
-      if (!confirm('노션·워드에서 붙여넣은 찌꺼기를 정리합니다.\n빈 줄과 숨은 표시가 사라집니다. 계속할까요?')) return;
+      if (!await uiConfirm('노션·워드에서 붙여넣은 찌꺼기를 정리합니다.\n빈 줄과 숨은 표시가 사라집니다.', { ok: '정리' })) return;
       ed.innerHTML = cleanPaste(ed.innerHTML);
       msg('본문을 정리했습니다. 확인하고 저장하세요.', 'ok');
     }
