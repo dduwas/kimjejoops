@@ -50,15 +50,15 @@ function renderReview(){
   }).join('')}</tbody></table>`;
   box.querySelectorAll('[data-rvlink]').forEach(s => s.onchange = async () => {
     const { data, error } = await sb.rpc('review_link', { p_id: s.dataset.rvlink, p_content: s.value || null });
-    if (error || !data?.ok) return alert((data && data.msg) || error?.message || '연결 실패');
+    if (error || !data?.ok) return uiAlert((data && data.msg) || error?.message || '연결 실패');
     await refresh();
   });
   box.querySelectorAll('[data-rvopen]').forEach(a => a.onclick = e => { e.preventDefault(); const c = cards.find(x => x.id === a.dataset.rvopen); if (c) openCard(c); });
   const decide = async (id, ok) => {
     let note = null;
-    if (!ok) { note = prompt('반려 사유를 적어 주세요 (편집 담당자에게 카드 다음 액션으로 전달됩니다)'); if (note === null) return; }
+    if (!ok) { note = await uiPrompt('반려 사유를 적어 주세요 (편집 담당자에게 카드 다음 액션으로 전달됩니다)'); if (note === null) return; }
     const { data, error } = await sb.rpc('review_decide', { p_id: id, p_ok: ok, p_note: note });
-    if (error || !data?.ok) return alert((data && data.msg) || error?.message || '처리 실패');
+    if (error || !data?.ok) return uiAlert((data && data.msg) || error?.message || '처리 실패');
     await refresh();
   };
   box.querySelectorAll('[data-rvok]').forEach(b => b.onclick = () => decide(b.dataset.rvok, true));
@@ -317,7 +317,7 @@ function renderOpsComments(body){
         <div class="cm-act">${c.reply_draft && !/답장 안 함/.test(c.reply_draft) ? `<button class="btn sm" data-cmsend="${esc(c.id)}">이대로 보내기</button>` : ''}<button class="btn sm ghost" data-cmskip="${esc(c.id)}">건너뛰기</button></div>
         <div class="cm-my"><textarea rows="2" placeholder="추천 답장이 마음에 안 들면 여기에 직접 쓰고 확인" data-cmtxt="${esc(c.id)}"></textarea><button class="btn sm" data-cmmy="${esc(c.id)}">확인</button></div>`}
     </div>`).join('') : '<p class="lede">해당하는 댓글이 없습니다.</p>'}</div>`;
-  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-reply', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-reply', { body: b }); if (error || data?.error) { uiAlert((data && data.error) || error?.message || '실패'); return null; } return data; };
   const set = (id, patch) => { const c = opsData.comments.find(x => x.id === id); if (c) Object.assign(c, patch); renderOpsComments(body); };
   body.querySelectorAll('[data-cmacc]').forEach(b => b.onclick = () => { opsCmAcc = b.dataset.cmacc; renderOpsComments(body); });
   body.querySelectorAll('[data-cmst]').forEach(b => b.onclick = () => { opsCmSt = b.dataset.cmst; renderOpsComments(body); });
@@ -327,16 +327,16 @@ function renderOpsComments(body){
   });
   body.querySelectorAll('[data-cmmy]').forEach(b => b.onclick = async () => {
     const id = b.dataset.cmmy; const t = body.querySelector(`[data-cmtxt="${CSS.escape(id)}"]`).value.trim();
-    if (!t) return alert('답장 내용을 적어 주세요.');
+    if (!t) return uiAlert('답장 내용을 적어 주세요.');
     b.disabled = true; if (await call({ action:'send', id, text:t })) set(id, { status:'sending', replied_text:t, send_error:null }); else b.disabled = false;
   });
   body.querySelectorAll('[data-cmlang]').forEach(b => b.onclick = async () => { const id = b.dataset.cmlang; b.textContent = '…'; b.disabled = true; if (await call({ action:'draft', ids:[id], lang:b.dataset.l })) { await loadOps(); } renderOpsComments(body); });
   body.querySelectorAll('[data-cmskip]').forEach(b => b.onclick = async () => { if (await call({ action:'skip', id:b.dataset.cmskip })) set(b.dataset.cmskip, { status:'skip' }); });
   body.querySelectorAll('[data-cmundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.cmundo })) set(b.dataset.cmundo, { status:'drafted' }); });
-  $('#cm-draft').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…'; const d = await call({ action:'draft' }); await loadOps(); renderOpsComments(body); if (d) alert(`추천 답장 ${d.drafted || 0}개를 만들었습니다.`); };
+  $('#cm-draft').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…'; const d = await call({ action:'draft' }); await loadOps(); renderOpsComments(body); if (d) uiAlert(`추천 답장 ${d.drafted || 0}개를 만들었습니다.`); };
   $('#cm-reload').onclick = async () => { await loadOps(); renderOpsComments(body); };
   if ($('#cm-xhs-login2') && $('#cm-xhs-login')) $('#cm-xhs-login2').onclick = () => $('#cm-xhs-login').click();
-  if ($('#cm-xhs-login')) $('#cm-xhs-login').onclick = async () => { const w = window.open('about:blank', '_blank'); const { data } = await sb.from('app_settings').select('value').eq('key', 'xhs_login_url').maybeSingle(); if (data && data.value) { if (w) w.location = data.value; else location.href = data.value; } else { if (w) w.close(); alert('로그인 링크 설정이 없습니다(관리자만 사용 가능).'); } };
+  if ($('#cm-xhs-login')) $('#cm-xhs-login').onclick = async () => { const w = window.open('about:blank', '_blank'); const { data } = await sb.from('app_settings').select('value').eq('key', 'xhs_login_url').maybeSingle(); if (data && data.value) { if (w) w.location = data.value; else location.href = data.value; } else { if (w) w.close(); uiAlert('로그인 링크 설정이 없습니다(관리자만 사용 가능).'); } };
 }
 
 const UP_TABS = () => `<div class="ops-tabs" style="margin-top:0"><button class="${opsUp === 'threads' ? 'on' : ''}" data-upkind="threads">🧵 쓰레드 @kimjejo_pharma</button><button class="${opsUp === 'carousel' ? 'on' : ''}" data-upkind="carousel">🖼 캐러셀 @kimjejo_pharma</button></div>`;
@@ -373,17 +373,17 @@ async function renderOpsUpThreads(body){
         </div>`}
     </div>`).join('') : `<p class="lede">${G[st]} 글이 없습니다.</p>`}</div>`;
   upTabBind(body);
-  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-threads', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-threads', { body: b }); if (error || data?.error) { uiAlert((data && data.error) || error?.message || '실패'); return null; } return data; };
   const txt = id => body.querySelector(`[data-uptxt="${id}"]`).value;
   const at = id => { const v = body.querySelector(`[data-upat="${id}"]`)?.value; return v ? new Date(v + ':00+09:00').toISOString() : null; };
   body.querySelectorAll('[data-upst]').forEach(b => b.onclick = () => { opsUpSt = b.dataset.upst; renderOpsUpload(body); });
   body.querySelectorAll('.up-txt').forEach(t => t.oninput = () => { body.querySelector(`[data-upcnt="${t.dataset.uptxt}"]`).textContent = t.value.length + '/500자'; });
   body.querySelectorAll('[data-upok]').forEach(b => b.onclick = async () => { b.disabled = true; if (await call({ action:'approve', id:b.dataset.upok, text:txt(b.dataset.upok), scheduled_at:at(b.dataset.upok) })) renderOpsUpload(body); else b.disabled = false; });
   body.querySelectorAll('[data-upsave]').forEach(b => b.onclick = async () => { if (await call({ action:'save', id:b.dataset.upsave, text:txt(b.dataset.upsave) })) { b.textContent = '저장됨'; setTimeout(() => b.textContent = '글만 저장', 1500); } });
-  body.querySelectorAll('[data-upno]').forEach(b => b.onclick = async () => { const why = prompt('반려 이유를 짧게 적어 주세요(선택) — AI가 다음 초안부터 반영합니다.\n예) 너무 광고 같음 / 말투 과함 / 주제 겹침', ''); if (why === null) return; if (await call({ action:'reject', id:b.dataset.upno, reason:why })) renderOpsUpload(body); });
+  body.querySelectorAll('[data-upno]').forEach(b => b.onclick = async () => { const why = await uiPrompt('반려 이유를 짧게 적어 주세요(선택) — AI가 다음 초안부터 반영합니다.\n예) 너무 광고 같음 / 말투 과함 / 주제 겹침', ''); if (why === null) return; if (await call({ action:'reject', id:b.dataset.upno, reason:why })) renderOpsUpload(body); });
   body.querySelectorAll('[data-upundo]').forEach(b => b.onclick = async () => { if (await call({ action:'undo', id:b.dataset.upundo })) renderOpsUpload(body); });
-  $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:3 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) alert(`초안 ${d.made || 0}개를 만들었습니다.`); };
-  $('#up-restyle').onclick = async e => { if (!confirm('아직 안 올라간 글(승인 대기·예약됨·실패)을 지금 말투 기준으로 다시 씁니다. 올라간 글은 그대로 둡니다. 진행할까요?')) return; e.target.disabled = true; e.target.textContent = '🧵 다시 쓰는 중…(30초쯤)'; const d = await call({ action:'restyle' }); renderOpsUpload(body); if (d) alert(`${d.changed || 0}개를 다시 썼습니다.`); };
+  $('#up-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(20초쯤)'; const d = await call({ action:'generate', n:3 }); opsUpSt = 'draft'; renderOpsUpload(body); if (d) uiAlert(`초안 ${d.made || 0}개를 만들었습니다.`); };
+  $('#up-restyle').onclick = async e => { if (!await uiConfirm('아직 안 올라간 글(승인 대기·예약됨·실패)을 지금 말투 기준으로 다시 씁니다. 올라간 글은 그대로 둡니다. 진행할까요?')) return; e.target.disabled = true; e.target.textContent = '🧵 다시 쓰는 중…(30초쯤)'; const d = await call({ action:'restyle' }); renderOpsUpload(body); if (d) uiAlert(`${d.changed || 0}개를 다시 썼습니다.`); };
 }
 
 // v69 🖼 캐러셀 — AI가 문구·캡션 초안 → 대표 승인 → 장표 이미지 올리면 수요일마다 자동 게시
@@ -454,11 +454,11 @@ async function renderOpsUpCarousel(body){
     <p class="rv-sub" style="margin:-4px 0 12px">${esc(CAR_FMT_D[carFmt] || '')}</p>
     <div>${list.length ? list.map(c => carCard(c, kstLocal)).join('') : `<p class="lede">${CAR_G[st]} 캐러셀이 없습니다.</p>`}</div>`;
   upTabBind(body);
-  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-threads', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-threads', { body: b }); if (error || data?.error) { uiAlert((data && data.error) || error?.message || '실패'); return null; } return data; };
   const re = () => renderOpsUpCarousel(body);
   body.querySelectorAll('[data-carst]').forEach(b => b.onclick = () => { opsCarSt = b.dataset.carst; re(); });
   body.querySelectorAll('[data-carfmt]').forEach(b => b.onclick = () => { carFmt = b.dataset.carfmt; re(); });
-  body.querySelector('#car-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(40초쯤)'; const d = await call({ action:'car_generate', n:2, fmt: carFmt }); opsCarSt = 'draft'; re(); if (d) alert(`캐러셀 초안 ${d.made || 0}개를 만들었습니다.`); };
+  body.querySelector('#car-gen').onclick = async e => { e.target.disabled = true; e.target.textContent = '🤖 만드는 중…(40초쯤)'; const d = await call({ action:'car_generate', n:2, fmt: carFmt }); opsCarSt = 'draft'; re(); if (d) uiAlert(`캐러셀 초안 ${d.made || 0}개를 만들었습니다.`); };
   body.querySelectorAll('[data-carid]').forEach(card => {
     const id = card.dataset.carid;
     const slides = () => [...card.querySelectorAll('[data-carh]')].map((h, i) => ({ headline: h.value, body: card.querySelector(`[data-carb="${i}"]`).value }));
@@ -470,9 +470,9 @@ async function renderOpsUpCarousel(body){
     if (ok) ok.onclick = async () => { ok.disabled = true; await call({ action:'car_save', id, slides: slides(), caption: cap() });
       const d = await call({ action:'car_approve', id, scheduled_at: at() });
       if (!d) { ok.disabled = false; return; }
-      re(); alert(d.status === 'approved' ? '예약했습니다 — ' + fmtKst(d.scheduled_at) : `문구를 확정했습니다 (${fmtKst(d.scheduled_at)} 예정).\n장표 이미지 ${d.need}장을 올리면 그때부터 자동 게시 대상이 됩니다.`); };
+      re(); uiAlert(d.status === 'approved' ? '예약했습니다 — ' + fmtKst(d.scheduled_at) : `문구를 확정했습니다 (${fmtKst(d.scheduled_at)} 예정).\n장표 이미지 ${d.need}장을 올리면 그때부터 자동 게시 대상이 됩니다.`); };
     const no = card.querySelector('[data-carno]');
-    if (no) no.onclick = async () => { const why = prompt('반려 이유를 짧게 적어 주세요(선택) — AI가 다음 초안부터 반영합니다.', ''); if (why === null) return; if (await call({ action:'car_reject', id, reason: why })) re(); };
+    if (no) no.onclick = async () => { const why = await uiPrompt('반려 이유를 짧게 적어 주세요(선택) — AI가 다음 초안부터 반영합니다.', ''); if (why === null) return; if (await call({ action:'car_reject', id, reason: why })) re(); };
     const un = card.querySelector('[data-carundo]');
     if (un) un.onclick = async () => { if (await call({ action:'car_undo', id })) re(); };
     const mk = card.querySelector('[data-carmake]');
@@ -482,7 +482,7 @@ async function renderOpsUpCarousel(body){
       if (d) { opsCarSt = 'design'; re(); poToast('장표 시안을 요청했습니다. 「장표 시안」 탭에서 그림이 올라오면 보고 승인하시면 됩니다.', 6000); } else mk.disabled = false; };
     card.querySelectorAll('[data-carf]').forEach(f => f.onchange = async () => {
       const file = f.files && f.files[0]; if (!file) return;
-      if (file.size > 4000000) return alert('이미지가 너무 큽니다. 4MB 이하로 줄여 주세요.');
+      if (file.size > 4000000) return uiAlert('이미지가 너무 큽니다. 4MB 이하로 줄여 주세요.');
       const data64 = await new Promise(res => { const rd = new FileReader(); rd.onload = () => res(rd.result); rd.readAsDataURL(file); });
       f.disabled = true;
       const d = await call({ action:'car_img', id, i: +f.dataset.carf, data: data64 });
@@ -493,12 +493,12 @@ async function renderOpsUpCarousel(body){
       const fs = [...(allf.files || [])].sort((a, b) => a.name.localeCompare(b.name, 'en', { numeric: true }));
       if (!fs.length) return;
       const slots = card.querySelectorAll('[data-carh]').length;
-      if (fs.length > slots && !confirm('장표 칸은 ' + slots + '개인데 ' + fs.length + '장을 고르셨습니다. 앞에서 ' + slots + '장만 올립니다. 계속할까요?')) return;
+      if (fs.length > slots && !await uiConfirm('장표 칸은 ' + slots + '개인데 ' + fs.length + '장을 고르셨습니다. 앞에서 ' + slots + '장만 올립니다. 계속할까요?')) return;
       const st = card.querySelector('[data-carallst]'); const n = Math.min(fs.length, slots);
       allf.disabled = true;
       for (let i = 0; i < n; i++) {
         const file = fs[i];
-        if (file.size > 4000000) { alert(file.name + ' 이(가) 4MB를 넘어 건너뜁니다.'); continue; }
+        if (file.size > 4000000) { uiAlert(file.name + ' 이(가) 4MB를 넘어 건너뜁니다.'); continue; }
         if (st) st.textContent = '올리는 중… ' + (i + 1) + '/' + n;
         const data64 = await new Promise(res => { const rd = new FileReader(); rd.onload = () => res(rd.result); rd.readAsDataURL(file); });
         const d = await call({ action:'car_img', id, i, data: data64 });
@@ -559,15 +559,15 @@ async function renderOpsVideo(body){
         ${j.reject_reason ? `<div class="rv-sub">반려 사유: ${esc(j.reject_reason)}</div>` : ''}
         ${act ? `<div class="cm-act" style="align-items:center;flex-wrap:wrap">${act}</div>` : ''}
       </div>`; }).join('') : `<p class="lede">${VD_GL[opsVdSt]} 항목이 없습니다.</p>`}</div>`;
-  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-video', { body: b }); if (error || data?.error) { alert((data && data.error) || error?.message || '실패'); return null; } return data; };
+  const call = async (b) => { const { data, error } = await sb.functions.invoke('ops-video', { body: b }); if (error || data?.error) { uiAlert((data && data.error) || error?.message || '실패'); return null; } return data; };
   const again = () => renderOpsVideo(body);
   body.querySelectorAll('[data-vdst]').forEach(b => b.onclick = () => { opsVdSt = b.dataset.vdst; again(); });
   body.querySelectorAll('[data-vdok]').forEach(b => b.onclick = async () => { b.disabled = true; if (await call({ action:'approve', id:b.dataset.vdok })) again(); else b.disabled = false; });
-  body.querySelectorAll('[data-vdno]').forEach(b => b.onclick = async () => { const r = prompt('반려 사유(선택)', ''); if (r === null) return; if (await call({ action:'reject', id:b.dataset.vdno, reason:r })) again(); });
-  body.querySelectorAll('[data-vdcancel]').forEach(b => b.onclick = async () => { if (!confirm('이 요청을 취소할까요?')) return; if (await call({ action:'cancel', id:b.dataset.vdcancel })) again(); });
+  body.querySelectorAll('[data-vdno]').forEach(b => b.onclick = async () => { const r = await uiPrompt('반려 사유(선택)', ''); if (r === null) return; if (await call({ action:'reject', id:b.dataset.vdno, reason:r })) again(); });
+  body.querySelectorAll('[data-vdcancel]').forEach(b => b.onclick = async () => { if (!await uiConfirm('이 요청을 취소합니다.', { ok: '요청 취소', cancel: '그대로 두기', danger: true })) return; if (await call({ action:'cancel', id:b.dataset.vdcancel })) again(); });
   body.querySelectorAll('[data-vddone]').forEach(b => b.onclick = async () => { if (await call({ action:'decide', id:b.dataset.vddone, ok:true })) { poToast('검수 승인했습니다.', 2000); again(); } });
-  body.querySelectorAll('[data-vdredo]').forEach(b => b.onclick = async () => { const t = body.querySelector(`[data-vdwhy="${b.dataset.vdredo}"]`).value.trim(); if (!t) return alert('고칠 점을 적어 주세요.'); if (await call({ action:'decide', id:b.dataset.vdredo, ok:false, reason:t })) again(); });
-  body.querySelectorAll('[data-vdcopy]').forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.vdcopy); b.textContent = '복사됨'; } catch (e) { prompt('경로', b.dataset.vdcopy); } });
+  body.querySelectorAll('[data-vdredo]').forEach(b => b.onclick = async () => { const t = body.querySelector(`[data-vdwhy="${b.dataset.vdredo}"]`).value.trim(); if (!t) return uiAlert('고칠 점을 적어 주세요.'); if (await call({ action:'decide', id:b.dataset.vdredo, ok:false, reason:t })) again(); });
+  body.querySelectorAll('[data-vdcopy]').forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.vdcopy); b.textContent = '복사됨'; } catch (e) { await uiPrompt('경로', b.dataset.vdcopy); } });
   // 새 요청
   const box = $('#vd-new');
   const drawNew = () => {
@@ -591,7 +591,7 @@ async function renderOpsVideo(body){
     box.querySelectorAll('[name="vdpick"]').forEach(r => r.onchange = () => { opsVdNew.pick = r.value; });
     $('#vd-close').onclick = () => { opsVdNew = null; drawNew(); };
     $('#vd-send').onclick = async e => {
-      if (!opsVdNew.pick) return alert(k === 'new' ? '카드를 골라 주세요.' : '원본 영상을 골라 주세요.');
+      if (!opsVdNew.pick) return uiAlert(k === 'new' ? '카드를 골라 주세요.' : '원본 영상을 골라 주세요.');
       e.target.disabled = true;
       const b = { action:'request', kind:k, note:$('#vd-note').value, approve: !!($('#vd-appr') && $('#vd-appr').checked) };
       if (k === 'new') b.content_id = opsVdNew.pick; else b.source_file_id = opsVdNew.pick;
