@@ -62,7 +62,7 @@ async function renderPush(){
   };
 }
 
-function render(){ renderCands(); renderFormats(); renderPush(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); try { navBadges(); } catch (e) {} }   // v102 묶음 배지도 같이
+function render(){ renderCands(); renderFormats(); renderPush(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); try { const on = document.querySelector('nav button.on'); navSync(on ? on.dataset.view : 'board', true); } catch (e) {} }   // v102 묶음·배지도 같이 맞춘다
 
 /* ---------------- 공용 숫자 도우미 ---------------- */
 const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
