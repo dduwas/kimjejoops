@@ -764,20 +764,17 @@ img,video,iframe,pre{max-width:100%}
 
 /* ===== v105 메뉴 고정 + 전부 보이기 — 묶음 없이 12개를 다 두고, 화면을 내려도 따라온다 ===== */
 header{position:sticky;top:0;z-index:40}
-.hrow{height:auto;min-height:56px;padding:8px 0;flex-wrap:wrap;row-gap:4px}
-nav{flex:1 1 420px;min-width:0}
-nav button{min-height:36px}
-@media (max-width:1040px){
-  /* 좁아지면 메뉴를 한 줄로 두고 좌우로만 민다 — 줄 수가 바뀌면 메뉴가 흔들려 보인다 */
-  .hrow{flex-wrap:nowrap;height:56px;padding:0;gap:10px}
-  nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:0}
-  nav::-webkit-scrollbar{display:none}
-  nav button{flex:0 0 auto;white-space:nowrap}
-  .hbrand{flex:0 0 auto}
-  .hright{flex:0 0 auto;white-space:nowrap}
-}
+/* 메뉴는 어떤 너비에서도 늘 한 줄 — 줄 수가 바뀌면 메뉴가 흔들려 보인다 */
+.hrow{height:56px;padding:0;flex-wrap:nowrap;gap:12px}
+nav{flex:1 1 auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-left:0}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;white-space:nowrap;min-height:36px}
+.hbrand{flex:0 0 auto}
+.hright{flex:0 0 auto;white-space:nowrap}
+@media (max-width:1400px){ nav{gap:2px} nav button{padding:7px 10px} }
 @media (max-width:720px){
   .hrow{height:52px;gap:8px}
+  nav{gap:1px}
   .hbrand span{display:none}      /* 폰에서는 로고만 — 글자 자리를 메뉴에 준다 */
   .hbrand{margin:0}
   .hbrand .hlogo{height:28px;padding:2px 6px;margin:0}
