@@ -133,7 +133,7 @@ function renderCalendar(evs){
       <span><span class="dotmark k-plan"></span>게시 예정</span>
       <span><span class="dotmark k-done"></span>게시 완료</span>
       <span>🤖 자동 = 카드 없던 실제 게시물·예약 업로드</span>
-      <span style="color:var(--muted)">촬영은 촬영일, 나머지는 게시예정일에 표시됩니다 · 끌어서 날짜를 옮기고, 빈 칸을 누르면 그 날짜로 새 일정이 생깁니다</span>
+      <span class="u-muted">촬영은 촬영일, 나머지는 게시예정일에 표시됩니다 · 끌어서 날짜를 옮기고, 빈 칸을 누르면 그 날짜로 새 일정이 생깁니다</span>
     </div>
     ${noDate.length ? `<div class="sect" style="margin-top:26px">날짜 미정 ${noDate.length}개</div>
       ${scheduleTableHTML(noDate)}` : ''}`;
@@ -156,12 +156,12 @@ function scheduleTableHTML(evs){
         <td data-open="${c.id}" style="cursor:pointer">${tagHTML(c)}<b>${esc(c.title)}</b>
           ${c.publish_url ? ` <a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시 링크</a>` : ''}
           ${c.reference_url ? ` <a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px">레퍼런스</a>` : ''}
-          ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
-        <td style="font-size:12px;color:var(--muted)">${esc((c.channels||[]).join(', ') || '—')}</td>
+          ${c.key_message ? `<br><span class="u-sm">${esc(c.key_message)}</span>` : ''}</td>
+        <td class="u-sm">${esc((c.channels||[]).join(', ') || '—')}</td>
         <td>${esc(ownerNames(c.owner_ids))}</td>
         <td style="font-variant-numeric:tabular-nums">${fmtN(c.views)}</td>
         <td style="font-variant-numeric:tabular-nums">${fmtN(c.saves)}</td>
-        <td style="white-space:nowrap">
+        <td class="u-nowrap">
           ${e.kind === 'planned' ? `<button class="btn sm" data-sdone="${c.id}">게시 완료</button>` : ''}
           ${e.kind === 'done' ? `<button class="btn sm ghost" data-splan="${c.id}">예정으로</button>` : ''}
           ${(e.kind === 'planned' || e.kind === 'done')
