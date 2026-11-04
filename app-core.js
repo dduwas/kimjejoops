@@ -197,6 +197,10 @@ const NAVG = {
   see:  ['insight'],
   more: ['drops', 'team', 'settings']
 };
+const NAVG_HINT = {
+  ops: '댓글 답장 · 업로드 자동화 · AI 영상편집 — 아래 탭에서 고릅니다',
+  see: '최근 30일 게시 성과와, 14일 넘게 안 움직인 카드를 모아 봅니다'
+};
 const navGroupOf = v => Object.keys(NAVG).find(g => NAVG[g].includes(v)) || 'make';
 let navLast = {};
 try { navLast = JSON.parse(localStorage.getItem('kjnavlast') || '{}') || {}; } catch (e) { navLast = {}; }
@@ -211,7 +215,11 @@ function navSync(view, quiet) {
   $$('nav button').forEach(x => x.classList.toggle('gout', navGroupOf(x.dataset.view) !== g));
   const nav = document.querySelector('nav');
   const shown = $$('nav button').filter(x => !x.classList.contains('gout') && !x.classList.contains('hide')).length;
-  if (nav) nav.classList.toggle('onesub', shown < 2);   // 한 칸짜리 묶음은 아랫줄을 아예 없앤다
+  // 한 칸짜리 묶음은 아랫줄에 같은 버튼을 또 띄우지 않고, 그 화면이 뭘 하는 곳인지 한 줄로 적는다.
+  // 줄 자체는 없애지 않는다 — 높이가 바뀌면 메뉴가 흔들려 보인다.
+  const hint = document.querySelector('.hsub-hint');
+  if (hint) { hint.textContent = shown < 2 ? (NAVG_HINT[g] || '') : ''; hint.classList.toggle('hide', shown >= 2); }
+  if (nav) nav.classList.toggle('gout', shown < 2);
   navBadges();
 }
 /* 묶음이 접혀 있을 때도 숫자가 보이게 — 자식 배지를 묶음 버튼에 합산한다 */
