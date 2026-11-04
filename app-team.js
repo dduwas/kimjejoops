@@ -31,7 +31,7 @@ function renderTodos(){
         <td><input type="checkbox" class="tdchk" data-toggle="${t.id}" ${t.done?'checked':''}></td>
         <td data-tdopen="${t.id}" style="cursor:pointer">
           <b class="todo-t">${esc(t.title)}</b>
-          ${t.memo ? `<br><span style="font-size:12px;color:var(--muted)">${esc(t.memo.split('\n')[0]).slice(0,60)}${t.memo.length>60?'…':''}</span>` : ''}
+          ${t.memo ? `<br><span class="u-sm">${esc(t.memo.split('\n')[0]).slice(0,60)}${t.memo.length>60?'…':''}</span>` : ''}
           ${t.meeting_id ? '<br><span style="font-size:11.5px;color:var(--blue)">회의록에서 옮김</span>' : ''}
         </td>
         <td style="font-size:12.5px">${esc(ownerNames(t.owner_ids))}</td>
@@ -133,7 +133,7 @@ function renderMeetings(){
           <b>${esc(m.title)}</b>
           <span style="font-size:12px;color:var(--muted);margin-left:9px">${m.met_on || '날짜 미정'}</span>
         </div>
-        <span style="font-size:12px;color:var(--muted)">
+        <span class="u-sm">
           ${(m.files || []).length ? `첨부 ${(m.files||[]).length}개 · ` : ''}${esc(ownerNames(m.attendee_ids))}</span>
       </div>
       ${m.summary ? `<div class="mt-sum">${summaryPreview(m.summary)}</div>`
@@ -156,7 +156,7 @@ function summaryPreview(html){
   const text = (tmp.innerText || '').trim();
   const head = esc(text.slice(0, 180)).replace(/\n/g, '<br>') + (text.length > 180 ? '…' : '');
   const tag = nImg ? `<span style="color:var(--blue);font-size:12px">이미지 ${nImg}개</span>` : '';
-  return (head || '<span style="color:var(--muted)">내용 없음</span>') + (tag ? '<br>' + tag : '');
+  return (head || '<span class="u-muted">내용 없음</span>') + (tag ? '<br>' + tag : '');
 }
 
 function openMeeting(m){
@@ -187,15 +187,15 @@ function openMeeting(m){
     <div class="sect">핵심 결론</div>
     <div class="rich" id="m-sum" contenteditable="true" data-ph="결정된 내용을 적으세요. 이미지는 Ctrl+V 로 붙여넣습니다."></div>
     <div class="richbar">
-      <button class="btn ghost sm" data-pick="m-sum">이미지 넣기</button>
+      <button class="btn sm ghost" data-pick="m-sum">이미지 넣기</button>
       <span class="richhint">캡처 후 Ctrl+V 로도 들어갑니다</span>
     </div>
 
     <div class="sect">다음 액션</div>
     <div class="rich" id="m-act" contenteditable="true" data-ph="- [담당자] 할 일 내용"></div>
     <div class="richbar">
-      <button class="btn ghost sm" data-pick="m-act">이미지 넣기</button>
-      <button class="btn ghost sm" id="m-to-todo">액션을 할 일로 보내기</button>
+      <button class="btn sm ghost" data-pick="m-act">이미지 넣기</button>
+      <button class="btn sm ghost" id="m-to-todo">액션을 할 일로 보내기</button>
     </div>
     <p class="note">"- [담당자] 내용" 형태의 줄만 할 일로 옮깁니다. 담당자 이름이 팀 명단과 같으면 자동 배정됩니다.<br>
       이미지는 승인된 팀원만 볼 수 있습니다.</p>
@@ -437,7 +437,7 @@ function wireRich(sel, onMsg){
 }
 
 function filesHTML(files){
-  if (!files.length) return '<div style="font-size:12.5px;color:var(--muted)">첨부된 파일이 없습니다.</div>';
+  if (!files.length) return '<div class="u-sm2">첨부된 파일이 없습니다.</div>';
   return files.map(f => `<div class="filerow">
     <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(f.name)}</span>
     <span style="font-size:11.5px;color:var(--muted)">${Math.round((f.size||0)/1024).toLocaleString()}KB</span>
@@ -458,10 +458,10 @@ function renderDrops(){
       return `<tr>
         <td style="font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--muted)">${when || '—'}</td>
         <td data-open="${c.id}" style="cursor:pointer">${tagHTML(c)}<b>${esc(c.title)}</b>
-          ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
-        <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
+          ${c.key_message ? `<br><span class="u-sm">${esc(c.key_message)}</span>` : ''}</td>
+        <td class="u-sm">${esc((c.channels || []).join(', ') || '—')}</td>
         <td style="font-size:12.5px">${esc(ownerNames(c.owner_ids))}</td>
-        <td style="white-space:nowrap"><button class="btn sm" data-restore="${c.id}">아이디어 단계로 복구</button></td>
+        <td class="u-nowrap"><button class="btn sm" data-restore="${c.id}">아이디어 단계로 복구</button></td>
       </tr>`;
     }).join('')}
   </table>
@@ -500,7 +500,7 @@ function renderTeam(){
           .map(([k,v]) => `<option value="${k}" ${t.role===k?'selected':''}>${v}</option>`).join('')}
       </select></td>
       <td><span class="pill ${t.status}">${STATUS_KO[t.status]}</span></td>
-      <td style="white-space:nowrap">
+      <td class="u-nowrap">
         ${(t.status !== 'approved' && !locked) ? `<button class="btn sm" data-approve="${t.id}">승인</button>` : ''}
         <button class="btn sm ghost" data-edit2="${t.id}">정보 수정</button>
         ${(t.status === 'approved' && !locked) ? `<button class="btn sm danger" data-suspend="${t.id}">중지</button>` : ''}
@@ -552,7 +552,7 @@ function openMember(t){
 
     <div class="sect">아이디 (이메일)</div>
     <div class="field"><label>로그인에 쓰는 이메일</label><input id="p-email" value="${esc(t.email)}"></div>
-    <button class="btn ghost sm" id="p-email-btn" ${canTouch?'':'disabled'}>이메일 바꾸기</button>
+    <button class="btn sm ghost" id="p-email-btn" ${canTouch?'':'disabled'}>이메일 바꾸기</button>
     <p class="note">바꾸면 이 사람은 <b>새 이메일로 로그인</b>해야 합니다. 반드시 알려주세요.</p>
 
     <div class="sect">비밀번호</div>
@@ -562,8 +562,8 @@ function openMember(t){
     </div>
     <div class="field"><label>새 비밀번호 (8자 이상)</label>
       <input id="p-pw" type="text" placeholder="예: kimjejo2026!" autocomplete="off"></div>
-    <button class="btn ghost sm" id="p-pw-btn" ${canTouch?'':'disabled'}>비밀번호 새로 지정</button>
-    <button class="btn ghost sm" id="p-pw-gen">임시 비밀번호 만들기</button>
+    <button class="btn sm ghost" id="p-pw-btn" ${canTouch?'':'disabled'}>비밀번호 새로 지정</button>
+    <button class="btn sm ghost" id="p-pw-gen">임시 비밀번호 만들기</button>
     <p class="note">지정한 비밀번호를 카톡 등으로 전달하고, 받은 사람이 바로 바꾸도록 안내하세요.</p>
 
     ${(!isSelf && t.role !== 'master') ? `
@@ -669,7 +669,7 @@ function openMyAccount(){
       <input id="me-pw" type="password" autocomplete="new-password"></div>
     <div class="field"><label>한 번 더 입력</label>
       <input id="me-pw2" type="password" autocomplete="new-password"></div>
-    <button class="btn ghost sm" id="me-pw-btn">비밀번호 바꾸기</button>
+    <button class="btn sm ghost" id="me-pw-btn">비밀번호 바꾸기</button>
     <p class="note">본인 비밀번호는 언제든 여기서 바꿀 수 있습니다.</p>
 
     <div class="drawer-actions">
@@ -752,8 +752,8 @@ function renderSync(){
       <input id="cfg-ig" type="text" placeholder="${it ? '바꾸려면 새 토큰을 넣으세요' : 'IGAA... 로 시작하는 긴 문자열'}"></div>
 
     <button class="btn sm" id="cfg-save">연동 정보 저장</button>
-    <button class="btn ghost sm" id="cfg-run">성과 지금 전체 수집</button>
-    <button class="btn ghost sm" id="cfg-prev">미리보기 전체 다시 만들기</button>
+    <button class="btn sm ghost" id="cfg-run">성과 지금 전체 수집</button>
+    <button class="btn sm ghost" id="cfg-prev">미리보기 전체 다시 만들기</button>
     <div id="cfg-msg" style="margin-top:12px"></div>
     <p class="note">
       인스타 토큰은 60일마다 만료됩니다. 수집할 때 자동으로 연장되니 30일 안에 한 번씩만 수집을 돌리면 됩니다.<br>
@@ -810,9 +810,9 @@ function renderChannels(){
     ${channels.map(c => `<tr>
       <td><input class="mini" type="number" style="width:60px" value="${c.sort_order}" data-corder="${c.id}"></td>
       <td><input class="mini" style="width:100%" value="${esc(c.label)}" data-clabel="${c.id}"></td>
-      <td style="color:var(--muted)">${used(c.label)}개</td>
+      <td class="u-muted">${used(c.label)}개</td>
       <td><input type="checkbox" ${c.active?'checked':''} data-cactive="${c.id}"></td>
-      <td style="white-space:nowrap">
+      <td class="u-nowrap">
         <button class="btn sm" data-csave="${c.id}">저장</button>
         <button class="btn sm danger" data-cdel="${c.id}">삭제</button>
       </td></tr>`).join('')}
