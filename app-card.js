@@ -182,14 +182,14 @@ function openCard(c, preset){
 
   if ($('#dr-restore')) $('#dr-restore').onclick = async () => {
     const { error } = await sb.from('contents').update({ stage: IDEA }).eq('id', c.id);
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     forceClose(); await refresh();
   };
 
   if ($('#dr-del')) $('#dr-del').onclick = async () => {
-    if (!confirm('이 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 드랍을 쓰세요.')) return;
+    if (!await uiConfirm('이 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 드랍을 쓰세요.', { ok: '완전히 삭제', danger: true })) return;
     const { error } = await sb.from('contents').delete().eq('id', c.id);
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     forceClose(); await refresh();
   };
 }
@@ -309,20 +309,20 @@ document.addEventListener('contextmenu', e => {
   // v32: 정리 필요 등에서 바로 처리 — 게시완료·계속 진행·삭제
   if (t.kind === 'card' && obj.stage !== DONE) items.push(['✅ 게시완료로', async () => {
     const { error } = await sb.from('contents').update({ stage: DONE, publish_date: obj.publish_date || new Date().toISOString().slice(0, 10), updated_at: new Date().toISOString() }).eq('id', obj.id);
-    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('게시완료로 옮겼습니다.', 2500);
+    if (error) return uiAlert(cleanErr(error.message)); await refresh(); poToast('게시완료로 옮겼습니다.', 2500);
   }]);
   if (t.kind === 'card') items.push(['⏩ 계속 진행 (오늘로 갱신)', async () => {
     const { error } = await sb.from('contents').update({ updated_at: new Date().toISOString() }).eq('id', obj.id);
-    if (error) return alert(cleanErr(error.message)); await refresh();
+    if (error) return uiAlert(cleanErr(error.message)); await refresh();
   }]);
   if (t.kind === 'card' && isAdmin()) items.push(['🗑 완전히 삭제', async () => {
-    if (!confirm(`"${obj.title}" 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 단계 이동의 '드랍'을 쓰세요.`)) return;
+    if (!await uiConfirm(`"${obj.title}" 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 단계 이동의 '드랍'을 쓰세요.`, { ok: '완전히 삭제', danger: true })) return;
     const { error } = await sb.from('contents').delete().eq('id', obj.id);
-    if (error) return alert(cleanErr(error.message)); await refresh(); poToast('삭제했습니다.', 2500);
+    if (error) return uiAlert(cleanErr(error.message)); await refresh(); poToast('삭제했습니다.', 2500);
   }, 'danger']);
   if (t.kind === 'todo') items.push([obj.done ? '↩ 완료 취소' : '✔ 완료로 표시', async () => {
     const { error } = await sb.from('todos').update({ done: !obj.done, done_at: obj.done ? null : new Date().toISOString() }).eq('id', obj.id);
-    if (error) return alert(cleanErr(error.message)); await refresh();
+    if (error) return uiAlert(cleanErr(error.message)); await refresh();
   }]);
 
   const m = document.createElement('div'); m.className = 'kjctx';
@@ -350,7 +350,7 @@ document.addEventListener('contextmenu', e => {
   if (di) di.onchange = async () => {
     const v = di.value || null; closeCtx();
     const { error } = await sb.from('contents').update({ publish_date: v }).eq('id', obj.id);
-    if (error) return alert(cleanErr(error.message)); await refresh();
+    if (error) return uiAlert(cleanErr(error.message)); await refresh();
   };
 }, true);
 document.addEventListener('mousedown', e => { if (!(e.target.closest && e.target.closest('.kjctx'))) closeCtx(); }, true);
@@ -372,7 +372,7 @@ function openFromUrl(){
 
   if (kind === 'card') {
     const c = cards.find(x => x.id === id);
-    if (!c) return alert('해당 카드를 찾지 못했습니다. 삭제됐거나 권한이 없을 수 있습니다.');
+    if (!c) return uiAlert('해당 카드를 찾지 못했습니다. 삭제됐거나 권한이 없을 수 있습니다.');
     if (c.stage === PLANNED || c.stage === DONE) goTab('schedule');
     else if (c.stage === DROP) goTab('drops');
     setTimeout(() => openCard(c), 0);
