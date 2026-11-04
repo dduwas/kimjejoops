@@ -62,7 +62,7 @@ async function renderPush(){
   };
 }
 
-function render(){ renderCands(); renderFormats(); renderPush(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); }
+function render(){ renderCands(); renderFormats(); renderPush(); renderReview(); renderVideo(); buildChannelChips(); buildOwnerChips(); buildScheduleChips(); renderBoard(); renderSchedule(); renderInsight(); renderPosts(); renderTodos(); renderMeetings(); renderDrops(); renderTeam(); renderSettings(); try { navBadges(); } catch (e) {} }   // v102 묶음 배지도 같이
 
 /* ---------------- 공용 숫자 도우미 ---------------- */
 const num  = v => (v === null || v === undefined || v === '') ? null : Number(v);
@@ -291,7 +291,7 @@ function renderInsight(){
   stale.forEach(c => { const k = (c.owner_ids || []).length ? ownerNames([c.owner_ids[0]]) : '담당 미정'; (groups[k] = groups[k] || []).push(c); });
   const srow = c => `<tr data-insrow="${c.id}" title="우클릭: 게시완료·단계 이동·삭제"><td class="ttl" data-insopen="${c.id}" title="${esc(c.title)}">${esc(c.title)}</td><td>${esc(c.stage)}</td>
     <td class="num">${Math.floor((now - new Date(c.updated_at)) / DAY)}일</td>
-    <td style="white-space:nowrap"><button class="mini-b" data-inskeep="${c.id}" title="계속 진행 — 오늘 날짜로 갱신">계속</button><input type="date" class="mini-b" data-insdate="${c.id}" title="게시예정일 지정" style="padding:1px 3px"><button class="mini-b" data-insdrop="${c.id}">드랍</button></td></tr>`;
+    <td class="u-nowrap"><button class="mini-b" data-inskeep="${c.id}" title="계속 진행 — 오늘 날짜로 갱신">계속</button><input type="date" class="mini-b" data-insdate="${c.id}" title="게시예정일 지정" style="padding:1px 3px"><button class="mini-b" data-insdrop="${c.id}">드랍</button></td></tr>`;
   const clean = `<details data-ins="stale" ${open('stale') ? 'open' : ''}><summary>🧹 ${TEAM_LABEL[curLine]} 라인 정리 필요 — 14일 넘게 안 움직인 카드 ${stale.length}개</summary>
     ${stale.length ? Object.entries(groups).sort((a, b) => b[1].length - a[1].length).map(([k, list]) => `<div class="owner">${esc(k)} · ${list.length}개</div>
       <table>${list.slice(0, 15).map(srow).join('')}</table>${list.length > 15 ? `<p class="note">… 외 ${list.length - 15}개</p>` : ''}`).join('')
@@ -346,13 +346,13 @@ function renderBoardTable(list){
     }
     html += `<tr>
       <td data-open="${c.id}" style="cursor:pointer">${tagHTML(c)}<b>${esc(c.title)}</b>
-        ${c.key_message ? `<br><span style="font-size:12px;color:var(--muted)">${esc(c.key_message)}</span>` : ''}</td>
+        ${c.key_message ? `<br><span class="u-sm">${esc(c.key_message)}</span>` : ''}</td>
       <td style="font-size:12.5px;white-space:nowrap">${esc(c.stage)}</td>
-      <td style="font-size:12px;color:var(--muted)">${esc((c.channels || []).join(', ') || '—')}</td>
+      <td class="u-sm">${esc((c.channels || []).join(', ') || '—')}</td>
       <td style="font-size:12.5px">${esc(ownerNames(c.owner_ids))}</td>
       <td style="font-size:12.5px;color:var(--muted);max-width:200px">${esc(c.next_action || '—')}</td>
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px">${c.publish_date || '—'}</td>
-      <td style="white-space:nowrap">
+      <td class="u-nowrap">
         ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시</a> ` : ''}
         ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}">참고</a> ` : ''}
         ${c.stage === REVIEW ? `<button class="btn sm" data-tpub="${c.id}">게시 승인</button>` : ''}
