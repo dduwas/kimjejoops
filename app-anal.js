@@ -109,11 +109,11 @@ let scPick = null;   // 고르는 중이면 Set(카드 id)
 const ymd = () => { const d = new Date(); return String(d.getFullYear()).slice(2) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); };
 const safeName = s => String(s || '').replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 40);
 async function scriptDownload(list, label){
-  if (!list.length) return alert('대본을 만들 카드가 없습니다.');
-  if (!window.KJScript) return alert('대본 도구를 불러오지 못했습니다. 새로고침 후 다시 해 주세요.');
+  if (!list.length) return uiAlert('대본을 만들 카드가 없습니다.');
+  if (!window.KJScript) return uiAlert('대본 도구를 불러오지 못했습니다. 새로고침 후 다시 해 주세요.');
   const name = list.length === 1 ? `${ymd()}_${safeName(list[0].title)}_대본.docx` : `${ymd()}_${label || TEAM_LABEL[lineOf()] + ' 라인'}_대본초안_${list.length}개.docx`;
   try { poToast('대본 파일 만드는 중…', 1500); await window.KJScript.download(list, name); poToast(`다운로드: ${name}`, 3500); }
-  catch (err) { alert('대본 파일을 만들지 못했습니다: ' + (err.message || err)); }
+  catch (err) { uiAlert('대본 파일을 만들지 못했습니다: ' + (err.message || err)); }
 }
 function scBarCount(){ const n = scPick ? scPick.size : 0; $('#sc-bar-n').textContent = n ? `${n}개 골랐습니다` : '카드를 눌러 고르세요'; }
 function scPickMode(on){
@@ -126,11 +126,11 @@ const scAllList = (order = ['대본', '촬영']) => { return visible().filter(c 
 $('#btn-sc-pick').onclick = () => scPickMode(!scPick);
 $('#sc-bar-x').onclick = () => scPickMode(false);
 $$('[data-scpickst]').forEach(b => b.onclick = () => { if (b.dataset.scpickst === 'clear') scPick.clear(); else scAllList([b.dataset.scpickst]).forEach(c => scPick.add(c.id)); renderBoard(); scBarCount(); });
-$('#sc-bar-go').onclick = async () => { if (!scPick || !scPick.size) return alert('카드를 먼저 골라 주세요.'); const order = cards.filter(c => scPick.has(c.id)); await scriptDownload(order, TEAM_LABEL[lineOf()] + ' 선택'); };
-$('#sc-bar-ai').onclick = () => { if (!scPick || !scPick.size) return alert('카드를 먼저 골라 주세요.'); aiScriptBulk(cards.filter(c => scPick.has(c.id))); };
+$('#sc-bar-go').onclick = async () => { if (!scPick || !scPick.size) return uiAlert('카드를 먼저 골라 주세요.'); const order = cards.filter(c => scPick.has(c.id)); await scriptDownload(order, TEAM_LABEL[lineOf()] + ' 선택'); };
+$('#sc-bar-ai').onclick = () => { if (!scPick || !scPick.size) return uiAlert('카드를 먼저 골라 주세요.'); aiScriptBulk(cards.filter(c => scPick.has(c.id))); };
 $$('[data-scsave]').forEach(b => b.onclick = () => {   // v41 칸(탭)별 저장: 대본 칸 / 촬영 칸 / 둘 다
   const st = b.dataset.scsave.split(','); const list = scAllList(st); const nm = st.join('·');
-  if (!list.length) return alert(`${TEAM_LABEL[lineOf()]} 라인의 ${nm} 칸에 카드가 없습니다.`);
+  if (!list.length) return uiAlert(`${TEAM_LABEL[lineOf()]} 라인의 ${nm} 칸에 카드가 없습니다.`);
   scriptDownload(list, `${TEAM_LABEL[lineOf()]} 라인 ${st.length > 1 ? '전체' : nm + ' 칸'}`);
 });
 
@@ -265,7 +265,7 @@ function cdCard(c){
 }
 async function cdSet(c, patch){
   const { data, error } = await sb.from('kj_candidates').update({ ...patch, decided_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', c.id).select('id');
-  if (error || !data || !data.length) { alert(error ? cleanErr(error.message) : '저장되지 않았습니다(권한 확인).'); return false; }
+  if (error || !data || !data.length) { uiAlert(error ? cleanErr(error.message) : '저장되지 않았습니다(권한 확인).'); return false; }
   Object.assign(c, patch); return true;
 }
 async function cdMove(c, team){
@@ -274,7 +274,7 @@ async function cdMove(c, team){
   const title = (c.title || (c.caption || '').split('\n').find(x => x.trim()) || fb).replace(/\s+/g, ' ').trim().slice(0, 60);
   const { data, error } = await sb.from('contents').insert({ title, stage: IDEA, team_tag: team, reference_url: c.url,
     next_action: `콘텐츠 후보(${cdRoomRow(cdRoomOf(c))[2]})에서 넘어옴 · ${c.account || ''}${c.note ? ' · 메모: ' + c.note : ''}`.slice(0, 500) }).select('id').single();
-  if (error) return alert(cleanErr(error.message));
+  if (error) return uiAlert(cleanErr(error.message));
   if (await cdSet(c, { status: 'moved', team_tag: team, content_id: data.id })) { await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); }
 }
 async function renderCands(){
@@ -303,13 +303,13 @@ async function renderCands(){
   box.querySelectorAll('[data-cdmass]').forEach(b => b.onclick = () => { const c = get(b); kjMassModal([{ cand_id: c.id, label: c.title || c.account || '후보' }]); });
   box.querySelectorAll('[data-cddrop]').forEach(b => b.onclick = async () => { if (await cdSet(get(b), { status: 'dropped' })) { cdBadge(); renderCands(); } });
   box.querySelectorAll('[data-cdback]').forEach(b => b.onclick = async () => { if (await cdSet(get(b), { status: 'new' })) { cdBadge(); renderCands(); } });
-  box.querySelectorAll('[data-cddel]').forEach(b => b.onclick = async () => { const c = get(b); if (!confirm('이 후보를 지울까요? (목록에서 사라지고 다시 수집되지 않습니다)')) return; if (await cdSet(c, { status: 'deleted' })) { CANDS = CANDS.filter(x => x !== c); cdBadge(); renderCands(); } });
+  box.querySelectorAll('[data-cddel]').forEach(b => b.onclick = async () => { const c = get(b); if (!await uiConfirm('이 후보를 지웁니다.\n목록에서 사라지고 다시 수집되지 않습니다.', { ok: '지우기', danger: true })) return; if (await cdSet(c, { status: 'deleted' })) { CANDS = CANDS.filter(x => x !== c); cdBadge(); renderCands(); } });
 }
 $('#cd-add') && ($('#cd-add').onclick = async () => {
-  const u = $('#cd-url').value.trim().split('?')[0]; if (!/^https?:\/\//.test(u)) return alert('릴스·게시물 링크를 넣어 주세요.');
+  const u = $('#cd-url').value.trim().split('?')[0]; if (!/^https?:\/\//.test(u)) return uiAlert('릴스·게시물 링크를 넣어 주세요.');
   const sc = (u.match(/\/(?:reel|reels|p|tv)\/([\w-]+)/) || [])[1] || null;
   const { error } = await sb.from('kj_candidates').insert({ src: 'manual', url: u, shortcode: sc, ext_key: cdRoom + ':' + (sc || 'manual:' + u), shared_at: new Date().toISOString() });
-  if (error) return alert(/duplicate|unique/i.test(error.message) ? '이미 후보에 있는 링크입니다.' : cleanErr(error.message));
+  if (error) return uiAlert(/duplicate|unique/i.test(error.message) ? '이미 후보에 있는 링크입니다.' : cleanErr(error.message));
   $('#cd-url').value = ''; cdLoaded = false; cdTab = 'new'; await renderCands(); poToast(`${cdRoomRow(cdRoom)[1]} 후보에 넣었습니다. 미리보기는 20분 안에 채워집니다.`);
 });
 
@@ -367,7 +367,7 @@ async function renderOpsAnal(body){
     <div id="an-body"></div>`;
   body.querySelector('#an-re').onclick = async () => { anData = null; renderOpsAnal(body); };
   body.querySelector('#an-addjump').onclick = () => { anTab = 'targets'; renderOpsAnal(body); setTimeout(() => { const i = body.querySelector('#an-h'); if (i) i.focus(); }, 60); };
-  const tb = body.querySelector('#an-tag'); if (tb) tb.onclick = async () => { tb.disabled = true; tb.textContent = '분류 중…'; const j = await kjFn({ action: 'tag_now' }); if (j.error) alert(j.error); anData = null; renderOpsAnal(body); };
+  const tb = body.querySelector('#an-tag'); if (tb) tb.onclick = async () => { tb.disabled = true; tb.textContent = '분류 중…'; const j = await kjFn({ action: 'tag_now' }); if (j.error) uiAlert(j.error); anData = null; renderOpsAnal(body); };
   body.querySelectorAll('[data-antab]').forEach(b => b.onclick = () => { anTab = b.dataset.antab; renderOpsAnal(body); });
   const ab = body.querySelector('#an-body');
   if (anTab === 'thr') return renderAnThreads(ab, body);
@@ -385,7 +385,7 @@ async function renderOpsAnal(body){
   ab.querySelectorAll('[data-anfmt]').forEach(b => b.onclick = () => { anFmt = b.dataset.anfmt; re(); });
   const pf = ab.querySelector('#an-pushf'); if (pf) pf.onclick = () => { anPush = !anPush; re(); };
   const P = el => posts.find(p => p.id === el.closest('[data-anid]').dataset.anid);
-  const upd = async (p, patch) => { const { data, error } = await sb.from('kj_tposts').update({ ...patch, decided_at: new Date().toISOString() }).eq('id', p.id).select('id'); if (error || !data?.length) { alert(error ? cleanErr(error.message) : '저장 안 됨'); return false; } Object.assign(p, patch); return true; };
+  const upd = async (p, patch) => { const { data, error } = await sb.from('kj_tposts').update({ ...patch, decided_at: new Date().toISOString() }).eq('id', p.id).select('id'); if (error || !data?.length) { uiAlert(error ? cleanErr(error.message) : '저장 안 됨'); return false; } Object.assign(p, patch); return true; };
   ab.querySelectorAll('[data-ansel]').forEach(c => c.onchange = () => { const p = P(c); c.checked ? anSel.add(p.id) : anSel.delete(p.id); re(); });
   ab.querySelectorAll('[data-anstar]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: p.status === 'starred' ? 'new' : 'starred' })) re(); });
   ab.querySelectorAll('[data-androp]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: 'dropped' })) { anSel.delete(p.id); re(); } });
@@ -396,7 +396,7 @@ async function renderOpsAnal(body){
     const title = (p.topic ? p.topic + ' — ' : '') + ((p.caption || '').split('\n').find(x => x.trim()) || '@' + p.handle);
     const { data, error } = await sb.from('contents').insert({ title: title.replace(/\s+/g, ' ').slice(0, 60), stage: IDEA, team_tag: team, reference_url: p.permalink,
       next_action: `🔎 분석 대상(@${p.handle}, 조회 ${opsN(p.views)}${p.ratio ? ', 평소의 ' + p.ratio + '배' : ''})에서 넘어옴${p.kj_angle ? ' · 각도: ' + p.kj_angle : ''}`.slice(0, 500) }).select('id').single();
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     await upd(p, { status: 'line', content_id: data.id }); await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); re(); });
   const go = ab.querySelector('#an-go'); if (go) go.onclick = () => kjMassModal([...anSel].map(id => { const p = posts.find(x => x.id === id); return { post_id: id, label: '@' + (p ? p.handle + ' ' + (p.topic || '') : id) }; }), () => { anSel.clear(); });
   const clr = ab.querySelector('#an-clr'); if (clr) clr.onclick = () => { anSel.clear(); re(); };
@@ -437,10 +437,10 @@ function renderAnThreads(ab, body){
   ab.querySelectorAll('[data-athrs]').forEach(b => b.onclick = () => { anThrSort = b.dataset.athrs; re(); });
   ab.querySelectorAll('[data-athra]').forEach(b => b.onclick = () => { anThrAcc = b.dataset.athra; re(); });
   const P = el => all.find(x => x.id === el.closest('[data-thrid]').dataset.thrid);
-  const set = async (p, patch) => { const { error } = await sb.from('kj_tposts').update(patch).eq('id', p.id); if (error) { alert(cleanErr(error.message)); return false; } Object.assign(p, patch); return true; };
+  const set = async (p, patch) => { const { error } = await sb.from('kj_tposts').update(patch).eq('id', p.id); if (error) { uiAlert(cleanErr(error.message)); return false; } Object.assign(p, patch); return true; };
   ab.querySelectorAll('[data-thrstar]').forEach(b => b.onclick = async () => { const p = P(b); if (await set(p, { status: p.status === 'starred' ? 'new' : 'starred' })) re(); });
   ab.querySelectorAll('[data-thrdrop]').forEach(b => b.onclick = async () => { const p = P(b); if (await set(p, { status: 'dropped' })) re(); });
-  ab.querySelectorAll('[data-thrcopy]').forEach(b => b.onclick = async () => { const p = P(b); try { await navigator.clipboard.writeText(p.caption || ''); poToast('복사했습니다.'); } catch (e) { alert('복사가 막혔습니다. 글을 직접 긁어 주세요.'); } });
+  ab.querySelectorAll('[data-thrcopy]').forEach(b => b.onclick = async () => { const p = P(b); try { await navigator.clipboard.writeText(p.caption || ''); poToast('복사했습니다.'); } catch (e) { uiAlert('복사가 막혔습니다. 글을 직접 긁어 주세요.'); } });
 }
 
 // v80 분석 대상 계정 — 출처 제거, 여러 개 한 번에 삭제, 열 눌러 정렬
@@ -450,10 +450,10 @@ async function anDelete(handles, body){
   const msg = hs.length === 1
     ? '@' + hs[0] + ' 을(를) 분석 대상에서 지울까요?\n모아 둔 그 계정 영상도 같이 지워집니다. (수집만 멈추려면 「사용」 체크를 끄세요)'
     : hs.length + '개 계정을 분석 대상에서 지울까요?\n' + hs.slice(0, 8).map(h => '@' + h).join(', ') + (hs.length > 8 ? ' 외 ' + (hs.length - 8) + '개' : '') + '\n모아 둔 그 계정 영상도 같이 지워집니다.';
-  if (!confirm(msg)) return;
+  if (!await uiConfirm(msg)) return;
   await sb.from('kj_tposts').delete().in('handle', hs);
   const { error } = await sb.from('kj_targets').delete().in('handle', hs);
-  if (error) return alert(cleanErr(error.message));
+  if (error) return uiAlert(cleanErr(error.message));
   anTSel.clear(); anData = null; renderOpsAnal(body);
   poToast(hs.length + '개 계정을 지웠습니다.', 4000);
 }
@@ -494,18 +494,18 @@ function renderAnTargets(ab, body){
   const dsel = ab.querySelector('#an-tdel'); if (dsel) dsel.onclick = () => anDelete([...anTSel], body);
   const cclr = ab.querySelector('#an-tclr'); if (cclr) cclr.onclick = () => { anTSel.clear(); re(); };
   const cbad = ab.querySelector('#an-tbad'); if (cbad) cbad.onclick = () => { bad.forEach(t => anTSel.add(t.handle)); re(); };
-  ab.querySelectorAll('[data-anact]').forEach(c => c.onchange = async () => { const { error } = await sb.from('kj_targets').update({ active: c.checked }).eq('handle', c.dataset.anact); if (error) alert(cleanErr(error.message)); else anData.targets.find(t => t.handle === c.dataset.anact).active = c.checked; });
+  ab.querySelectorAll('[data-anact]').forEach(c => c.onchange = async () => { const { error } = await sb.from('kj_targets').update({ active: c.checked }).eq('handle', c.dataset.anact); if (error) uiAlert(cleanErr(error.message)); else anData.targets.find(t => t.handle === c.dataset.anact).active = c.checked; });
   ab.querySelectorAll('[data-andel]').forEach(b => b.onclick = () => anDelete([b.dataset.andel], body));
   const anAdd = async () => {
     const raw = $('#an-h').value;
     const hs = [...new Set(raw.split(/[\s,·]+/).map(x => x.trim().replace(/^@/, '').replace(/^https?:\/\//, '').replace(/.*instagram\.com\//, '').replace(/[/?#].*$/, '').toLowerCase()).filter(x => /^[a-z0-9._]{2,30}$/.test(x)))];
-    if (!hs.length) return alert('계정 아이디를 적어 주세요. 여러 개면 쉼표나 줄바꿈으로 나눠 적으면 됩니다.');
+    if (!hs.length) return uiAlert('계정 아이디를 적어 주세요. 여러 개면 쉼표나 줄바꿈으로 나눠 적으면 됩니다.');
     const have = new Set(anData.targets.map(t => t.handle));
     const neu = hs.filter(h => !have.has(h));
-    if (!neu.length) return alert('이미 모두 들어 있는 계정입니다.');
+    if (!neu.length) return uiAlert('이미 모두 들어 있는 계정입니다.');
     const memo = $('#an-hm').value.trim() || null;
     const { error } = await sb.from('kj_targets').insert(neu.map(h => ({ handle: h, info: memo })));
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     $('#an-h').value = ''; $('#an-hm').value = '';
     anData = null; renderOpsAnal(body);
     poToast(neu.length + '개 추가(' + neu.slice(0, 3).map(h => '@' + h).join(', ') + (neu.length > 3 ? ' 외' : '') + '). 다음 수집 때 조회수를 모읍니다.' + (hs.length > neu.length ? ' 이미 있던 ' + (hs.length - neu.length) + '개는 건너뜀.' : ''));
@@ -531,7 +531,7 @@ async function kjMassModal(items, after){
   $b('#ms-go').onclick = async () => {
     $b('#ms-go').disabled = true; $b('#ms-st').textContent = '보내는 중…';
     const j = await kjFn({ action: 'mass_queue', items: items.map(({ label, ...x }) => x), format_id: $b('#ms-fmt').value || null, n: +$b('#ms-n').value, team: $b('#ms-team').value, note: $b('#ms-note').value });
-    if (j.error) { $b('#ms-go').disabled = false; $b('#ms-st').textContent = ''; return alert(j.error); }
+    if (j.error) { $b('#ms-go').disabled = false; $b('#ms-st').textContent = ''; return uiAlert(j.error); }
     close(); if (after) after(); if (anData) anData = null;
     poToast(`${j.queued}건 양산 시작. 1건에 30~90초 — 🏭 대본 양산 탭에서 확인하세요.`, 4000);
     try { opsTab = 'mass'; localStorage.setItem('kj_opstab', 'mass'); } catch (e) {}
@@ -559,7 +559,7 @@ async function renderOpsMass(body){
     </div>`).join('') || '<p class="lede">아직 양산한 대본이 없습니다.</p>'}</div>`;
   const J = el => (jobs || []).find(j => j.id === el.closest('[data-msid]').dataset.msid);
   body.querySelectorAll('[data-msline]').forEach(b => b.onclick = async () => { b.disabled = true; const r = await kjFn({ action: 'mass_line', id: J(b).id, idx: +b.dataset.msline, team: b.dataset.team });
-    if (r.error) { b.disabled = false; return alert(r.error); } await refresh(); poToast(`생산 라인(${TEAM_LABEL[b.dataset.team]}) '대본' 단계에 카드로 넣었습니다.`); renderOpsMass(body); });
+    if (r.error) { b.disabled = false; return uiAlert(r.error); } await refresh(); poToast(`생산 라인(${TEAM_LABEL[b.dataset.team]}) '대본' 단계에 카드로 넣었습니다.`); renderOpsMass(body); });
   body.querySelectorAll('[data-msretry]').forEach(b => b.onclick = async () => { await kjFn({ action: 'mass_retry', id: J(b).id }); setTimeout(() => renderOpsMass(body), 800); });
   body.querySelectorAll('[data-msdrop]').forEach(b => b.onclick = async () => { await sb.from('kj_mass_jobs').update({ status: 'dropped', updated_at: new Date().toISOString() }).eq('id', J(b).id); renderOpsMass(body); });
   body.querySelector('#ms-fromtext').onclick = () => { const ls = body.querySelector('#ms-lines').value.split('\n').map(s => s.trim()).filter(Boolean); if (!ls.length) return;
@@ -642,14 +642,14 @@ function fmtEdit(f){
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
       const path = 'up/' + crypto.randomUUID() + '.' + ext;
       const { error } = await sb.storage.from('formats').upload(path, file, { contentType: file.type || 'image/jpeg' });
-      if (error) { st.textContent = ''; return alert('사진 올리기 실패: ' + cleanErr(error.message)); }
+      if (error) { st.textContent = ''; return uiAlert('사진 올리기 실패: ' + cleanErr(error.message)); }
       imgs.push({ url: FMT_BUCKET() + path, cap: file.name });
     }
     st.textContent = ''; e.target.value = ''; drawImgs();
   };
   $b('#fe-save').onclick = async () => {
     const name = $b('#fe-name').value.trim(), grp = $b('#fe-grp').value.trim();
-    if (!name || !grp) return alert('분류와 이름을 적어 주세요.');
+    if (!name || !grp) return uiAlert('분류와 이름을 적어 주세요.');
     const old = new Map((f.examples || []).map(x => [x.url, x]));
     const examples = $b('#fe-ex').value.split('\n').map(l => l.trim()).filter(Boolean).map(l => {
       const [url, title, views] = l.split('|').map(x => (x || '').trim()); const o = old.get(url) || {}; const yt = fmtYt(url);
@@ -659,15 +659,15 @@ function fmtEdit(f){
     if (isNew) row.sort = Math.max(0, ...FMT.filter(x => x.grp === grp).map(x => x.sort || 0)) + 1;
     const q = isNew ? sb.from('kj_formats').insert(row).select('id') : sb.from('kj_formats').update(row).eq('id', f.id).select('id');
     const { data, error } = await q;
-    if (error) return alert(cleanErr(error.message));
-    if (!data || !data.length) return alert('저장되지 않았습니다(권한 확인 필요).');
+    if (error) return uiAlert(cleanErr(error.message));
+    if (!data || !data.length) return uiAlert('저장되지 않았습니다(권한 확인 필요).');
     close(); fmtLoaded = false; await renderFormats(); poToast(isNew ? '형식을 추가했습니다.' : '형식을 저장했습니다.');
   };
   const del = $b('#fe-del');
   if (del) del.onclick = async () => {
-    if (!confirm(`'${f.name}' 형식을 지울까요?`)) return;
+    if (!await uiConfirm(`'${f.name}' 형식을 지웁니다.`, { ok: '지우기', danger: true })) return;
     const { data, error } = await sb.from('kj_formats').delete().eq('id', f.id).select('id');
-    if (error || !data || !data.length) return alert('삭제는 관리자만 할 수 있습니다.');
+    if (error || !data || !data.length) return uiAlert('삭제는 관리자만 할 수 있습니다.');
     close(); fmtLoaded = false; await renderFormats(); poToast('형식을 지웠습니다.');
   };
 }
