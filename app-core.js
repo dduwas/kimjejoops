@@ -184,7 +184,56 @@ $$('nav button').forEach(b => b.onclick = async () => {
   b.classList.add('on');
   ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','push','cands','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
+  navSync(b.dataset.view);
   render();
+});
+
+/* v102 탭 묶음 — 상위 탭 12개를 5묶음으로 접는다. 화면(view)은 그대로 두고 nav 버튼만 묶음별로 보여준다.
+   자주 쓰는 생산 라인·최종검수를 각 묶음의 첫 칸에 뒀다. 묶음 안에서 마지막에 본 화면을 기억한다. */
+const NAVG = {
+  ops:  ['video'],
+  make: ['board', 'cands', 'posts', 'formats'],
+  up:   ['review', 'schedule', 'push'],
+  see:  ['insight'],
+  more: ['drops', 'team', 'settings']
+};
+const navGroupOf = v => Object.keys(NAVG).find(g => NAVG[g].includes(v)) || 'make';
+let navLast = {};
+try { navLast = JSON.parse(localStorage.getItem('kjnavlast') || '{}') || {}; } catch (e) { navLast = {}; }
+
+function navSync(view) {
+  const g = navGroupOf(view);
+  navLast[g] = view;
+  try { localStorage.setItem('kjnavlast', JSON.stringify(navLast)); } catch (e) {}
+  $$('#navg .gtab').forEach(x => x.classList.toggle('on', x.dataset.g === g));
+  $$('nav button').forEach(x => x.classList.toggle('gout', navGroupOf(x.dataset.view) !== g));
+  const nav = document.querySelector('nav');
+  const shown = $$('nav button').filter(x => !x.classList.contains('gout') && !x.classList.contains('hide')).length;
+  if (nav) nav.classList.toggle('onesub', shown < 2);   // 한 칸짜리 묶음은 아랫줄을 아예 없앤다
+  navBadges();
+}
+/* 묶음이 접혀 있을 때도 숫자가 보이게 — 자식 배지를 묶음 버튼에 합산한다 */
+function navBadges() {
+  const read = id => { const el = document.getElementById(id); return el && !el.classList.contains('hide') ? (parseInt(el.textContent, 10) || 0) : 0; };
+  const sum = { make: read('cd-badge'), up: read('rv-badge') };
+  Object.entries(sum).forEach(([g, n]) => {
+    const b = document.querySelector(`#navg [data-gb="${g}"]`);
+    if (!b) return;
+    const active = document.querySelector(`#navg .gtab[data-g="${g}"]`);
+    const open = active && active.classList.contains('on');
+    b.textContent = n;
+    b.classList.toggle('hide', !n || open);   // 펼쳐져 있으면 아래 칸에 이미 보인다
+  });
+}
+$$('#navg .gtab').forEach(b => b.onclick = () => {
+  const g = b.dataset.g;
+  const list = (NAVG[g] || []).filter(v => {
+    const btn = document.querySelector(`nav button[data-view="${v}"]`);
+    return btn && !btn.classList.contains('hide');
+  });
+  const v = list.includes(navLast[g]) ? navLast[g] : list[0];
+  const btn = v && document.querySelector(`nav button[data-view="${v}"]`);
+  if (btn) btn.click();
 });
 
 
@@ -298,3 +347,5 @@ function uiPrompt(msg, def, opt) {
     box.appendChild(t); box.appendChild(inp); box.appendChild(row);
   });
 }
+
+setTimeout(() => { try { const on = document.querySelector('nav button.on'); navSync(on ? on.dataset.view : 'board'); } catch (e) {} }, 0);
