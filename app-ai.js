@@ -53,7 +53,7 @@ async function aiScript(card){
     <div class="aiw-fmts"><button type="button" class="chip ${enMode ? '' : 'on'}" data-awen="0">🇰🇷 한국어</button><button type="button" class="chip ${enMode ? 'on' : ''}" data-awen="1">🌐 영어 대본</button>
       <span class="aiw-hint">영어로 하면 직역 대신 현지 구어체로 다시 쓰고, 메모 끝에 번역표가 붙습니다 (외국어 라인 카드는 자동으로 켜집니다)</span></div>
     <label>추가 지시 (선택)</label><input id="aw-note" placeholder="예: 40초 이내, 네/아니요 형식, TTS 질문 + 약사 답">
-    <div class="row"><button class="btn sm" id="aw-go">✍️ 초안 쓰기</button><button class="btn sm" id="aw-same" style="background:#6B3FA0;border-color:#6B3FA0" title="레퍼런스를 구성·순서까지 거의 그대로 따라가되 나열 항목 1~2개 교체·순서 바꾸기로 변주합니다. 문장은 새로 씁니다. 위의 형식 선택은 쓰지 않습니다">🔁 거의 그대로 따라 쓰기</button><button class="chip" id="aw-x">닫기</button><span id="aw-st" style="font-size:12.5px;color:var(--muted)"></span></div>
+    <div class="row"><button class="btn sm" id="aw-go">✍️ 초안 쓰기</button><button class="btn sm" id="aw-same" style="background:#6B3FA0;border-color:#6B3FA0" title="레퍼런스를 구성·순서까지 거의 그대로 따라가되 나열 항목 1~2개 교체·순서 바꾸기로 변주합니다. 문장은 새로 씁니다. 위의 형식 선택은 쓰지 않습니다">🔁 거의 그대로 따라 쓰기</button><button class="chip" id="aw-x">닫기</button><span id="aw-st" class="u-sm2"></span></div>
     <div id="aw-out"></div></div>`;
   document.body.appendChild(bg);
   const $b = s => bg.querySelector(s);
@@ -93,7 +93,7 @@ async function aiScript(card){
       if (j.need_key) { out.innerHTML = `<div class="msg">⚠ AI 키가 아직 설정되지 않았습니다.</div>`; return; }
       out.innerHTML = `<div class="msg">내용: ${esc(j.ref_how || '-')} · 형식: ${esc(j.fmt_how || '-')} · 스킬 v${j.skill_version}${j.hook ? `<br><b>훅:</b> ${esc(j.hook)}` : ''}${j.notes ? `<br><b>메모:</b> ${esc(j.notes)}` : ''}</div>
         <table><tr><th style="width:42%">장면 설명</th><th>대사/자막</th></tr>${(j.rows || []).map(r => `<tr><td>${esc(r.scene || '')}</td><td>${esc(r.line || '')}</td></tr>`).join('')}</table>
-        <div class="row"><button class="btn sm" id="aw-apply">카드 대본에 넣기</button><button class="chip" id="aw-again">다시 쓰기</button><span style="font-size:12.5px;color:var(--muted)">${card.script ? '지금 대본은 AI 작업 기록에 남기고 바꿉니다' : ''}</span></div>`;
+        <div class="row"><button class="btn sm" id="aw-apply">카드 대본에 넣기</button><button class="chip" id="aw-again">다시 쓰기</button><span class="u-sm2">${card.script ? '지금 대본은 AI 작업 기록에 남기고 바꿉니다' : ''}</span></div>`;
       out.querySelector('#aw-again').onclick = () => run(mode);
       out.querySelector('#aw-apply').onclick = async e => {
         const cur = cards.find(x => x.id === card.id) || card;
@@ -136,7 +136,7 @@ async function aiScriptBulk(list){
     <input id="bw-note" placeholder="예: 40초 이내, 첫 2초에 결론 먼저">
     <label style="display:flex;gap:6px;align-items:center;margin-top:12px;font-weight:600"><input type="checkbox" id="bw-over"> 이미 대본이 있는 카드도 다시 쓰기
       <span class="aiw-hint">끄면 대본이 비어 있는 카드만 씁니다 (이전 대본은 어느 쪽이든 AI 작업 기록에 남습니다)</span></label>
-    <div class="row"><button class="btn sm" id="bw-go">대기열에 넣기</button><button class="chip" id="bw-x">닫기</button><span id="bw-st" style="font-size:12.5px;color:var(--muted)"></span></div></div>`;
+    <div class="row"><button class="btn sm" id="bw-go">대기열에 넣기</button><button class="chip" id="bw-x">닫기</button><span id="bw-st" class="u-sm2"></span></div></div>`;
   document.body.appendChild(bg);
   const $b = s => bg.querySelector(s);
   const fill = () => { const f = AI_FMT.find(x => x.k === fmtK) || AI_FMT[0];
@@ -211,7 +211,7 @@ function buildChannelChips(){
 
   $('#channel-chips').innerHTML = active.map(c =>
     `<button class="chip ch ${channelFilter.has(c.label)?'on':''}" data-ch="${esc(c.label)}">${esc(c.label)}</button>`
-  ).join('') || '<span style="font-size:12.5px;color:var(--muted)">설정 탭에서 채널을 추가하세요</span>';
+  ).join('') || '<span class="u-sm2">설정 탭에서 채널을 추가하세요</span>';
 
   $$('#channel-chips .chip').forEach(b => b.onclick = () => {
     const ch = b.dataset.ch;
