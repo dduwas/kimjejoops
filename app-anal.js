@@ -20,7 +20,7 @@ function buildChips(boxSel, clearSel, items, filterSet, onDone){
 
   box.innerHTML = items.length
     ? items.map(i => `<button class="chip ch ${filterSet.has(i.key)?'on':''}" data-key="${esc(i.key)}">${esc(i.label)}</button>`).join('')
-    : '<span style="font-size:12.5px;color:var(--muted)">표시할 항목이 없습니다</span>';
+    : '<span class="u-sm2">표시할 항목이 없습니다</span>';
 
   const clearBtn = $(clearSel);
   const sync = () => clearBtn && clearBtn.classList.toggle('hide', filterSet.size === 0);
@@ -474,7 +474,7 @@ function renderAnTargets(ab, body){
   const n = anTSel.size;
   const bad = ts.filter(t => t.fetch_error && anErr(t.fetch_error).s === '읽기 불가');
   ab.innerHTML = `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 — 여러 개는 쉼표·줄바꿈, 인스타 링크도 됩니다" style="min-width:320px;flex:1"><input id="an-hm" placeholder="메모(선택)" style="max-width:200px"><button class="btn sm" id="an-hadd">＋ 추가</button></div>
-    <p class="an-note">비즈니스·크리에이터 계정만 조회수 수집이 됩니다. <b>사용</b>을 끄면 수집에서만 빠지고 모아 둔 영상은 남습니다. <b>삭제</b>는 계정과 그 계정 영상까지 지웁니다. 제목 줄(팔로워·평소 조회 등)을 누르면 정렬됩니다.${bad.length ? ` <b style="color:#b42318">읽기 불가 ${bad.length}개</b> — 아이디가 바뀌었거나 개인 계정이라 조회수를 영영 못 모읍니다. 아래 버튼으로 한 번에 골라 지우세요.` : ''}</p>
+    <p class="an-note">비즈니스·크리에이터 계정만 조회수 수집이 됩니다. <b>사용</b>을 끄면 수집에서만 빠지고 모아 둔 영상은 남습니다. <b>삭제</b>는 계정과 그 계정 영상까지 지웁니다. 제목 줄(팔로워·평소 조회 등)을 누르면 정렬됩니다.${bad.length ? ` <b style="color:var(--bad)">읽기 불가 ${bad.length}개</b> — 아이디가 바뀌었거나 개인 계정이라 조회수를 영영 못 모읍니다. 아래 버튼으로 한 번에 골라 지우세요.` : ''}</p>
     <div class="an-filters"><label class="an-chk"><input type="checkbox" id="an-tall" ${n && n === ts.length ? 'checked' : ''}> 전체 선택</label>
       ${bad.length ? `<button class="chip sm" id="an-tbad">읽기 불가 ${bad.length}개 선택</button>` : ''}
       ${n ? `<button class="btn sm danger" id="an-tdel">선택한 ${n}개 삭제</button><button class="chip sm" id="an-tclr">선택 해제</button>` : '<span class="rv-sub">왼쪽 칸을 체크하면 여러 개를 한 번에 지울 수 있습니다</span>'}</div>
@@ -482,7 +482,7 @@ function renderAnTargets(ab, body){
     ${ts.map(t => `<tr class="${t.active ? '' : 'off'}"><td><input type="checkbox" data-antsel="${esc(t.handle)}" ${anTSel.has(t.handle) ? 'checked' : ''}></td>
       <td><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener">@${esc(t.handle)}</a>${t.name ? ' ' + esc(t.name) : ''}${t.lang === 'en' ? ' 🌐' : ''}${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</td>
       <td>${t.followers ? opsN(t.followers) : (t.influence ? t.influence + '만*' : '-')}</td><td>${t.median_views ? opsN(t.median_views) : '-'}</td><td>${t.hot_n || ''}</td>
-      <td>${t.fetch_error ? `<span title="${esc(anErr(t.fetch_error).t)}" style="color:#b42318">${anErr(t.fetch_error).s}</span>` : t.last_fetch ? (new Date(t.last_fetch).getMonth() + 1) + '/' + new Date(t.last_fetch).getDate() : '대기'}</td>
+      <td>${t.fetch_error ? `<span title="${esc(anErr(t.fetch_error).t)}" style="color:var(--bad)">${anErr(t.fetch_error).s}</span>` : t.last_fetch ? (new Date(t.last_fetch).getMonth() + 1) + '/' + new Date(t.last_fetch).getDate() : '대기'}</td>
       <td><input type="checkbox" data-anact="${esc(t.handle)}" ${t.active ? 'checked' : ''}></td>
       <td><button class="chip sm cd-del" data-andel="${esc(t.handle)}" title="계정과 그 계정 영상까지 지웁니다">삭제</button></td></tr>`).join('')}</table></div>
     <p class="an-note">* 팔로워 칸의 '만*'은 26.09 조사 당시 영향력 수치입니다.</p>`;
@@ -524,7 +524,7 @@ async function kjMassModal(items, after){
     <label>레퍼런스마다 초안 수</label><select id="ms-n"><option>1</option><option selected>2</option><option>3</option><option>4</option></select>
     <label>담당팀 (말투 예시를 이 팀 대본에서 가져옴)</label><select id="ms-team"><option value="솔">솔루션즈</option><option value="웰">웰니스박스</option><option value="기타">롱폼/퀵릴스/캐러셀</option><option value="외">외국어</option></select>
     <label>추가 지시 (선택)</label><input id="ms-note" placeholder="예: 40초 이내, 숫자 근거 1개 이상, 마지막에 댓글 유도 질문">
-    <div class="row"><button class="btn sm" id="ms-go">🏭 양산 시작</button><button class="chip" id="ms-x">닫기</button><span id="ms-st" style="font-size:12.5px;color:var(--muted)"></span></div></div>`;
+    <div class="row"><button class="btn sm" id="ms-go">🏭 양산 시작</button><button class="chip" id="ms-x">닫기</button><span id="ms-st" class="u-sm2"></span></div></div>`;
   document.body.appendChild(bg);
   const $b = s => bg.querySelector(s); const close = () => bg.remove();
   $b('#ms-x').onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
@@ -549,7 +549,7 @@ async function renderOpsMass(body){
       <div class="ms-h"><b>${esc(j.ref_title || j.ref_url || '레퍼런스')}</b> <span class="ms-st">${ST[j.status] || j.status}</span>
         <span class="an-note">${esc(j.format_label || '형식 자유')} · ${TEAM_LABEL[j.team_tag] || ''} · ${new Date(j.created_at).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}${j.ref_views ? ' · 원본 ' + opsN(j.ref_views) + '회' : ''}</span>
         
-        <span style="margin-left:auto"></span>${['error', 'done'].includes(j.status) ? '<button class="chip sm" data-msretry>다시 쓰기</button>' : ''}${j.status !== 'moved' ? '<button class="chip sm cd-del" data-msdrop>드랍</button>' : ''}</div>
+        <span class="u-push"></span>${['error', 'done'].includes(j.status) ? '<button class="chip sm" data-msretry>다시 쓰기</button>' : ''}${j.status !== 'moved' ? '<button class="chip sm cd-del" data-msdrop>드랍</button>' : ''}</div>
       ${j.ref_url ? kjReferenceMarkup(j.ref_url, j.ref_title) : ''}
       ${j.status === 'error' ? `<div class="msg">⚠ ${esc(j.error || '')}</div>` : ''}
       ${(j.drafts || []).length ? `<div class="ms-drafts">${j.drafts.map((d, i) => `<details ${i === 0 && j.status === 'done' ? 'open' : ''} class="${j.chosen === i ? 'chosen' : ''}"><summary><b>초안 ${i + 1}</b> ${esc(d.title || '')}${d.hook ? ` — <i>${esc(d.hook)}</i>` : ''}${j.chosen === i ? ' ✅' : ''}</summary>
@@ -630,7 +630,7 @@ function fmtEdit(f){
     <label>캡처·그림 <span class="aiw-hint">릴스 화면 캡처나 구성 그림을 올리세요 (카드 위쪽에 보임)</span></label>
     <div class="fe-imgs" id="fe-imgs"></div><input type="file" id="fe-file" accept="image/*" multiple>
     <label>출처</label><input id="fe-src" value="${esc(f.source || '')}">
-    <div class="row"><button class="btn sm" id="fe-save">저장</button><button class="chip" id="fe-x">닫기</button>${isNew ? '' : '<button class="chip" id="fe-del" style="margin-left:auto;color:#b42318">삭제</button>'}<span id="fe-st" style="font-size:12.5px;color:var(--muted)"></span></div></div>`;
+    <div class="row"><button class="btn sm" id="fe-save">저장</button><button class="chip" id="fe-x">닫기</button>${isNew ? '' : '<button class="chip" id="fe-del" style="margin-left:auto;color:var(--bad)">삭제</button>'}<span id="fe-st" class="u-sm2"></span></div></div>`;
   document.body.appendChild(bg);
   const $b = s => bg.querySelector(s), st = $b('#fe-st');
   const drawImgs = () => { $b('#fe-imgs').innerHTML = imgs.map((i, k) => `<span><img src="${esc(i.url)}"><button type="button" data-rm="${k}">✕</button></span>`).join(''); bg.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { imgs.splice(+b.dataset.rm, 1); drawImgs(); }); };
