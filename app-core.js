@@ -201,10 +201,12 @@ const navGroupOf = v => Object.keys(NAVG).find(g => NAVG[g].includes(v)) || 'mak
 let navLast = {};
 try { navLast = JSON.parse(localStorage.getItem('kjnavlast') || '{}') || {}; } catch (e) { navLast = {}; }
 
-function navSync(view) {
+function navSync(view, quiet) {
   const g = navGroupOf(view);
-  navLast[g] = view;
-  try { localStorage.setItem('kjnavlast', JSON.stringify(navLast)); } catch (e) {}
+  if (!quiet) {
+    navLast[g] = view;
+    try { localStorage.setItem('kjnavlast', JSON.stringify(navLast)); } catch (e) {}
+  }
   $$('#navg .gtab').forEach(x => x.classList.toggle('on', x.dataset.g === g));
   $$('nav button').forEach(x => x.classList.toggle('gout', navGroupOf(x.dataset.view) !== g));
   const nav = document.querySelector('nav');
