@@ -97,11 +97,11 @@ async function aiScript(card){
       out.querySelector('#aw-again').onclick = () => run(mode);
       out.querySelector('#aw-apply').onclick = async e => {
         const cur = cards.find(x => x.id === card.id) || card;
-        if (cur.script && !confirm('카드에 있는 대본·메모를 이 초안으로 바꿉니다. (이전 대본은 AI 작업 기록에 남습니다)')) return;
+        if (cur.script && !await uiConfirm('카드에 있는 대본·메모를 이 초안으로 바꿉니다. (이전 대본은 AI 작업 기록에 남습니다)')) return;
         e.target.disabled = true;
         const { data: upd, error } = await sb.from('contents').update({ script: j.script }).eq('id', card.id).select('id, script');
-        if (error) { e.target.disabled = false; return alert(cleanErr(error.message)); }
-        if (!upd || !upd.length || upd[0].script !== j.script) { e.target.disabled = false; return alert('저장되지 않았습니다(권한 확인 필요). 다시 시도하거나 대표에게 알려 주세요.'); }
+        if (error) { e.target.disabled = false; return uiAlert(cleanErr(error.message)); }
+        if (!upd || !upd.length || upd[0].script !== j.script) { e.target.disabled = false; return uiAlert('저장되지 않았습니다(권한 확인 필요). 다시 시도하거나 대표에게 알려 주세요.'); }
         if (j.job_id) await sb.from('script_jobs').update({ applied_at: new Date().toISOString() }).eq('id', j.job_id);
         const fs = document.getElementById('f-script');   // 카드 편집창이 열려 있으면 그 칸도 같은 대본으로(편집창 저장 때 덮어쓰기 방지)
         if (fs) { fs.value = j.script; fs.dispatchEvent(new Event('input', { bubbles: true })); }
@@ -118,7 +118,7 @@ async function aiScript(card){
    고른 카드를 script_jobs 에 queued 로 쌓고(write-script action:'queue'), pg_cron kj-script-queue 가 1분마다 한 건씩
    write-script action:'run_queued' 로 처리해 카드 대본까지 바로 채운다. 브라우저를 꺼도 계속된다. 이전 대본은 prev_script 에 남는다. */
 async function aiScriptBulk(list){
-  if (!list || !list.length) return alert('카드를 먼저 골라 주세요.');
+  if (!list || !list.length) return uiAlert('카드를 먼저 골라 주세요.');
   let fmtK = '';
   let enMode = list.every(c => c.team_tag === '외');
   const bg = document.createElement('div'); bg.className = 'aiw-bg';
@@ -157,12 +157,12 @@ async function aiScriptBulk(list){
         body: JSON.stringify({ action: 'queue', card_ids: list.map(c => c.id), format_type: fmtK ? `${f.label} — ${f.desc}` : '',
           note: (enMode ? EN_NOTE + '\n' : '') + $b('#bw-note').value, overwrite: $b('#bw-over').checked }) });
       const j = await r.json();
-      if (j.error) { go.disabled = false; $b('#bw-st').textContent = ''; return alert(j.error); }
+      if (j.error) { go.disabled = false; $b('#bw-st').textContent = ''; return uiAlert(j.error); }
       close(); scPickMode(false);
       poToast(j.queued ? `${j.queued}개를 대기열에 넣었습니다${j.skipped ? ` (대본이 이미 있어 건너뜀 ${j.skipped}개)` : ''}. 1분에 한 건씩 써서 카드에 바로 채웁니다.`
         : '넣을 카드가 없습니다. 이미 대기 중이거나 대본이 모두 채워져 있습니다.', 6000);
       sqWatch();
-    } catch (err) { go.disabled = false; $b('#bw-st').textContent = ''; alert(err.message || String(err)); }
+    } catch (err) { go.disabled = false; $b('#bw-st').textContent = ''; uiAlert(err.message || String(err)); }
   };
 }
 let sqTimer = null;
@@ -182,7 +182,7 @@ async function moveLine(id, t){
   id = String(id || '').split('|')[0];   // 캘린더 일정은 "카드id|종류"
   const c = cards.find(x => x.id === id); if (!c || teamTag(c) === t) return;
   const { error } = await sb.from('contents').update({ team_tag: t }).eq('id', id);
-  if (error) return alert(cleanErr(error.message));
+  if (error) return uiAlert(cleanErr(error.message));
   await refresh(); poToast(`"${(c.title || '').slice(0, 24)}" → ${TEAM_LABEL[t]} 라인으로 옮김 (단계 '${c.stage}' 그대로)`, 2800);
 }
 
