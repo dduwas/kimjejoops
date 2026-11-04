@@ -27,7 +27,7 @@ function openCard(c, preset){
     <div class="field"><label>채널</label><div class="chgroup" id="f-channels">
       ${channels.filter(c => c.active || (d.channels||[]).includes(c.label))
         .map(c => `<label><input type="checkbox" value="${esc(c.label)}" ${(d.channels||[]).includes(c.label)?'checked':''}>${esc(c.label)}</label>`).join('')
-        || '<span style="font-size:12.5px;color:var(--muted)">설정 탭에서 채널을 먼저 추가하세요</span>'}
+        || '<span class="u-sm2">설정 탭에서 채널을 먼저 추가하세요</span>'}
     </div></div>
 
     ${hasStyles() ? `<div class="field"><label>스타일 — 여러 개 선택 가능</label><div class="chgroup" id="f-styles">
@@ -63,7 +63,7 @@ function openCard(c, preset){
     <div class="field"><label>레퍼런스 링크 — 참고 자료·벤치마크</label>
       <input id="f-ref" value="${esc(d.reference_url)}" placeholder="https://"></div>
     ${(d.publish_url || d.reference_url) ? `<div class="field"><label>미리보기 — ${d.publish_url ? '게시물' : '레퍼런스'}</label>${kjReferenceMarkup(d.publish_url || d.reference_url, d.title || '콘텐츠')}</div>` : ''}
-    ${!isNew && d.publish_url ? `<button class="btn ghost sm" id="f-sync">게시 링크에서 불러오기</button>
+    ${!isNew && d.publish_url ? `<button class="btn sm ghost" id="f-sync">게시 링크에서 불러오기</button>
     <div id="f-sync-msg" style="margin-top:9px"></div>
     <p class="note">유튜브·인스타 게시 링크가 있으면 조회수·좋아요·댓글을 자동으로 채웁니다.
       ${d.stats_synced_at ? `마지막 수집 ${d.stats_synced_at.slice(0,16).replace('T',' ')}` : '아직 수집한 적이 없습니다.'}</p>` : ''}
@@ -76,13 +76,13 @@ function openCard(c, preset){
     <div class="grid2">
       <div class="field"><label>댓글 ${d.publish_url ? '<span style="color:var(--blue)">· 자동</span>' : ''}</label>
         <input type="number" id="f-cm" value="${d.comments ?? ''}"></div>
-      <div class="field"><label>저장 <span style="color:var(--muted)">· 직접 입력</span></label>
+      <div class="field"><label>저장 <span class="u-muted">· 직접 입력</span></label>
         <input type="number" id="f-s" value="${d.saves ?? ''}"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>공유 <span style="color:var(--muted)">· 직접 입력</span></label>
+      <div class="field"><label>공유 <span class="u-muted">· 직접 입력</span></label>
         <input type="number" id="f-sh" value="${d.shares ?? ''}"></div>
-      <div class="field"><label>링크 클릭 <span style="color:var(--muted)">· 직접 입력</span></label>
+      <div class="field"><label>링크 클릭 <span class="u-muted">· 직접 입력</span></label>
         <input type="number" id="f-lc" value="${d.link_clicks ?? ''}"></div>
     </div>
     <p class="note">저장·공유·링크클릭은 계정 소유자만 볼 수 있는 값이라 자동으로 못 가져옵니다.
