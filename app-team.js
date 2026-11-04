@@ -48,7 +48,7 @@ function renderTodos(){
   $$('#todo-list [data-toggle]').forEach(el => el.onchange = async e => {
     e.stopPropagation();
     const { error } = await sb.from('todos').update({ done: el.checked }).eq('id', el.dataset.toggle);
-    if (error) alert(cleanErr(error.message));
+    if (error) uiAlert(cleanErr(error.message));
     await refresh();
   });
   $$('#todo-list [data-tdopen]').forEach(el =>
@@ -117,9 +117,9 @@ function openTodo(t){
   $('#t-save').onclick = () => ctl.saveAndClose();
   $('#t-cancel').onclick = () => ctl.discard();
   if ($('#t-del')) $('#t-del').onclick = async () => {
-    if (!confirm('이 할 일을 삭제합니다.')) return;
+    if (!await uiConfirm('이 할 일을 삭제합니다.', { ok: '삭제', danger: true })) return;
     const { error } = await sb.from('todos').delete().eq('id', t.id);
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     ctl.forceClose(); await refresh();
   };
 }
@@ -274,11 +274,11 @@ function openMeeting(m){
     $$('#m-files [data-dl]').forEach(b => b.onclick = async () => {
       const { data, error } = await sb.storage.from('meeting-files')
         .createSignedUrl(b.dataset.dl, 60);
-      if (error) return alert(cleanErr(error.message));
+      if (error) return uiAlert(cleanErr(error.message));
       window.open(data.signedUrl, '_blank');
     });
     $$('#m-files [data-rm]').forEach(b => b.onclick = async () => {
-      if (!confirm('이 파일을 지웁니다.')) return;
+      if (!await uiConfirm('이 파일을 지웁니다.', { ok: '지우기', danger: true })) return;
       await sb.storage.from('meeting-files').remove([b.dataset.rm]);
       files = files.filter(f => f.path !== b.dataset.rm);
       $('#m-files').innerHTML = filesHTML(files); wireFiles();
@@ -315,7 +315,7 @@ function openMeeting(m){
     }).filter(r => r.title && r.title !== '없음');
 
     if (!rows.length) return mtMsg('옮길 액션이 없습니다.');
-    if (!confirm(`${rows.length}개를 할 일로 보냅니다.`)) return;
+    if (!await uiConfirm(`${rows.length}개를 할 일로 보냅니다.`, { ok: '보내기' })) return;
     const { error } = await sb.from('todos').insert(rows);
     if (error) return mtMsg(cleanErr(error.message));
     mtMsg(`${rows.length}개를 할 일 탭으로 보냈습니다.`, 'ok');
@@ -323,9 +323,9 @@ function openMeeting(m){
   };
 
   if ($('#m-del')) $('#m-del').onclick = async () => {
-    if (!confirm('이 회의록을 삭제합니다. 되돌릴 수 없습니다.')) return;
+    if (!await uiConfirm('이 회의록을 삭제합니다. 되돌릴 수 없습니다.', { ok: '삭제', danger: true })) return;
     const { error } = await sb.from('meetings').delete().eq('id', m.id);
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     forceClose(); await refresh();
   };
 }
@@ -471,9 +471,10 @@ function renderDrops(){
   $$('#drop-list [data-open]').forEach(el =>
     el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
   $$('#drop-list [data-restore]').forEach(b => b.onclick = async () => {
-    const c = cards.find(x => x.id === b.dataset.restore);
-    if (!confirm(`"${c.title}" 을(를) 아이디어 단계로 되돌립니다.`)) return;
+    const c = cards.find(x => x.id === b.dataset.restore);   // v101 되돌릴 수 있는 일은 묻지 않는다
     await moveStage(c.id, IDEA);
+    uiToast('되살림: ' + String(c.title || '').slice(0, 24) + ' · 아이디어에 있습니다',
+      { action: { label: '되돌리기', run: () => moveStage(c.id, DROP) } });
   });
 }
 
@@ -515,7 +516,7 @@ function renderTeam(){
   $$('#team-list [data-suspend]').forEach(b => b.onclick = () => setStatus(b.dataset.suspend, 'suspended'));
   $$('#team-list [data-role]').forEach(sel => sel.onchange = async () => {
     const { error } = await sb.from('profiles').update({ role: sel.value }).eq('id', sel.dataset.role);
-    if (error) alert(cleanErr(error.message));
+    if (error) uiAlert(cleanErr(error.message));
     await refresh();
   });
   $$('#team-list [data-edit], #team-list [data-edit2]').forEach(el =>
@@ -609,7 +610,7 @@ function openMember(t){
   $('#p-pw-btn').onclick = async () => {
     const pw = $('#p-pw').value.trim();
     if (pw.length < 8) return msg('비밀번호는 8자 이상이어야 합니다.');
-    if (!confirm(`${t.name || t.email} 님의 비밀번호를 아래로 바꿉니다.\n\n${pw}\n\n이 값을 본인에게 전달하세요.`)) return;
+    if (!await uiConfirm(`${t.name || t.email} 님의 비밀번호를 아래로 바꿉니다.\n\n${pw}\n\n이 값을 본인에게 전달하세요.`)) return;
     try {
       await callAdmin({ action: 'password', password: pw });
       msg(`비밀번호를 바꿨습니다.\n새 비밀번호: ${pw}\n본인에게 전달하고 바로 변경하도록 안내하세요.`, 'ok');
@@ -620,7 +621,7 @@ function openMember(t){
     const em = $('#p-email').value.trim();
     if (!em.includes('@')) return msg('이메일 형식이 올바르지 않습니다.');
     if (em === t.email) return msg('기존과 같은 이메일입니다.');
-    if (!confirm(`로그인 아이디를 ${em} 으로 바꿉니다.\n이 사람은 앞으로 새 이메일로 로그인해야 합니다.`)) return;
+    if (!await uiConfirm(`로그인 아이디를 ${em} 으로 바꿉니다.\n이 사람은 앞으로 새 이메일로 로그인해야 합니다.`)) return;
     try {
       await callAdmin({ action: 'email', email: em });
       msg('이메일을 바꿨습니다. 본인에게 알려주세요.', 'ok');
@@ -636,7 +637,7 @@ function openMember(t){
     if (nCards) detail.push(`담당 콘텐츠 ${nCards}개`);
     if (nTodos) detail.push(`담당 할 일 ${nTodos}개`);
 
-    if (!confirm(
+    if (!await uiConfirm(
       `${who} 님을 완전히 삭제합니다.\n` +
       (detail.length ? `\n${detail.join(' · ')} 에서 담당자만 빠지고 내용은 남습니다.\n` : '') +
       `\n잠시 쉬는 것뿐이라면 삭제 대신 접근 상태를 [중지] 로 바꾸세요.\n계속할까요?`
@@ -708,7 +709,7 @@ function openMyAccount(){
 
 async function setStatus(id, status){
   const { error } = await sb.from('profiles').update({ status }).eq('id', id);
-  if (error) return alert(cleanErr(error.message));
+  if (error) return uiAlert(cleanErr(error.message));
   await refresh();
 }
 
@@ -829,20 +830,20 @@ function renderChannels(){
     const id = b.dataset.csave;
     const old = channels.find(c => c.id === id);
     const label = $(`#channel-list [data-clabel="${id}"]`).value.trim();
-    if (!label) return alert('채널 이름을 비울 수 없습니다.');
+    if (!label) return uiAlert('채널 이름을 비울 수 없습니다.');
     const { error } = await sb.from('channels').update({
       label,
       sort_order: Number($(`#channel-list [data-corder="${id}"]`).value) || 0,
       active: $(`#channel-list [data-cactive="${id}"]`).checked
     }).eq('id', id);
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
 
     if (old.label !== label) {
       const targets = cards.filter(c => (c.channels || []).includes(old.label));
       for (const t of targets) {
         const next = (t.channels || []).map(x => x === old.label ? label : x);
         const r = await sb.from('contents').update({ channels: next }).eq('id', t.id);
-        if (r.error) { alert('카드 반영 중 오류: ' + cleanErr(r.error.message)); break; }
+        if (r.error) { uiAlert('카드 반영 중 오류: ' + cleanErr(r.error.message)); break; }
       }
       if (channelFilter.has(old.label)) { channelFilter.delete(old.label); channelFilter.add(label); }
     }
@@ -851,19 +852,19 @@ function renderChannels(){
 
   $$('#channel-list [data-cdel]').forEach(b => b.onclick = async () => {
     const c = channels.find(x => x.id === b.dataset.cdel);
-    if (used(c.label)) return alert(`이 채널을 쓰는 카드가 ${used(c.label)}개 있습니다. 삭제 대신 노출을 꺼주세요.`);
-    if (!confirm(`"${c.label}" 채널을 삭제합니다.`)) return;
+    if (used(c.label)) return uiAlert(`이 채널을 쓰는 카드가 ${used(c.label)}개 있습니다. 삭제 대신 노출을 꺼주세요.`);
+    if (!await uiConfirm(`"${c.label}" 채널을 삭제합니다.`, { ok: '삭제', danger: true })) return;
     const { error } = await sb.from('channels').delete().eq('id', c.id);
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     await refresh();
   });
 
   $('#channel-add').onclick = async () => {
     const label = $('#new-clabel').value.trim();
-    if (!label) return alert('채널 이름을 입력해 주세요.');
+    if (!label) return uiAlert('채널 이름을 입력해 주세요.');
     const { error } = await sb.from('channels').insert({
       label, sort_order: Number($('#new-corder').value) || 0 });
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     await refresh();
   };
 }
