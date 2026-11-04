@@ -38,7 +38,7 @@ async function renderPush(){
     </div>`).join('') : '<p class="lede">아직 등록한 소재가 없습니다. <b>＋ 소재 추가</b>로 시작하세요.</p>';
   box.querySelectorAll('[data-ptid]').forEach(card => {
     const id = card.dataset.ptid;
-    const save = async patch => { const { error } = await sb.from('kj_push_topics').update(patch).eq('id', id); if (error) alert(cleanErr(error.message)); else { Object.assign(PUSH.find(x => x.id === id) || {}, patch); poToast('저장했습니다.', 1200); } };
+    const save = async patch => { const { error } = await sb.from('kj_push_topics').update(patch).eq('id', id); if (error) uiAlert(cleanErr(error.message)); else { Object.assign(PUSH.find(x => x.id === id) || {}, patch); poToast('저장했습니다.', 1200); } };
     card.querySelector('[data-ptname]').onchange = e => { const n = e.target.value.trim(); if (n) save({ name: n }); };
     card.querySelector('[data-ptw]').onchange = e => save({ weight: +e.target.value });
     card.querySelector('[data-ptu]').onchange = e => save({ until: e.target.value || null });
@@ -46,18 +46,18 @@ async function renderPush(){
     card.querySelector('[data-ptk]').onchange = e => save({ keywords: e.target.value.split(/[,·]/).map(x => x.trim()).filter(Boolean) });
     card.querySelector('[data-ptg]').onchange = e => save({ angle: e.target.value.trim() || null });
     card.querySelector('[data-ptdel]').onclick = async () => {
-      if (!confirm('"' + (PUSH.find(x => x.id === id) || {}).name + '" 을(를) 밀기 소재에서 지울까요?\n잠시 쉬게 하려면 「켜짐」 체크만 끄면 됩니다.')) return;
+      if (!await uiConfirm('"' + (PUSH.find(x => x.id === id) || {}).name + '" 을(를) 밀기 소재에서 지웁니다.\n잠시 쉬게 하려면 「켜짐」 체크만 끄면 됩니다.', { ok: '지우기', danger: true })) return;
       const { error } = await sb.from('kj_push_topics').delete().eq('id', id);
-      if (error) return alert(cleanErr(error.message));
+      if (error) return uiAlert(cleanErr(error.message));
       await loadPush(true); renderPush();
     };
   });
   const add = document.getElementById('pt-add');
   add.onclick = async () => {
-    const n = prompt('밀고 싶은 소재 이름 (예: K뷰티, 크레아틴)', '');
+    const n = await uiPrompt('밀고 싶은 소재 이름 (예: K뷰티, 크레아틴)', '');
     if (!n || !n.trim()) return;
     const { error } = await sb.from('kj_push_topics').insert({ name: n.trim(), created_by: me.id });
-    if (error) return alert(/duplicate|unique/i.test(error.message) ? '이미 있는 소재입니다.' : cleanErr(error.message));
+    if (error) return uiAlert(/duplicate|unique/i.test(error.message) ? '이미 있는 소재입니다.' : cleanErr(error.message));
     await loadPush(true); renderPush();
   };
 }
@@ -106,11 +106,11 @@ async function dropNow(id){
   const c = cards.find(x => x.id === id); if (!c || c.stage === DROP) return;
   const was = c.stage, name = c.title || '카드';
   const { error } = await sb.from('contents').update({ stage: DROP, updated_at: new Date().toISOString() }).eq('id', id);
-  if (error) return alert(cleanErr(error.message));
+  if (error) return uiAlert(cleanErr(error.message));
   await refresh();
   poUndo('드랍: ' + name.slice(0, 28) + ' · 드랍 게시판에 보관됩니다', async () => {
     const { error: e2 } = await sb.from('contents').update({ stage: was, updated_at: new Date().toISOString() }).eq('id', id);
-    if (e2) return alert(cleanErr(e2.message));
+    if (e2) return uiAlert(cleanErr(e2.message));
     await refresh(); poToast('되돌렸습니다.', 2000);
   });
 }
@@ -302,7 +302,7 @@ function renderInsight(){
   $$('#kj-ins [data-insopen]').forEach(el => el.onclick = () => openCard(cards.find(c => c.id === el.dataset.insopen)));
   const touch = async (id, extra) => {
     const { error } = await sb.from('contents').update({ ...(extra || {}), updated_at: new Date().toISOString() }).eq('id', id);
-    if (error) return alert(cleanErr(error.message));
+    if (error) return uiAlert(cleanErr(error.message));
     await refresh();
   };
   $$('#kj-ins [data-inskeep]').forEach(b => b.onclick = () => touch(b.dataset.inskeep));
@@ -314,8 +314,8 @@ function renderInsight(){
     const c = cards.find(x => x.id === b.dataset.insrep); if (!c) return;
     const { error } = await sb.from('contents').insert({ title: '[같은 틀] ' + c.title, stage: IDEA, channels: c.channels || [], moat: c.moat || null,
       reference_url: c.publish_url || null, next_action: `잘 된 형식(조회 ${fmtN(c.views)}) 그대로 다음 주제 정하기`, created_by: me.id, team_tag: teamTag(c) });
-    if (error) return alert(cleanErr(error.message));
-    await refresh(); alert('아이디어 칸에 "같은 틀" 카드를 만들었습니다.');
+    if (error) return uiAlert(cleanErr(error.message));
+    await refresh(); uiAlert('아이디어 칸에 "같은 틀" 카드를 만들었습니다.');
   });
 }
 
@@ -370,7 +370,7 @@ async function moveStage(id, stage){
   const card = cards.find(c => c.id === id);
   if (!card || card.stage === stage) return;
   const { error } = await sb.from('contents').update({ stage }).eq('id', id);
-  if (error) return alert(cleanErr(error.message));
+  if (error) return uiAlert(cleanErr(error.message));
   await refresh();
 }
 
