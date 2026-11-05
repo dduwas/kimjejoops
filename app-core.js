@@ -50,6 +50,7 @@ let bdView = 'kanban';
 let stageFilter = new Set();
 let channelFilter = new Set();
 let ownerFilter = new Set();          // 생산 라인 담당자 필터
+let bdQ = '';                         // v106 생산 라인 제목 검색어
 let teamFilter = new Set();           // (v37부터 안 씀 — 라인 탭으로 대체)
 // v37: 생산 라인을 웰니스박스·솔루션즈·기타로 완전히 나눔. 한 번에 한 라인만 보임(마지막 선택 기억)
 let curLine = (() => { try { return localStorage.getItem('kj_line'); } catch (_) { return null; } })();
@@ -148,7 +149,10 @@ async function boot(){
   $('#me-role').textContent = ROLES[profile.role] || profile.role;
   $$('.admin-only').forEach(el => el.classList.toggle('hide', !isAdmin()));
   show('app');
+  restoreLastView();                    // v106 마지막에 본 탭으로 시작
   await refresh();
+  const sk = document.getElementById('boot-skel'); if (sk) sk.remove();   // v106 스켈레톤 걷기
+  wireV106();
   openFromUrl();
 }
 
@@ -170,8 +174,7 @@ async function refresh(){
   ]);
   cards = c.data || []; team = p.data || []; moats = m.data || []; channels = ch.data || [];
   todos = td.data || []; meetings = mt.data || []; posts = po.data || [];
-  await loadSettings();
-  await loadReview();
+  await Promise.all([loadSettings(), loadReview()]);   // v106 순차 2번 → 한 번에
   render();
 }
 
@@ -185,8 +188,75 @@ $$('nav button').forEach(b => b.onclick = async () => {
   ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','push','cands','team','settings'].forEach(v =>
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   navSync(b.dataset.view);
+  try { localStorage.setItem('kj_lastview', b.dataset.view); } catch (e) {}   // v106
   render();
 });
+
+/* v106 ── 필터 줄 접기. 생산 라인·게시 일정이 같은 방식으로 돈다. */
+function filterBox(boxId, btnId, nId, key, count){
+  const box = document.getElementById(boxId), btn = document.getElementById(btnId);
+  if (!box || !btn) return;
+  let open = false; try { open = localStorage.getItem(key) === '1'; } catch (e) {}
+  const paint = () => {
+    box.classList.toggle('hide', !open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    const n = count(), b = document.getElementById(nId);
+    if (b) { b.textContent = n; b.classList.toggle('hide', !n); }
+  };
+  btn.onclick = () => { open = !open; try { localStorage.setItem(key, open ? '1' : '0'); } catch (e) {} paint(); };
+  box.__paint = paint;
+  paint();
+}
+function paintFilterCounts(){
+  ['bd-filters','sc-filters'].forEach(id => { const b = document.getElementById(id); if (b && b.__paint) b.__paint(); });
+}
+
+/* v106 ── 지금 보고 있는 것을 주소에 남긴다. 링크를 그대로 넘기면 같은 화면이 열린다. */
+let hashBusy = false;
+function syncHash(){
+  if (hashBusy) return;
+  const on = document.querySelector('nav button.on');
+  const p = new URLSearchParams();
+  if (on) p.set('v', on.dataset.view);
+  if (curLine) p.set('line', curLine);
+  if (onlyMine) p.set('mine', '1');
+  if (bdView !== 'kanban') p.set('bv', bdView);
+  if (bdQ) p.set('q', bdQ);
+  if (stageFilter.size)   p.set('st',  [...stageFilter].join('|'));
+  if (ownerFilter.size)   p.set('own', [...ownerFilter].join('|'));
+  if (channelFilter.size) p.set('ch',  [...channelFilter].join('|'));
+  try { history.replaceState(null, '', location.pathname + location.search + (p.toString() ? '#' + p : '')); } catch (e) {}
+}
+function applyHash(){
+  const h = location.hash.slice(1); if (!h) return null;
+  const p = new URLSearchParams(h);
+  hashBusy = true;
+  if (p.get('line')) curLine = p.get('line');
+  onlyMine = p.get('mine') === '1';
+  if (p.get('bv')) bdView = p.get('bv');
+  bdQ = p.get('q') || '';
+  const fill = (s, v) => { s.clear(); (v ? v.split('|') : []).forEach(x => s.add(x)); };
+  fill(stageFilter,   p.get('st'));
+  fill(ownerFilter,   p.get('own'));
+  fill(channelFilter, p.get('ch'));
+  hashBusy = false;
+  return p.get('v');
+}
+
+/* v106 지난번에 보던 탭으로 열어 준다. 없거나 권한이 없으면 생산 라인. */
+function restoreLastView(){
+  let v = applyHash();                                         // 주소에 적힌 게 먼저
+  if (!v) { try { v = localStorage.getItem('kj_lastview'); } catch (e) {} }
+  try { localStorage.removeItem('kjnavlast'); } catch (e) {}   // v102 탭 묶음이 쓰던 죽은 키
+  if (!v) return;
+  const b = document.querySelector(`nav button[data-view="${v}"]`);
+  if (!b || b.classList.contains('hide')) return;
+  $$('nav button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  ['board','schedule','insight','posts','todo','meetings','review','video','drops','formats','push','cands','team','settings']
+    .forEach(x => $('#view-' + x).classList.toggle('hide', x !== v));
+  navSync(v, true);
+}
 
 /* v105 메뉴 복구 — v102 탭 묶음(navg)을 걷어냈다. 상위 탭 12개를 다시 한 줄에 모두 둔다.
    navSync 는 app-board.js 등에서도 부르므로 이름은 남기고, 접힘 흔적만 지우는 일만 한다. */
@@ -198,6 +268,59 @@ function navSync(view, quiet) {
     const hint = document.querySelector('.hsub-hint');
     if (hint) { hint.textContent = ''; hint.classList.add('hide'); }
   } catch (e) {}
+}
+
+/* v106 ── 검색칸 · 필터 접기 · 단축키를 한 번에 붙인다 (부팅 끝에 한 번 부른다) */
+function wireV106(){
+  // 생산 라인 제목 검색
+  const q = document.getElementById('bd-q');
+  if (q) {
+    q.value = bdQ;
+    let t = null;
+    q.oninput = () => { clearTimeout(t); t = setTimeout(() => { bdQ = q.value.trim(); renderBoard(); }, 180); };
+    q.onkeydown = e => { if (e.key === 'Escape') { q.value = ''; bdQ = ''; renderBoard(); q.blur(); } };
+  }
+  filterBox('bd-filters', 'bd-filter-toggle', 'bd-filter-n', 'kj_bdfilters',
+            () => stageFilter.size + ownerFilter.size + channelFilter.size);
+  filterBox('sc-filters', 'sc-filter-toggle', 'sc-filter-n', 'kj_scfilters',
+            () => scOwnerFilter.size + scChannelFilter.size + scAccFilter.size);
+
+  // 📝 대본 묶음 메뉴
+  const mb = document.getElementById('sc-menu-btn'), mn = document.getElementById('sc-menu');
+  if (mb && mn) {
+    const close = () => { mn.classList.add('hide'); mb.setAttribute('aria-expanded', 'false'); };
+    mb.onclick = e => { e.stopPropagation();
+      const open = mn.classList.toggle('hide') === false;
+      mb.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+    mn.onclick = () => setTimeout(close, 0);
+    document.addEventListener('click', e => { if (!mn.contains(e.target) && e.target !== mb) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  }
+
+  // 단축키 — 글 쓰는 중이거나 창이 떠 있으면 안 듣는다
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target;
+    if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
+    if (document.querySelector('.uim-back') || $('#drawer-root').innerHTML) return;
+    if (e.key === '/') {
+      e.preventDefault();
+      const b = document.querySelector('nav button[data-view="board"]');
+      if (b && !document.querySelector('nav button.on[data-view="board"]')) b.click();
+      setTimeout(() => { const i = document.getElementById('bd-q'); if (i) i.focus(); }, 60);
+      return;
+    }
+    if (e.key === 'n' || e.key === 'N') {
+      const nb = document.getElementById('btn-new');
+      if (nb && !$('#view-board').classList.contains('hide')) { e.preventDefault(); nb.click(); }
+      return;
+    }
+    if (/^[1-9]$/.test(e.key)) {
+      const list = $$('nav button').filter(x => !x.classList.contains('hide'));
+      const b = list[+e.key - 1];
+      if (b) { e.preventDefault(); b.click(); }
+    }
+  });
 }
 
 /* v100 폰에서 표가 화면을 통째로 밀지 않게 — 표를 .tblwrap 으로 감싸 표만 좌우로 움직이고,
