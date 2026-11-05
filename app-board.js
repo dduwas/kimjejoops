@@ -160,6 +160,7 @@ function buildStageChips(){
 }
 
 function renderBoard(){
+  if (document.getElementById('view-board').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const list = visible();
   const inLine = cards.filter(c => teamTag(c) === lineOf());
   const live = inLine.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP).length;
@@ -178,7 +179,29 @@ function renderBoard(){
   $('#stage-bar').classList.toggle('hide', bdView !== 'table');
   buildStageChips();
 
+  paintFilterCounts();   // v106 접힌 필터 버튼에 개수 표시
+  syncHash();            // v106 지금 보는 화면을 주소에 남긴다
   if (bdView === 'table') return renderBoardTable(list);
+
+  // v106 필터·검색 때문에 하나도 안 남으면, 빈 칸 5개 대신 이유를 한 줄로 알려준다
+  if (!list.length) {
+    const why = bdQ ? `'${esc(bdQ)}' 로 찾은 카드가 없습니다.`
+      : (onlyMine || stageFilter.size || ownerFilter.size || channelFilter.size) ? '지금 건 필터에 맞는 카드가 없습니다.'
+      : `${TEAM_LABEL[curLine]} 라인에 제작 중인 카드가 없습니다.`;
+    const can = bdQ || onlyMine || stageFilter.size || ownerFilter.size || channelFilter.size;
+    $('#line').innerHTML = `<div class="empty" style="width:100%">${why}
+      ${can ? '<br><button class="btn sm ghost" id="bd-clear-all" style="margin-top:12px">필터·검색 모두 지우기</button>'
+            : '<br><button class="btn sm ghost" id="bd-add-here" style="margin-top:12px">＋ 콘텐츠 추가</button>'}</div>`;
+    const ca = $('#bd-clear-all');
+    if (ca) ca.onclick = () => {
+      bdQ = ''; onlyMine = false; stageFilter.clear(); ownerFilter.clear(); channelFilter.clear();
+      const q = document.getElementById('bd-q'); if (q) q.value = '';
+      const cm = $('#chip-mine'); if (cm) cm.classList.remove('on');
+      buildOwnerChips(); buildChannelChips(); renderBoard();
+    };
+    const ah = $('#bd-add-here'); if (ah) ah.onclick = () => $('#btn-new').click();
+    return;
+  }
 
   $('#line').innerHTML = BOARD_COLS.map((col, i) => {
     const items = list.filter(c => col.stages.includes(c.stage));
@@ -265,6 +288,7 @@ function renderBoard(){
 
 /* ---------- 성과 요약 + 정리 필요 카드 (v29) ---------- */
 function renderInsight(){
+  if (document.getElementById('view-insight').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const box = $('#kj-ins'); if (!box) return;
   const now = Date.now(), DAY = 864e5;
   const open = (k) => { try { return localStorage.getItem('kjins:' + k) !== '0'; } catch (_) { return true; } };
@@ -320,17 +344,31 @@ function renderInsight(){
 }
 
 // 생산 라인 — 게시판 보기
+let bdShown = 80;                     // v106 표 보기에서 한 번에 그리는 줄 수
 function renderBoardTable(list){
   const stageIdx = st => BOARD_COLS.findIndex(c => c.stages.includes(st));
-  const rows = [...list].sort((a,b) =>
+  let rows = [...list].sort((a,b) =>
     (stageIdx(a.stage) - stageIdx(b.stage)) ||
     (a.publish_date || '9999').localeCompare(b.publish_date || '9999') ||
     (b.updated_at || '').localeCompare(a.updated_at || ''));
 
   if (!rows.length) {
-    $('#board-table').innerHTML = '<div class="empty">해당하는 콘텐츠가 없습니다.</div>';
+    const can = bdQ || onlyMine || stageFilter.size || ownerFilter.size || channelFilter.size;
+    $('#board-table').innerHTML = `<div class="empty">${bdQ ? `'${esc(bdQ)}' 로 찾은 콘텐츠가 없습니다.` : '해당하는 콘텐츠가 없습니다.'}
+      ${can ? '<br><button class="btn sm ghost" id="bt-clear-all" style="margin-top:12px">필터·검색 모두 지우기</button>' : ''}</div>`;
+    const ca = $('#bt-clear-all');
+    if (ca) ca.onclick = () => {
+      bdQ = ''; onlyMine = false; stageFilter.clear(); ownerFilter.clear(); channelFilter.clear();
+      const q = document.getElementById('bd-q'); if (q) q.value = '';
+      const cm = $('#chip-mine'); if (cm) cm.classList.remove('on');
+      buildOwnerChips(); buildChannelChips(); renderBoard();
+    };
     return;
   }
+
+  const all = rows.length;
+  const more = all > bdShown;
+  if (more) rows = rows.slice(0, bdShown);
 
   // 단계별로 소제목을 넣어 구분한다
   let html = '', lastCol = null;
@@ -358,12 +396,15 @@ function renderBoardTable(list){
         ${c.stage === REVIEW ? `<button class="btn sm" data-tpub="${c.id}">게시 승인</button>` : ''}
       </td></tr>`;
   });
-  html += '</table><p class="note">제목을 누르면 카드가 열립니다. 단계를 옮기려면 칸반 보기에서 끌거나, 카드를 열어 단계를 바꾸세요.</p>';
+  html += '</table>';
+  if (more) html += `<div class="morebar"><button class="btn sm ghost" id="bt-more">더 보기 (${all - bdShown}개 남음)</button></div>`;
+  html += '<p class="note">제목을 누르면 카드가 열립니다. 단계를 옮기려면 칸반 보기에서 끌거나, 카드를 열어 단계를 바꾸세요.</p>';
 
   $('#board-table').innerHTML = html;
   $$('#board-table [data-open]').forEach(el =>
     el.onclick = () => openCard(cards.find(c => c.id === el.dataset.open)));
   $$('#board-table [data-tpub]').forEach(b => b.onclick = () => moveStage(b.dataset.tpub, PLANNED));
+  const mb = $('#bt-more'); if (mb) mb.onclick = () => { bdShown += 80; renderBoard(); };
 }
 
 async function moveStage(id, stage){
