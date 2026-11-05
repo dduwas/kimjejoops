@@ -66,6 +66,7 @@ function matchChannel(c, set){
 }
 
 function buildOwnerChips(){
+  if (document.getElementById('view-board').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const pool = cards.filter(c => c.stage !== PLANNED && c.stage !== DONE && c.stage !== DROP && teamTag(c) === lineOf());
   buildChips('#owner-chips', '#owner-clear', ownerItems(pool), ownerFilter, renderBoard);
   buildLineTabs();
