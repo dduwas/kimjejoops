@@ -4,6 +4,7 @@
 let tdFilter = 'open';
 
 function renderTodos(){
+  if (document.getElementById('view-todo').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const today = new Date().toISOString().slice(0,10);
   let rows = todos.filter(t => {
     if (tdFilter === 'open') return !t.done;
@@ -126,6 +127,7 @@ function openTodo(t){
 
 /* ---------------- 회의록 ---------------- */
 function renderMeetings(){
+  if (document.getElementById('view-meetings').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   $('#meeting-list').innerHTML = meetings.length ? meetings.map(m => `
     <div class="mtcard" data-mt="${m.id}">
       <div class="mt-head">
@@ -448,6 +450,7 @@ function filesHTML(files){
 
 /* ---------------- 드랍 게시판 ---------------- */
 function renderDrops(){
+  if (document.getElementById('view-drops').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const rows = cards.filter(c => c.stage === DROP)
     .sort((a,b) => (b.dropped_at || b.updated_at || '').localeCompare(a.dropped_at || a.updated_at || ''));
 
@@ -480,6 +483,7 @@ function renderDrops(){
 
 /* ---------------- 팀 관리 ---------------- */
 function renderTeam(){
+  if (document.getElementById('view-team').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   if (!isAdmin()) return;
   const order = { pending:0, approved:1, suspended:2, rejected:3 };
   const rows = [...team].sort((a,b) =>
@@ -714,7 +718,10 @@ async function setStatus(id, status){
 }
 
 /* ---------------- 설정: 채널 + 연동 ---------------- */
-function renderSettings(){ renderChannels(); renderSync(); }
+function renderSettings(){
+  if (document.getElementById('view-settings').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
+  renderChannels(); renderSync();
+}
 
 let appSettings = {};
 
