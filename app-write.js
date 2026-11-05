@@ -148,6 +148,7 @@ async function pushPreview(postId, msg){
 }
 
 function renderPosts(){
+  if (document.getElementById('view-posts').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   let rows = posts.filter(p => poFilter === 'all' || p.status === poFilter);
   rows.sort((a,b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
 
