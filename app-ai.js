@@ -187,6 +187,7 @@ async function moveLine(id, t){
 }
 
 function buildScheduleChips(){
+  if (document.getElementById('view-schedule').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const pool = cards.filter(c => scLineOk(c) && (
     c.stage === '촬영' || c.stage === '편집' || c.stage === PLANNED || c.stage === DONE));
   buildChips('#sc-owner-chips', '#sc-owner-clear', ownerItems(pool), scOwnerFilter, renderSchedule);
@@ -205,6 +206,7 @@ function buildScheduleChips(){
 }
 
 function buildChannelChips(){
+  if (document.getElementById('view-board').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const active = channels.filter(c => c.active);
   // 사라진 채널이 필터에 남아 있으면 정리
   [...channelFilter].forEach(l => { if (!active.some(c => c.label === l)) channelFilter.delete(l); });
@@ -237,6 +239,7 @@ function visible(){
     if (teamTag(c) !== lineOf()) return false;
     if (!matchChannel(c, channelFilter)) return false;
     if (stageFilter.size && !stageFilter.has(colNameOf(c.stage))) return false;
+    if (bdQ && !((c.title || '') + ' ' + (c.memo || '')).toLowerCase().includes(bdQ.toLowerCase())) return false;   // v106 제목 검색
     return true;
   });
 }
