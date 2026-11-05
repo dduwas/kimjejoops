@@ -66,10 +66,12 @@ function scheduleEvents(){
 }
 
 function renderSchedule(){
+  if (document.getElementById('view-schedule').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   if (!schedAutoAt) { loadSchedAuto().then(() => { buildScheduleChips(); renderSchedule(); }).catch(() => {}); }
   const evs = scheduleEvents();
   const n = k => evs.filter(e => e.kind === k).length;
   const filtered = scOwnerFilter.size || scChannelFilter.size || scAccFilter.size;
+  paintFilterCounts();   // v106 접힌 필터 버튼에 개수 표시
 
   const parts = [];
   ['shoot','edit','planned','done'].forEach(k => {
