@@ -1,5 +1,5 @@
 'use strict';
-// 김제조 웍스 — 게시 일정·공용 서랍  (v88에서 index.html 에서 분리)
+// 김제조 웍스 — 게시 일정·공용 서랍  (v88에서 index.html 에서 분리) · v107 외국어 라인·번역·계정별 업로드 현황
 /* ---------------- 게시 일정 (캘린더 + 게시판) ---------------- */
 let scView = 'calendar', scCat = 'all';
 let calBase = new Date();
@@ -17,20 +17,26 @@ const SC_KINDS = {
    카드에 게시일이 없던 실제 게시물(인스타·유튜브·쓰레드·더우인·샤오홍슈)과 예약 업로드(쓰레드 예약·유튜브 예약)를
    n8n 48(매일 07:25)이 sched-fill 함수로 kj_sched_auto 에 채움 → 캘린더에 '🤖 자동'으로 표시(누르면 게시물 열림).
    카드를 만들어 게시 링크를 넣으면 다음날 자동 일정은 사라짐. 솔루션즈·전체 라인에서만, 담당자 필터 중엔 숨김. */
-let schedAuto = [], schedAutoAt = 0;
+let schedAuto = [], schedAutoAt = 0, schedStatus = null;
+/* v107 (11-10 대표 요청) 더우인·샤오홍슈·글로벌 인스타(@jejo.kpharmacist)는 외국어 라인, 나머지는 솔루션즈 라인.
+   중국어 제목은 sched-fill 이 '원문 ｜ 번역' 으로 저장 → 달력에 '원문 (번역)'. 계정별 업로드 현황은 _status 행(sched-fill 이 2시간마다 갱신). */
+const autoLine = a => (a.platform === 'douyin' || a.platform === 'xiaohongshu' || /jejo\.kpharmacist|global/i.test(a.account || '')) ? '외' : '솔';
+const autoTitle = t => { const p = String(t || '').split(' ｜ '); return p[1] ? p[0] + ' (' + p[1] + ')' : p[0]; };
 const SA_CH = { instagram:'인스타', youtube:'유튜브', threads:'쓰레드', douyin:'더우인', xiaohongshu:'샤오홍슈' };
 async function loadSchedAuto(){
   schedAutoAt = Date.now();
   const { data } = await sb.from('kj_sched_auto').select('*').order('date');
-  schedAuto = data || [];
+  const st = (data || []).find(x => x.ext_id === '_status');
+  try { schedStatus = st ? JSON.parse(st.title) : null; } catch (_) { schedStatus = null; }
+  schedAuto = (data || []).filter(x => x.ext_id !== '_status');
 }
 function autoEvHTML(e){
   const a = e.auto, k = e.kind === 'planned' ? 'k-plan' : 'k-done';
   // v99 한 플랫폼에 계정이 둘 이상이면(인스타 김제조/글로벌) 달력에도 계정을 같이 보여 준다
   const multi = (schedAuto || []).some(x => x.platform === a.platform && (x.account || '') !== (a.account || ''));
   const lab = (SA_CH[a.platform] || a.platform) + (multi && a.account ? ' ' + String(a.account).replace(/^@/, '') : '') + (e.kind === 'planned' ? ' 예약' : '');
-  const tip = `🤖 자동 · ${lab}${a.account ? ' · ' + a.account : ''} · ${a.title || ''}${a.exact === false ? ' (게시일 = 처음 확인된 날)' : ''}`;
-  return `<a class="ev ev-auto" ${a.url ? `href="${esc(a.url)}" target="_blank" rel="noopener"` : ''} title="${esc(tip)}"><span class="dotmark ${k}"></span>🤖${esc(lab)} ${esc(a.title || '(제목 없음)')}</a>`;
+  const tip = `🤖 자동 · ${lab}${a.account ? ' · ' + a.account : ''} · ${autoTitle(a.title)}${a.exact === false ? ' (게시일 = 처음 확인된 날)' : ''}`;
+  return `<a class="ev ev-auto" ${a.url ? `href="${esc(a.url)}" target="_blank" rel="noopener"` : ''} title="${esc(tip)}"><span class="dotmark ${k}"></span>🤖${esc(lab)} ${esc(autoTitle(a.title) || '(제목 없음)')}</a>`;
 }
 function scheduleEvents(){
   const out = [];
@@ -57,8 +63,9 @@ function scheduleEvents(){
     else if (c.stage === DONE) push('done');
   });
 
-  if (accOn || (!scOwnerFilter.size && (scLine === 'all' || scLine === '솔'))) schedAuto.forEach(a => {
+  if (accOn || !scOwnerFilter.size) schedAuto.forEach(a => {
     if (accOn && !scAccFilter.has((a.platform || '') + '|' + (a.account || ''))) return;
+    if (!accOn && scLine !== 'all' && scLine !== autoLine(a)) return;   // v107 외국어 채널은 외국어 라인에서
     if (!accOn && scChannelFilter.size && ![...scChannelFilter].some(ch => String(ch).includes(SA_CH[a.platform] || a.platform))) return;
     out.push({ card: null, auto: a, kind: a.kind === 'planned' ? 'planned' : 'done', date: a.date });
   });
@@ -82,7 +89,35 @@ function renderSchedule(){
 
   $('#cal-controls').classList.toggle('hide', scView !== 'calendar');
   scView === 'calendar' ? renderCalendar(evs) : renderScheduleTable(evs);
+  renderUploadStatus();
   wireScheduleButtons();
+}
+
+/* v107 계정별 업로드 현황 — 모든 계정의 실제 게시(카드와 짝지어진 것 포함)를 한 표로. sched-fill 이 갱신 */
+function renderUploadStatus(){
+  let box = document.getElementById('sched-status');
+  if (!box) { box = document.createElement('div'); box.id = 'sched-status'; const body = $('#schedule-body'); body.parentNode.insertBefore(box, body); }
+  const S = schedStatus;
+  if (!S || !Array.isArray(S.accounts)) { box.innerHTML = ''; return; }
+  let open = true; try { open = localStorage.getItem('kj_upst') !== '0'; } catch (_) {}
+  const all = S.accounts.filter(a => !String(a.platform).startsWith('_'));
+  const rows = all.filter(a => (a.total || a.planned) || !all.some(b => b !== a && b.platform === a.platform && (b.total || b.planned)))
+    .filter(a => scLine === 'all' || a.line === scLine);
+  const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10), mon = today.slice(0, 7);
+  const ago = d => d ? Math.round((new Date(today) - new Date(d)) / 864e5) : null;
+  const ch = a => (SA_CH[a.platform] || a.platform) + (a.account ? ' ' + String(a.account).replace(/^@/, '') : '');
+  const lineLab = { '외': '외국어', '솔': '솔루션즈' };
+  const at = S.at ? new Date(S.at) : null;
+  box.innerHTML = `<details class="upst" ${open ? 'open' : ''} style="margin:4px 0 12px;border:1px solid var(--line,#dde5f0);border-radius:10px;padding:8px 12px;background:var(--card,#fff)">
+    <summary style="cursor:pointer;font-weight:700">📊 계정별 업로드 현황 <span class="u-muted" style="font-weight:400;font-size:12px">· ${at ? at.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' 갱신' : ''} · 2시간마다 자동</span></summary>
+    <table style="margin-top:8px"><tr><th>라인</th><th>계정</th><th>마지막 게시</th><th>최근 7일</th><th>최근 30일</th><th>이번 달</th><th>예약</th><th>누적</th></tr>
+    ${rows.map(a => { const g = ago(a.last); const warn = g === null || g > 7;
+      return `<tr><td>${lineLab[a.line] || a.line}</td><td><b>${esc(ch(a))}</b></td>
+        <td style="white-space:nowrap;${warn ? 'color:var(--warn,#c0392b);font-weight:700' : ''}">${a.last ? a.last.slice(5) + ` (${g === 0 ? '오늘' : g + '일 전'})` : '기록 없음'}</td>
+        <td>${a.d7 || 0}</td><td>${a.d30 || 0}</td><td>${(a.months || {})[mon] || 0}</td>
+        <td>${a.planned ? a.planned + (a.next ? ' · ' + a.next.slice(5) : '') : '—'}</td><td class="u-muted">${a.total || 0}</td></tr>`; }).join('')}
+    </table><p class="note" style="margin:6px 0 0">빨간 날짜 = 7일 넘게 게시가 없거나 기록이 없는 계정. 숫자는 ${esc(S.since || '')} 이후 실제 게시 기준(카드와 연결된 글 포함).</p></details>`;
+  box.querySelector('details').ontoggle = e => { try { localStorage.setItem('kj_upst', e.target.open ? '1' : '0'); } catch (_) {} };
 }
 
 function renderCalendar(evs){
