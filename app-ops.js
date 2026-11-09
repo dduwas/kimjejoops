@@ -15,6 +15,17 @@ function canReview(r){
   const c = cards.find(x => x.id === r.content_id);
   return !!(c && (c.owner_ids || []).includes(me.id));
 }
+// 11-09 카드 고르기: 단계별 묶음, 편집 중인 카드를 맨 위에
+const RV_GROUPS = ['편집', '검수·승인', '촬영', '대본', '아이디어', '게시예정', '게시완료'];
+function rvOpts(c, sel){
+  const all = cards.filter(x => x.stage !== DROP);
+  if (c && !all.includes(c)) all.unshift(c);
+  const one = o => `<option value="${o.id}" ${o.id === sel ? 'selected' : ''}>[${esc(TEAM_LABEL[o.team_tag] || o.team_tag || '')}] ${esc(o.title)} · ${esc(o.stage)}</option>`;
+  const by = st => all.filter(o => o.stage === st).sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+  const rest = all.filter(o => !RV_GROUPS.includes(o.stage));
+  return RV_GROUPS.map(st => { const L = by(st); return L.length ? `<optgroup label="${st === '편집' ? '✂️ 편집 중' : esc(st)} (${L.length})">${L.map(one).join('')}</optgroup>` : ''; }).join('')
+    + (rest.length ? `<optgroup label="기타 (${rest.length})">${rest.map(one).join('')}</optgroup>` : '');
+}
 function renderReview(){
   const pend = reviewFiles.filter(r => r.kind === 'master' && r.status === 'pending').length;
   const bd = $('#rv-badge'); if (bd) { bd.textContent = pend; bd.classList.toggle('hide', !pend); }
@@ -45,7 +56,7 @@ function renderReview(){
     return `<tr${c ? '' : ' class="rv-nolink"'}>
       <td class="fn">${c ? '' : '<div class="rv-nolink-badge">🔴 카드 미연결 — 생산 라인에 없는 영상</div><br>'}${esc(r.filename)}<div class="rv-sub">파일 날짜 ${esc(r.file_date || '-')} · NAS 올라옴 ${esc(fmtKst(r.mtime))} · ${fmtMB(r.size)}${clean.length ? ' · 클린본 ✓' : ''}</div>
         <div class="rv-sub">${esc(r.path)}</div></td>
-      <td><select data-rvlink="${r.id}" ${r.status === 'pending' ? '' : 'disabled'}><option value="">— 카드 선택 —</option>${(c && !opts.includes(c) ? [c] : []).concat(opts).map(o => `<option value="${o.id}" ${o.id === r.content_id ? 'selected' : ''}>[${esc(TEAM_LABEL[o.team_tag] || o.team_tag || '')}] ${esc(o.title)} · ${esc(o.stage)}</option>`).join('')}</select>
+      <td><select data-rvlink="${r.id}" ${r.status === 'pending' ? '' : 'disabled'}><option value="">— 카드 선택 —</option>${rvOpts(c, r.content_id)}</select>
         ${c ? `<div class="rv-sub">담당 ${esc(ownerNames(c.owner_ids))}${c.publish_date ? ' · 게시일 ' + esc(c.publish_date) : ''} · <a href="#" data-rvopen="${c.id}">카드 열기</a></div>` : ''}</td>
       <td>${warns.length ? warns.map(w => `<div class="rv-warn">⚠ ${esc(w)}</div>`).join('') : '<span class="rv-ok">제목·날짜 일치</span>'}
         ${r.note ? `<div class="rv-sub">메모: ${esc(r.note)}</div>` : ''}</td>
