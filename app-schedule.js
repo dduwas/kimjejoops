@@ -1,5 +1,5 @@
 'use strict';
-// 김제조 웍스 — 게시 일정·공용 서랍  (v88에서 index.html 에서 분리) · v107 외국어 라인·번역·계정별 업로드 현황
+// 김제조 웍스 — 게시 일정·공용 서랍  (v88에서 index.html 에서 분리) · v107 외국어 라인·번역·계정별 업로드 현황 · v107b 롱폼·캐러셀 라인
 /* ---------------- 게시 일정 (캘린더 + 게시판) ---------------- */
 let scView = 'calendar', scCat = 'all';
 let calBase = new Date();
@@ -20,7 +20,8 @@ const SC_KINDS = {
 let schedAuto = [], schedAutoAt = 0, schedStatus = null;
 /* v107 (11-10 대표 요청) 더우인·샤오홍슈·글로벌 인스타(@jejo.kpharmacist)는 외국어 라인, 나머지는 솔루션즈 라인.
    중국어 제목은 sched-fill 이 '원문 ｜ 번역' 으로 저장 → 달력에 '원문 (번역)'. 계정별 업로드 현황은 _status 행(sched-fill 이 2시간마다 갱신). */
-const autoLine = a => (a.platform === 'douyin' || a.platform === 'xiaohongshu' || /jejo\.kpharmacist|global/i.test(a.account || '')) ? '외' : '솔';
+const autoSub = a => a.platform === 'youtube' && /watch\?v=/.test(a.url || '') ? '롱폼' : a.platform === 'instagram' && /instagram\.com\/p\//.test(a.url || '') ? '캐러셀' : '';
+const autoLine = a => (a.platform === 'douyin' || a.platform === 'xiaohongshu' || /jejo\.kpharmacist|global/i.test(a.account || '')) ? '외' : autoSub(a) ? '기타' : '솔';   // v107b 롱폼·캐러셀 = 롱폼/퀵릴스/캐러셀 라인
 const autoTitle = t => { const p = String(t || '').split(' ｜ '); return p[1] ? p[0] + ' (' + p[1] + ')' : p[0]; };
 const SA_CH = { instagram:'인스타', youtube:'유튜브', threads:'쓰레드', douyin:'더우인', xiaohongshu:'샤오홍슈' };
 async function loadSchedAuto(){
@@ -34,7 +35,7 @@ function autoEvHTML(e){
   const a = e.auto, k = e.kind === 'planned' ? 'k-plan' : 'k-done';
   // v99 한 플랫폼에 계정이 둘 이상이면(인스타 김제조/글로벌) 달력에도 계정을 같이 보여 준다
   const multi = (schedAuto || []).some(x => x.platform === a.platform && (x.account || '') !== (a.account || ''));
-  const lab = (SA_CH[a.platform] || a.platform) + (multi && a.account ? ' ' + String(a.account).replace(/^@/, '') : '') + (e.kind === 'planned' ? ' 예약' : '');
+  const lab = (SA_CH[a.platform] || a.platform) + (multi && a.account ? ' ' + String(a.account).replace(/^@/, '') : '') + (autoLine(a) === '기타' ? ' ' + autoSub(a) : '') + (e.kind === 'planned' ? ' 예약' : '');
   const tip = `🤖 자동 · ${lab}${a.account ? ' · ' + a.account : ''} · ${autoTitle(a.title)}${a.exact === false ? ' (게시일 = 처음 확인된 날)' : ''}`;
   return `<a class="ev ev-auto" ${a.url ? `href="${esc(a.url)}" target="_blank" rel="noopener"` : ''} title="${esc(tip)}"><span class="dotmark ${k}"></span>🤖${esc(lab)} ${esc(autoTitle(a.title) || '(제목 없음)')}</a>`;
 }
@@ -105,8 +106,8 @@ function renderUploadStatus(){
     .filter(a => scLine === 'all' || a.line === scLine);
   const today = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10), mon = today.slice(0, 7);
   const ago = d => d ? Math.round((new Date(today) - new Date(d)) / 864e5) : null;
-  const ch = a => (SA_CH[a.platform] || a.platform) + (a.account ? ' ' + String(a.account).replace(/^@/, '') : '');
-  const lineLab = { '외': '외국어', '솔': '솔루션즈' };
+  const ch = a => (SA_CH[a.platform] || a.platform) + (a.account ? ' ' + String(a.account).replace(/^@/, '') : '') + (a.sub ? ' · ' + a.sub : '');
+  const lineLab = { '외': '외국어', '솔': '솔루션즈', '기타': '롱폼/퀵릴스/캐러셀' };
   const at = S.at ? new Date(S.at) : null;
   box.innerHTML = `<details class="upst" ${open ? 'open' : ''} style="margin:4px 0 12px;border:1px solid var(--line,#dde5f0);border-radius:10px;padding:8px 12px;background:var(--card,#fff)">
     <summary style="cursor:pointer;font-weight:700">📊 계정별 업로드 현황 <span class="u-muted" style="font-weight:400;font-size:12px">· ${at ? at.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' 갱신' : ''} · 2시간마다 자동</span></summary>
