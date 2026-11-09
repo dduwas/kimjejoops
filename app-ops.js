@@ -21,14 +21,19 @@ function renderReview(){
   const box = $('#rv-list'); if (!box || $('#view-review').classList.contains('hide')) return;
   let list = reviewFiles.filter(r => r.kind === 'master');
   if (rvFilter !== 'all') list = list.filter(r => r.status === rvFilter);
-  $('#rv-count').textContent = list.length + '건';
+  // 11-09 카드 미연결 강조: 생산 라인에 없는 영상을 맨 위로, 빨간 줄로
+  const rvLinked = r => !!cards.find(x => x.id === r.content_id);
+  list = list.slice().sort((a, b) => rvLinked(a) - rvLinked(b));
+  const rvNoLink = list.filter(r => !rvLinked(r)).length;
+  if (!document.getElementById('rv-nolink-css')) { const st = document.createElement('style'); st.id = 'rv-nolink-css'; st.textContent = '.rv-t tr.rv-nolink td{background:#fff1f1}.rv-t tr.rv-nolink td:first-child{border-left:4px solid #e03131}.rv-nolink-badge{display:inline-block;background:#e03131;color:#fff;font-weight:700;font-size:12px;border-radius:6px;padding:2px 8px;margin:0 0 4px}.rv-nolink-sum{color:#e03131;font-weight:700}'; document.head.appendChild(st); }
+  $('#rv-count').innerHTML = list.length + '건' + (rvNoLink ? ` · <span class="rv-nolink-sum">🔴 카드 미연결 ${rvNoLink}건</span>` : '');
   if (!list.length) { box.innerHTML = `<p class="lede">${rvFilter === 'pending' ? '검수 대기 중인 영상이 없습니다. NAS 인스타그램 폴더에 새 파일이 올라오면 여기 뜹니다.' : '해당 항목이 없습니다.'}</p>`; return; }
   const opts = cards.filter(c => c.stage !== DROP).sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
   box.innerHTML = `<table class="rv-t"><thead><tr><th>파일 (올라온 날짜)</th><th>연결된 카드</th><th>확인할 것</th><th>검수</th></tr></thead><tbody>${list.map(r => {
     const c = cards.find(x => x.id === r.content_id);
     const clean = reviewFiles.filter(x => x.master_id === r.id);
     const warns = [];
-    if (!c) warns.push('카드가 연결되지 않았습니다 — 오른쪽에서 골라 주세요');
+    if (!c) warns.push('생산 라인 카드와 연결되지 않았습니다 — 맞는 카드를 고르거나, 라인에서 빠진 카드를 찾아 정리해 주세요');
     else {
       if (r.match_score != null && r.match_score < 0.7) warns.push('파일 제목과 카드 제목이 조금 다릅니다');
       const pd = c.publish_date;
@@ -37,8 +42,8 @@ function renderReview(){
     }
     if (!clean.length) warns.push('클린본이 아직 없습니다');
     const can = canReview(r) && r.status !== 'baseline';
-    return `<tr>
-      <td class="fn">${esc(r.filename)}<div class="rv-sub">파일 날짜 ${esc(r.file_date || '-')} · NAS 올라옴 ${esc(fmtKst(r.mtime))} · ${fmtMB(r.size)}${clean.length ? ' · 클린본 ✓' : ''}</div>
+    return `<tr${c ? '' : ' class="rv-nolink"'}>
+      <td class="fn">${c ? '' : '<div class="rv-nolink-badge">🔴 카드 미연결 — 생산 라인에 없는 영상</div><br>'}${esc(r.filename)}<div class="rv-sub">파일 날짜 ${esc(r.file_date || '-')} · NAS 올라옴 ${esc(fmtKst(r.mtime))} · ${fmtMB(r.size)}${clean.length ? ' · 클린본 ✓' : ''}</div>
         <div class="rv-sub">${esc(r.path)}</div></td>
       <td><select data-rvlink="${r.id}" ${r.status === 'pending' ? '' : 'disabled'}><option value="">— 카드 선택 —</option>${(c && !opts.includes(c) ? [c] : []).concat(opts).map(o => `<option value="${o.id}" ${o.id === r.content_id ? 'selected' : ''}>[${esc(TEAM_LABEL[o.team_tag] || o.team_tag || '')}] ${esc(o.title)} · ${esc(o.stage)}</option>`).join('')}</select>
         ${c ? `<div class="rv-sub">담당 ${esc(ownerNames(c.owner_ids))}${c.publish_date ? ' · 게시일 ' + esc(c.publish_date) : ''} · <a href="#" data-rvopen="${c.id}">카드 열기</a></div>` : ''}</td>
