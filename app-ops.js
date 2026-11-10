@@ -189,7 +189,11 @@ async function loadOps(){
     sb.from('ops_sns_accounts').select('*').order('sort', { ascending:true }),
     sb.from('ops_sns_posts').select('*').order('published', { ascending:false }).limit(1000),
     sb.from('ops_sync_log').select('*').order('at', { ascending:false }).limit(1),
-    sb.from('ops_comments').select('*').order('created_at', { ascending:false }).limit(1000),
+    // v107 댓글: 처리할 것(새·초안·보내는 중)은 전부, 끝난 것(답장 완료·건너뜀)은 최근 300건만. 원본(raw) 칸은 화면에서 안 써서 뺐다
+    Promise.all([
+      sb.from('ops_comments').select('id,platform,kind,post_ext_id,post_title,post_url,author,text,created_at,status,reply_draft,replied_text,replied_by,replied_at,content_id,fetched_at,like_count,parent_id,send_error,reply_ext_id,reply_lang').in('status', ['new','drafted','sending']).order('created_at', { ascending:false }).limit(1000),
+      sb.from('ops_comments').select('id,platform,kind,post_ext_id,post_title,post_url,author,text,created_at,status,reply_draft,replied_text,replied_by,replied_at,content_id,fetched_at,like_count,parent_id,send_error,reply_ext_id,reply_lang').not('status', 'in', '(new,drafted,sending)').order('created_at', { ascending:false }).limit(300)
+    ]).then(([o, c]) => ({ data: [...(o.data || []), ...(c.data || [])].sort((x, y) => (y.created_at || '').localeCompare(x.created_at || '')), error: o.error || c.error })),
     loadFollowerHistory()
   ]);
   try { const { data: tr } = await sb.from('ops_sync_log').select('id').eq('kind', 'threads_ok').limit(1); opsThreadsReady = !!(tr && tr.length); } catch (e) {}
