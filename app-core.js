@@ -162,19 +162,55 @@ let show = function(which){
   $('#screen-app').classList.toggle('hide', which !== 'app');
 };
 
+/* v107 ── 카드 저장 때마다 contents 전체(약 40만 자)를 다시 받던 것을 "바뀐 카드만" 받게 바꿨다.
+   contents.updated_at 은 DB 트리거가 매 수정마다 갱신한다(11-11 확인). 삭제는 id 목록으로 잡는다.
+   안전장치: 5분마다·첫 로딩·이상 감지 시에는 예전처럼 전체를 받는다. */
+let _cAt = null, _cFullAt = 0, _rvAt = 0, _poAt = 0;
+function _cMax(list){ let m = ''; for (const r of list) if ((r.updated_at || '') > m) m = r.updated_at; return m || null; }
+async function loadContents(){
+  const full = async () => {
+    const r = await sb.from('contents').select('*').order('updated_at', { ascending:false });
+    if (!r.error) { _cAt = _cMax(r.data || []); _cFullAt = Date.now(); }
+    return r.data || [];
+  };
+  if (!_cAt || !cards.length || Date.now() - _cFullAt > 300000) return full();
+  try {
+    const since = new Date(new Date(_cAt).getTime() - 120000).toISOString();
+    const [chg, ids] = await Promise.all([
+      sb.from('contents').select('*').gte('updated_at', since),
+      sb.from('contents').select('id')
+    ]);
+    if (chg.error || ids.error) return full();
+    const alive = new Set((ids.data || []).map(x => x.id));
+    const map = new Map();
+    cards.forEach(c => { if (alive.has(c.id)) map.set(c.id, c); });
+    (chg.data || []).forEach(c => map.set(c.id, c));
+    if (map.size !== alive.size) return full();
+    const list = [...map.values()].sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''));
+    const mx = _cMax(chg.data || []); if (mx && mx > _cAt) _cAt = mx;
+    return list;
+  } catch (e) { return full(); }
+}
 async function refresh(){
+  const reviewOn = !$('#view-review').classList.contains('hide');
+  const postsOn = !$('#view-posts').classList.contains('hide');
   const [c, p, m, ch, td, mt, po] = await Promise.all([
-    sb.from('contents').select('*').order('updated_at', { ascending:false }),
+    loadContents(),
     sb.from('profiles').select('*').order('created_at', { ascending:false }),
     sb.from('moats').select('*').order('sort_order', { ascending:true }),
     sb.from('channels').select('*').order('sort_order', { ascending:true }),
     sb.from('todos').select('*').order('created_at', { ascending:false }),
     sb.from('meetings').select('*').order('met_on', { ascending:false }),
-    sb.from('posts').select('*').order('updated_at', { ascending:false })
+    // v107 글(posts) 본문(약 15만 자)은 글 화면을 보고 있거나 5분이 지났을 때만 다시 받는다
+    (postsOn || !_poAt || Date.now() - _poAt > 300000) ? sb.from('posts').select('*').order('updated_at', { ascending:false }) : null
   ]);
-  cards = c.data || []; team = p.data || []; moats = m.data || []; channels = ch.data || [];
-  todos = td.data || []; meetings = mt.data || []; posts = po.data || [];
-  await Promise.all([loadSettings(), loadReview()]);   // v106 순차 2번 → 한 번에
+  cards = c; team = p.data || []; moats = m.data || []; channels = ch.data || [];
+  todos = td.data || []; meetings = mt.data || [];
+  if (po && !po.error) { posts = po.data || []; _poAt = Date.now(); }
+  // v107 검수 파일 목록(약 13만 자)은 검수 화면을 보고 있을 때만, 아니면 탭을 열 때 받는다
+  const jobs = [loadSettings()];
+  if (reviewOn || !_rvAt) { jobs.push(loadReview()); _rvAt = Date.now(); }
+  await Promise.all(jobs);
   render();
 }
 
@@ -189,6 +225,8 @@ $$('nav button').forEach(b => b.onclick = async () => {
     $('#view-' + v).classList.toggle('hide', v !== b.dataset.view));
   navSync(b.dataset.view);
   try { localStorage.setItem('kj_lastview', b.dataset.view); } catch (e) {}   // v106
+  if (b.dataset.view === 'review' && Date.now() - _rvAt > 15000) { await loadReview(); _rvAt = Date.now(); }   // v107
+  if (b.dataset.view === 'posts' && Date.now() - _poAt > 15000) { const r = await sb.from('posts').select('*').order('updated_at', { ascending:false }); if (!r.error) { posts = r.data || []; _poAt = Date.now(); } }   // v107
   render();
 });
 
