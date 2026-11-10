@@ -330,8 +330,8 @@ async function kjFn(body){
 async function loadAnal(){
   const [t, p, th] = await Promise.all([
     sb.from('kj_targets').select('*').order('influence', { ascending: false, nullsFirst: false }),
-    sb.from('kj_tposts').select('*').order('views', { ascending: false, nullsFirst: false }).limit(1500),
-    sb.from('kj_tposts').select('*').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900)]);
+    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,created_at,ai_at,decided_at').order('views', { ascending: false, nullsFirst: false }).limit(1500),
+    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,created_at,ai_at,decided_at').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900)]);
   const isThr = x => /^THREADS/.test(x.product_type || '');
   anData = { targets: t.data || [], posts: (p.data || []).filter(x => !isThr(x)), threads: th.data || [], err: t.error || p.error };
 }
