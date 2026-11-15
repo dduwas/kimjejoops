@@ -1,0 +1,57 @@
+'use strict';
+/* v110 (11-15) 신사업부 운영 모드
+   - 김제조 웍스를 그냥 열면(누가 열든) '제한판': 🔐 운영관리 · 성과·정리 메뉴가 없다 (웰니스박스에 안 보이게)
+   - 솔루션즈 웍스 「신사업부 운영」 안에 끼워 열 때만(?nb=1 + works.npksol.space 안) 전체 메뉴
+   - 데이터 보안은 DB 권한(RLS)이 맡는다. 이 파일은 화면만 나눈다. */
+window.KJ_NB = (function () {
+  try {
+    if (window.top === window) return false;
+    if (!/[?&]nb=1/.test(location.search)) return false;
+    var ao = location.ancestorOrigins;
+    if (ao && ao.length) return /(^|\.)npksol\.space$/.test(new URL(ao[0]).hostname);
+    return /npksol\.space/.test(document.referrer || '');
+  } catch (e) { return false; }
+})();
+(function () {
+  var NB_ONLY = ['video', 'insight'];
+  var PARENT = 'https://works.npksol.space';
+  function navBtn(v) { return document.querySelector('nav button[data-view="' + v + '"]'); }
+  function setup() {
+    if (!window.KJ_NB) {
+      NB_ONLY.forEach(function (v) { var b = navBtn(v); if (b) b.classList.add('hide'); });
+      try { if (NB_ONLY.indexOf(localStorage.getItem('kj_lastview')) >= 0) localStorage.removeItem('kj_lastview'); } catch (e) {}
+      return;
+    }
+    document.documentElement.classList.add('kj-nb');
+    var st = document.createElement('style');
+    st.textContent = 'html.kj-nb header nav{display:none!important}html.kj-nb header .hrow{min-height:0}html.kj-nb .vtag::after{content:" · 신사업부 운영";font-weight:600}';
+    document.head.appendChild(st);
+    function say() {
+      var on = document.querySelector('nav button.on'); var v = on ? on.dataset.view : '';
+      var t = document.querySelector('.ops-tabs button.on'); var ops = t ? t.dataset.opstab : '';
+      try { parent.postMessage({ kjnb: 'at', v: v, ops: v === 'video' ? ops : '' }, PARENT); } catch (e) {}
+    }
+    function goOps(t) {
+      try { localStorage.setItem('kj_opstab', t); } catch (e) {}
+      var b = navBtn('video'); if (!b) return;
+      if (!b.classList.contains('on')) b.click();
+      var n = 0; (function tryTab() {
+        var x = document.querySelector('.ops-tabs button[data-opstab="' + t + '"]');
+        if (x) { if (!x.classList.contains('on')) x.click(); setTimeout(say, 50); return; }
+        if (++n < 40) setTimeout(tryTab, 100);
+      })();
+    }
+    addEventListener('message', function (e) {
+      if (e.origin !== PARENT || !e.data || !e.data.kjnb) return;
+      var d = e.data;
+      if (d.kjnb === 'view') { var b = navBtn(d.v); if (b && !b.classList.contains('hide')) b.click(); setTimeout(say, 50); }
+      else if (d.kjnb === 'ops') goOps(d.t);
+      else if (d.kjnb === 'ask') say();
+    });
+    document.addEventListener('click', function () { setTimeout(say, 80); }, true);
+    var mo = new MutationObserver(function () { clearTimeout(mo.t); mo.t = setTimeout(say, 120); });
+    mo.observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    say();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup); else setup();
+})();
