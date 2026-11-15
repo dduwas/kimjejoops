@@ -24,7 +24,14 @@ window.KJ_NB = (function () {
     }
     document.documentElement.classList.add('kj-nb');
     var st = document.createElement('style');
-    st.textContent = 'html.kj-nb header nav{display:none!important}html.kj-nb header .hrow{min-height:0}html.kj-nb .vtag::after{content:" · 신사업부 운영";font-weight:600}';
+    /* 11-15c 메뉴 이중 표시 없앰: 바깥(솔루션즈 웍스) 버튼 두 줄만 남기고 안쪽 머리줄·운영관리 제목/탭 줄은 숨김, 폭 제한 해제 */
+    st.textContent = [
+      'html.kj-nb header{display:none!important}',
+      'html.kj-nb #vd-root>h3,html.kj-nb #vd-root .ops-tabs{display:none!important}',
+      'html.kj-nb section.wrap{max-width:none!important;margin:0!important;padding:18px 22px 60px!important}',
+      'html.kj-nb body{background:#fff}',
+      '@media (max-width:720px){html.kj-nb section.wrap{padding:12px 12px 50px!important}}'
+    ].join('\n');
     document.head.appendChild(st);
     function say() {
       var on = document.querySelector('nav button.on'); var v = on ? on.dataset.view : '';
