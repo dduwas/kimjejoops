@@ -59,13 +59,13 @@ window.KJ_NB = (function () {
       sb.auth.getSession().then(function (r) {
         if (r && r.data && r.data.session) return;
         var n = 0; try { n = +sessionStorage.getItem('kj_nb_sso') || 0; } catch (e) {}
-        if (n >= 2) return;                                   // 두 번 실패하면 그냥 로그인 화면
-        try { sessionStorage.setItem('kj_nb_sso', n + 1); } catch (e) {}
+        if (n >= 3) return;                                   // 세 번 실패하면 그냥 로그인 화면
         try { parent.postMessage({ kjnb: 'need-login' }, PARENT); } catch (e) {}
       });
     }
     addEventListener('message', function (e) {
       if (e.origin !== PARENT || !e.data || e.data.kjnb !== 'sso' || !e.data.th || typeof sb === 'undefined') return;
+      try { sessionStorage.setItem('kj_nb_sso', (+sessionStorage.getItem('kj_nb_sso') || 0) + 1); } catch (x) {}
       sb.auth.verifyOtp({ token_hash: e.data.th, type: 'magiclink' }).then(function (r) {
         if (r && r.error) { try { parent.postMessage({ kjnb: 'sso-fail', msg: r.error.message }, PARENT); } catch (x) {} return; }
         try { sessionStorage.removeItem('kj_nb_sso'); } catch (x) {}
