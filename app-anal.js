@@ -227,7 +227,8 @@ function kjReferenceMarkup(raw, title = '레퍼런스 영상') {
     : '<iframe loading="lazy" title="' + label + '" src="' + esc(source.src) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
   const go = source.provider === 'Instagram'   // v98 비어 보이면 바로 열 수 있게
     ? '<a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a>' : '';
-  return '<span class="kj-ref-inline">' + media + go + '<small>영상 안의 ▶로 바로 재생 · 비공개·삭제·임베드 제한 영상은 재생되지 않을 수 있습니다.</small></span>';
+  const cpy = '<button type="button" class="kj-ref-copy" data-url="' + esc(raw) + '">🔗 링크 복사</button>';   // 11-15 대표 요청
+  return '<span class="kj-ref-inline">' + media + '<span class="kj-ref-acts">' + go + cpy + '</span><small>영상 안의 ▶로 바로 재생 · 비공개·삭제·임베드 제한 영상은 재생되지 않을 수 있습니다.</small></span>';
 }
 
 /* ---------- v53 📥 콘텐츠 후보 (생산 라인 앞단, 10-25 대표 요청) ----------
@@ -712,3 +713,22 @@ function fmtEdit(f){
   $('#fmt-add') && ($('#fmt-add').onclick = () => fmtEdit(null));
   $('#fmt-q') && ($('#fmt-q').oninput = e => { fmtQ = e.target.value; renderFormats(); });
 
+
+/* 11-15 콘텐츠 후보 카드 「🔗 링크 복사」 */
+(function(){
+  if (window.__kjRefCopy) return; window.__kjRefCopy = 1;
+  const st = document.createElement('style');
+  st.textContent = '.kj-ref-acts{display:flex;gap:6px;align-items:stretch}.kj-ref-acts .kj-ig-go{flex:1;min-width:0}'
+    + '.kj-ref-copy{flex:0 0 auto;border:1px solid #d6dae3;background:#fff;border-radius:8px;padding:0 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:#13213f;white-space:nowrap;min-height:40px}'
+    + '.kj-ref-copy:hover{background:#f3f5f9}.kj-ref-copy.ok{background:#e8f7ee;border-color:#86d3a3;color:#127a3e}';
+  document.head.appendChild(st);
+  document.addEventListener('click', async e => {
+    const b = e.target.closest && e.target.closest('.kj-ref-copy'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const u = b.getAttribute('data-url') || '';
+    let ok = false;
+    try { ok = (typeof copyText === 'function') ? await copyText(u) : (await navigator.clipboard.writeText(u), true); } catch (_) { ok = false; }
+    b.textContent = ok ? '✓ 복사됨' : '복사 실패'; b.classList.toggle('ok', ok);
+    setTimeout(() => { b.textContent = '🔗 링크 복사'; b.classList.remove('ok'); }, 1800);
+  }, true);
+})();
