@@ -321,6 +321,13 @@ $('#cd-add') && ($('#cd-add').onclick = async () => {
    대본 양산: 고른 영상·콘텐츠 후보·링크 → 형식(kj_formats) + 김제조 대본 스킬로 초안 N개(kj-anal 함수) → 하나 골라 생산 라인(대본 단계)으로 */
 let anTab = 'hot', anSel = new Set(), anDays = 90, anFmt = '', anSort = 'score', anData = null, msTimer = null, anPush = false;
 let anTSel = new Set(), anTSort = 'followers', anTDesc = true;   // v80 계정 탭: 다중 선택 + 정렬
+/* v108 (11-15 대표 지시) 분석 대상 재분류 — 계정마다 시장(한국·미국·중국) · 계정 유형(5유형) · 주제(뷰티·건강일반·영양제)
+   영상 틀은 6종(판정·검증·고민해결·추구미·제형·리듬·감성무드)으로 정리. 옛 틀 이름은 화면에서 새 이름으로 바꿔 보여 준다. */
+const AN_MK = ['한국', '미국', '중국'], AN_CC = ['리뷰·검증형', '고민→변화형', '추구미형', '제형·리듬형', '감성무드형'], AN_SJ = ['뷰티', '건강일반', '영양제', '제외'];
+const AN_FMT_MAP = { '처방형': '고민해결형', '이야기형': '추구미형', '순위형': '판정형', '평가형': '판정형', '문답형': '', '기타': '' };
+const anF = p => (p.fmt_guess in AN_FMT_MAP) ? AN_FMT_MAP[p.fmt_guess] : (p.fmt_guess || '');
+let anMk = '', anCc = '', anSj = '', anTMk = '', anTCc = '', anTSj = '', anTArc = false;
+const anSubj = (p, tg) => p.subject || (tg && tg.subject) || '';
 const kjFnUrl = () => String(window.SUPABASE_URL).replace(/\/+$/, '') + '/functions/v1/kj-anal';
 async function kjFn(body){
   const { data: { session } } = await sb.auth.getSession();
@@ -330,7 +337,7 @@ async function kjFn(body){
 async function loadAnal(){
   const [t, p, th] = await Promise.all([
     sb.from('kj_targets').select('*').order('influence', { ascending: false, nullsFirst: false }),
-    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,created_at,ai_at,decided_at').order('views', { ascending: false, nullsFirst: false }).limit(1500),
+    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,subject,status,content_id,product_type,thumb,created_at,ai_at,decided_at').order('views', { ascending: false, nullsFirst: false }).limit(1500),
     sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,created_at,ai_at,decided_at').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900)]);
   const isThr = x => /^THREADS/.test(x.product_type || '');
   anData = { targets: t.data || [], posts: (p.data || []).filter(x => !isThr(x)), threads: th.data || [], err: t.error || p.error };
@@ -341,7 +348,8 @@ function anCard(p, tg){
   return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
     ${kjReferenceMarkup(p.permalink, p.topic || p.handle)}<div class="an-acc">조회 ${opsN(p.views)}${p.ratio ? ` · 평소의 ${p.ratio}배` : ''}</div>
     <div class="an-b">${pushBadge(pushHit(p.topic, p.caption, p.hook, p.kj_angle))}<div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
-      ${p.topic ? `<div class="an-ti">${esc(p.topic)}${p.fmt_guess ? ` <span class="an-fmt">${esc(p.fmt_guess)}</span>` : ''}</div>` : ''}
+      ${p.topic ? `<div class="an-ti">${esc(p.topic)}${anF(p) ? ` <span class="an-fmt">${esc(anF(p))}</span>` : ''}</div>` : ''}
+      <div class="an-acc">${[tg && tg.market, anSubj(p, tg), tg && tg.concept].filter(Boolean).map(esc).join(' · ')}</div>
       ${p.hook ? `<div class="an-hook">“${esc(p.hook)}”</div>` : `<div class="an-cap">${esc((p.caption || '').slice(0, 110))}</div>`}
       ${p.kj_angle ? `<div class="an-angle">💡 ${esc(p.kj_angle)}</div>` : ''}
       <div class="an-act">${p.status === 'mass' ? '<span class="an-st">🏭 양산 중</span>' : p.status === 'line' ? '<span class="an-st">✅ 생산 라인</span>' : `<label class="an-chk"><input type="checkbox" data-ansel ${sel ? 'checked' : ''}> 선택</label>
@@ -356,10 +364,15 @@ async function renderOpsAnal(body){
   const since = anDays ? Date.now() - anDays * 86400000 : 0;
   let list = posts.filter(p => p.status !== 'dropped' && (!since || !p.posted_at || new Date(p.posted_at).getTime() >= since));
   if (anTab === 'hot') list = list.filter(p => p.hot);
-  if (anFmt) list = list.filter(p => p.fmt_guess === anFmt);
+  if (anFmt) list = list.filter(p => anF(p) === anFmt);
+  const tgOf = p => T.get(p.handle) || {};
+  list = list.filter(p => tgOf(p).active !== false || p.status === 'starred');
+  if (anMk) list = list.filter(p => tgOf(p).market === anMk);
+  if (anCc) list = list.filter(p => tgOf(p).concept === anCc);
+  list = anSj ? list.filter(p => anSubj(p, tgOf(p)) === anSj) : list.filter(p => anSubj(p, tgOf(p)) !== '제외');
   if (anPush) list = list.filter(p => pushHit(p.topic, p.caption, p.hook, p.kj_angle));
   list.sort(anSort === 'views' ? (a, b) => (b.views || 0) - (a.views || 0) : anSort === 'new' ? (a, b) => String(b.posted_at).localeCompare(String(a.posted_at)) : (a, b) => anScore(b) - anScore(a));
-  const fmts = [...new Set(posts.filter(p => p.hot && p.fmt_guess).map(p => p.fmt_guess))];
+  const fmts = ['판정형', '검증형', '고민해결형', '추구미형', '제형·리듬형', '감성무드형'].filter(f => posts.some(p => p.hot && anF(p) === f));
   const chip = (attr, v, cur, l) => `<button class="chip sm ${String(v) === String(cur) ? 'on' : ''}" ${attr}="${esc(String(v))}">${esc(l)}</button>`;
   body.innerHTML = `<div class="an-head"><b>분석 대상 ${targets.length}계정</b> · 수집 ${fetched}${errs ? ` · 오류 ${errs}` : ''} · 영상 ${posts.length} · 🔥 ${posts.filter(p => p.hot).length}
       <button class="chip sm" id="an-re">↻</button><button class="chip sm" id="an-addjump">＋ 계정 추가·삭제</button>${posts.some(p => p.hot && !p.ai_at) ? '<button class="chip sm" id="an-tag">🤖 AI 분류 지금</button>' : ''}</div>
@@ -376,7 +389,10 @@ async function renderOpsAnal(body){
   ab.innerHTML = `<div class="an-filters"><span>기간</span>${[[30, '30일'], [90, '90일'], [0, '전체']].map(([v, l]) => chip('data-andays', v, anDays, l)).join('')}
       <span>정렬</span>${chip('data-ansort', 'score', anSort, '추천순')}${chip('data-ansort', 'views', anSort, '조회수')}${chip('data-ansort', 'new', anSort, '최신')}
       ${pushLive().length ? `<span>밀기</span><button class="chip sm ${anPush ? 'on' : ''}" id="an-pushf">🎯 ${pushLive().map(p => esc(p.name)).join('·')}만</button>` : ''}
-      ${fmts.length ? `<br><span>형식</span>${chip('data-anfmt', '', anFmt, '전체')}${fmts.map(f => chip('data-anfmt', f, anFmt, f)).join('')}` : ''}</div>
+      <br><span>시장</span>${chip('data-anmk', '', anMk, '전체')}${AN_MK.map(v => chip('data-anmk', v, anMk, v)).join('')}
+      <span>주제</span>${chip('data-ansj', '', anSj, '전체')}${AN_SJ.slice(0, 3).map(v => chip('data-ansj', v, anSj, v)).join('')}
+      <br><span>계정 유형</span>${chip('data-ancc', '', anCc, '전체')}${AN_CC.map(v => chip('data-ancc', v, anCc, v)).join('')}
+      ${fmts.length ? `<br><span>영상 틀</span>${chip('data-anfmt', '', anFmt, '전체')}${fmts.map(f => chip('data-anfmt', f, anFmt, f)).join('')}` : ''}</div>
     ${anTab === 'hot' ? '<p class="an-note">🔥 = 그 계정 평소(최근 영상 중앙값) 대비 2.5배 이상이면서 2만 회 이상, 또는 30만 회 이상. 추천순 = 배수 × 조회수 규모.</p>' : ''}
     <div class="an-grid">${list.slice(0, 240).map(p => anCard(p, T.get(p.handle))).join('') || '<p class="lede">아직 없습니다.</p>'}</div>
     <div class="an-bar ${anSel.size ? '' : 'hide'}" id="an-bar"><b>${anSel.size}개 선택</b><button class="btn sm" id="an-go">🏭 대본 양산으로</button><button class="chip sm" id="an-clr">선택 해제</button></div>`;
@@ -384,6 +400,9 @@ async function renderOpsAnal(body){
   ab.querySelectorAll('[data-andays]').forEach(b => b.onclick = () => { anDays = +b.dataset.andays; re(); });
   ab.querySelectorAll('[data-ansort]').forEach(b => b.onclick = () => { anSort = b.dataset.ansort; re(); });
   ab.querySelectorAll('[data-anfmt]').forEach(b => b.onclick = () => { anFmt = b.dataset.anfmt; re(); });
+  ab.querySelectorAll('[data-anmk]').forEach(b => b.onclick = () => { anMk = b.dataset.anmk; re(); });
+  ab.querySelectorAll('[data-ancc]').forEach(b => b.onclick = () => { anCc = b.dataset.ancc; re(); });
+  ab.querySelectorAll('[data-ansj]').forEach(b => b.onclick = () => { anSj = b.dataset.ansj; re(); });
   const pf = ab.querySelector('#an-pushf'); if (pf) pf.onclick = () => { anPush = !anPush; re(); };
   const P = el => posts.find(p => p.id === el.closest('[data-anid]').dataset.anid);
   const upd = async (p, patch) => { const { data, error } = await sb.from('kj_tposts').update({ ...patch, decided_at: new Date().toISOString() }).eq('id', p.id).select('id'); if (error || !data?.length) { uiAlert(error ? cleanErr(error.message) : '저장 안 됨'); return false; } Object.assign(p, patch); return true; };
@@ -470,24 +489,41 @@ function renderAnTargets(ab, body){
   const K = { handle: t => String(t.handle || ''), followers: t => (t.followers || (t.influence ? t.influence * 10000 : 0) || 0),
               views: t => (t.median_views || 0), hot: t => (t.hot_n || 0), fetch: t => (t.last_fetch ? new Date(t.last_fetch).getTime() : 0) };
   const f = K[anTSort] || K.followers;
-  const ts = anData.targets.slice().sort((x, y) => { const a = f(x), b = f(y); const r = typeof a === 'string' ? a.localeCompare(b) : (a - b); return anTDesc ? -r : r; });
+  const tchip = (attr, v, cur, l) => `<button class="chip sm ${String(v) === String(cur) ? 'on' : ''}" ${attr}="${esc(String(v))}">${esc(l)}</button>`;
+  const cnt = (k, v) => anData.targets.filter(t => (anTArc || t.active !== false) && t[k] === v).length;
+  const ts = anData.targets.filter(t => (anTArc || t.active !== false) && (!anTMk || t.market === anTMk) && (!anTCc || t.concept === anTCc) && (!anTSj || t.subject === anTSj)).sort((x, y) => { const a = f(x), b = f(y); const r = typeof a === 'string' ? a.localeCompare(b) : (a - b); return anTDesc ? -r : r; });
   const th = (k, l) => `<th data-antsort="${k}" style="cursor:pointer;white-space:nowrap">${l}${anTSort === k ? (anTDesc ? ' ▼' : ' ▲') : ''}</th>`;
   const n = anTSel.size;
   const bad = ts.filter(t => t.fetch_error && anErr(t.fetch_error).s === '읽기 불가');
   ab.innerHTML = `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 — 여러 개는 쉼표·줄바꿈, 인스타 링크도 됩니다" style="min-width:320px;flex:1"><input id="an-hm" placeholder="메모(선택)" style="max-width:200px"><button class="btn sm" id="an-hadd">＋ 추가</button></div>
     <p class="an-note">비즈니스·크리에이터 계정만 조회수 수집이 됩니다. <b>사용</b>을 끄면 수집에서만 빠지고 모아 둔 영상은 남습니다. <b>삭제</b>는 계정과 그 계정 영상까지 지웁니다. 제목 줄(팔로워·평소 조회 등)을 누르면 정렬됩니다.${bad.length ? ` <b style="color:var(--bad)">읽기 불가 ${bad.length}개</b> — 아이디가 바뀌었거나 개인 계정이라 조회수를 영영 못 모읍니다. 아래 버튼으로 한 번에 골라 지우세요.` : ''}</p>
+    <div class="an-filters"><span>시장</span>${tchip('data-antmk', '', anTMk, '전체')}${AN_MK.map(v => tchip('data-antmk', v, anTMk, v + ' ' + cnt('market', v))).join('')}
+      <span>주제</span>${tchip('data-antsj', '', anTSj, '전체')}${AN_SJ.map(v => tchip('data-antsj', v, anTSj, v + ' ' + cnt('subject', v))).join('')}
+      <br><span>계정 유형</span>${tchip('data-antcc', '', anTCc, '전체')}${AN_CC.map(v => tchip('data-antcc', v, anTCc, v + ' ' + cnt('concept', v))).join('')}
+      <label class="an-chk"><input type="checkbox" id="an-tarc" ${anTArc ? 'checked' : ''}> 보관(사용 끈 계정)도 보기</label></div>
     <div class="an-filters"><label class="an-chk"><input type="checkbox" id="an-tall" ${n && n === ts.length ? 'checked' : ''}> 전체 선택</label>
       ${bad.length ? `<button class="chip sm" id="an-tbad">읽기 불가 ${bad.length}개 선택</button>` : ''}
       ${n ? `<button class="btn sm danger" id="an-tdel">선택한 ${n}개 삭제</button><button class="chip sm" id="an-tclr">선택 해제</button>` : '<span class="rv-sub">왼쪽 칸을 체크하면 여러 개를 한 번에 지울 수 있습니다</span>'}</div>
-    <div class="tbl-wrap"><table class="an-tbl"><tr><th></th>${th('handle', '계정')}${th('followers', '팔로워')}${th('views', '평소 조회')}${th('hot', '🔥')}${th('fetch', '수집')}<th>사용</th><th></th></tr>
+    <div class="tbl-wrap"><table class="an-tbl"><tr><th></th>${th('handle', '계정')}<th>시장</th><th>계정 유형</th><th>주제</th>${th('followers', '팔로워')}${th('views', '평소 조회')}${th('hot', '🔥')}${th('fetch', '수집')}<th>사용</th><th></th></tr>
     ${ts.map(t => `<tr class="${t.active ? '' : 'off'}"><td><input type="checkbox" data-antsel="${esc(t.handle)}" ${anTSel.has(t.handle) ? 'checked' : ''}></td>
       <td><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener">@${esc(t.handle)}</a>${t.name ? ' ' + esc(t.name) : ''}${t.lang === 'en' ? ' 🌐' : ''}${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</td>
+      ${[['market', AN_MK], ['concept', AN_CC], ['subject', AN_SJ]].map(([k, opts]) => `<td><select class="an-sel" data-anset="${k}" data-h="${esc(t.handle)}"><option value="">-</option>${opts.map(o => `<option ${t[k] === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></td>`).join('')}
       <td>${t.followers ? opsN(t.followers) : (t.influence ? t.influence + '만*' : '-')}</td><td>${t.median_views ? opsN(t.median_views) : '-'}</td><td>${t.hot_n || ''}</td>
       <td>${t.fetch_error ? `<span title="${esc(anErr(t.fetch_error).t)}" style="color:var(--bad)">${anErr(t.fetch_error).s}</span>` : t.last_fetch ? (new Date(t.last_fetch).getMonth() + 1) + '/' + new Date(t.last_fetch).getDate() : '대기'}</td>
       <td><input type="checkbox" data-anact="${esc(t.handle)}" ${t.active ? 'checked' : ''}></td>
       <td><button class="chip sm cd-del" data-andel="${esc(t.handle)}" title="계정과 그 계정 영상까지 지웁니다">삭제</button></td></tr>`).join('')}</table></div>
     <p class="an-note">* 팔로워 칸의 '만*'은 26.09 조사 당시 영향력 수치입니다.</p>`;
   const re = () => renderAnTargets(ab, body);
+  ab.querySelectorAll('[data-antmk]').forEach(b => b.onclick = () => { anTMk = b.dataset.antmk; re(); });
+  ab.querySelectorAll('[data-antcc]').forEach(b => b.onclick = () => { anTCc = b.dataset.antcc; re(); });
+  ab.querySelectorAll('[data-antsj]').forEach(b => b.onclick = () => { anTSj = b.dataset.antsj; re(); });
+  const arc = ab.querySelector('#an-tarc'); if (arc) arc.onchange = () => { anTArc = arc.checked; re(); };
+  ab.querySelectorAll('[data-anset]').forEach(sl => sl.onchange = async () => {
+    const k = sl.dataset.anset, h = sl.dataset.h, v = sl.value || null;
+    const { error } = await sb.from('kj_targets').update({ [k]: v }).eq('handle', h);
+    if (error) return uiAlert(cleanErr(error.message));
+    const t = anData.targets.find(x => x.handle === h); if (t) t[k] = v; poToast('@' + h + ' ' + (v || '비움'));
+  });
   ab.querySelectorAll('[data-antsort]').forEach(h => h.onclick = () => { const k = h.dataset.antsort; if (anTSort === k) anTDesc = !anTDesc; else { anTSort = k; anTDesc = k !== 'handle'; } re(); });
   ab.querySelectorAll('[data-antsel]').forEach(c => c.onchange = () => { c.checked ? anTSel.add(c.dataset.antsel) : anTSel.delete(c.dataset.antsel); re(); });
   const all = ab.querySelector('#an-tall');
