@@ -231,6 +231,7 @@ async function renderVideo(){
       <button data-opstab="anal" class="${opsTab === 'anal' ? 'on' : ''}">🔎 분석 대상</button>
       <button data-opstab="mass" class="${opsTab === 'mass' ? 'on' : ''}">🏭 대본 양산</button>
       <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
+      <button data-opstab="tiktok" class="${opsTab === 'tiktok' ? 'on' : ''}">🎵 틱톡 임시</button>
       <a class="ops-ext" href="https://works.npksol.space/mcp/beauty/" target="_blank" rel="noopener" title="미모미약국 벤치마킹(새 창)">💊 미모미 벤치마킹 ↗</a>
       <a class="ops-ext" href="https://works.npksol.space/pca/" target="_blank" rel="noopener" title="파마브로스 P.C.A. 강의 학습노트(새 창, 사내 로그인)">🎓 파마브로스 학습 ↗</a>
     </div><div id="ops-body"></div>
@@ -254,6 +255,7 @@ async function renderVideo(){
   if (opsTab === 'upload') return renderOpsUpload(body);
   if (opsTab === 'anal') return renderOpsAnal(body);
   if (opsTab === 'mass') return renderOpsMass(body);
+  if (opsTab === 'tiktok' && typeof renderOpsTiktok === 'function') return renderOpsTiktok(body);
   return renderOpsSns(body);
 }
 const CHINA_CHANNELS = {
