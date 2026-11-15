@@ -52,6 +52,27 @@ window.KJ_NB = (function () {
     var mo = new MutationObserver(function () { clearTimeout(mo.t); mo.t = setTimeout(say, 120); });
     mo.observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] });
     say();
+    /* 11-15b 자동 로그인: 김제조 로그인이 없으면 바깥(솔루션즈 웍스)에 1회용 토큰을 받아 와서 들어간다 */
+    var tries = 0;
+    function needLogin() {
+      if (typeof sb === 'undefined') { if (++tries < 100) setTimeout(needLogin, 100); return; }
+      sb.auth.getSession().then(function (r) {
+        if (r && r.data && r.data.session) return;
+        var n = 0; try { n = +sessionStorage.getItem('kj_nb_sso') || 0; } catch (e) {}
+        if (n >= 2) return;                                   // 두 번 실패하면 그냥 로그인 화면
+        try { sessionStorage.setItem('kj_nb_sso', n + 1); } catch (e) {}
+        try { parent.postMessage({ kjnb: 'need-login' }, PARENT); } catch (e) {}
+      });
+    }
+    addEventListener('message', function (e) {
+      if (e.origin !== PARENT || !e.data || e.data.kjnb !== 'sso' || !e.data.th || typeof sb === 'undefined') return;
+      sb.auth.verifyOtp({ token_hash: e.data.th, type: 'magiclink' }).then(function (r) {
+        if (r && r.error) { try { parent.postMessage({ kjnb: 'sso-fail', msg: r.error.message }, PARENT); } catch (x) {} return; }
+        try { sessionStorage.removeItem('kj_nb_sso'); } catch (x) {}
+        location.reload();
+      });
+    });
+    needLogin();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup); else setup();
 })();
