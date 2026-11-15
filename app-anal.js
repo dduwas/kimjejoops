@@ -486,17 +486,21 @@ function anErr(e){
   if (/token|OAuthException|#190/i.test(s)) return { s: '연결 오류', t: '인스타 연결(토큰) 문제입니다. ' + s.slice(0, 160) };
   return { s: '오류', t: s };
 }
+const AN_REC = 'AI 추천 대기';   // 11-16 계정 추천: 사용 꺼짐 + sources 에 이 표시가 있으면 '추천 대기'
+const anIsRec = t => !t.active && (t.sources || []).includes(AN_REC);
 function renderAnTargets(ab, body){
   const K = { handle: t => String(t.handle || ''), followers: t => (t.followers || (t.influence ? t.influence * 10000 : 0) || 0),
               views: t => (t.median_views || 0), hot: t => (t.hot_n || 0), fetch: t => (t.last_fetch ? new Date(t.last_fetch).getTime() : 0) };
   const f = K[anTSort] || K.followers;
   const tchip = (attr, v, cur, l) => `<button class="chip sm ${String(v) === String(cur) ? 'on' : ''}" ${attr}="${esc(String(v))}">${esc(l)}</button>`;
-  const cnt = (k, v) => anData.targets.filter(t => (anTArc || t.active !== false) && t[k] === v).length;
-  const ts = anData.targets.filter(t => (anTArc || t.active !== false) && (!anTMk || t.market === anTMk) && (!anTCc || t.concept === anTCc) && (!anTSj || t.subject === anTSj)).sort((x, y) => { const a = f(x), b = f(y); const r = typeof a === 'string' ? a.localeCompare(b) : (a - b); return anTDesc ? -r : r; });
+  const cnt = (k, v) => anData.targets.filter(t => !anIsRec(t) && (anTArc || t.active !== false) && t[k] === v).length;
+  const ts = anData.targets.filter(t => !anIsRec(t) && (anTArc || t.active !== false) && (!anTMk || t.market === anTMk) && (!anTCc || t.concept === anTCc) && (!anTSj || t.subject === anTSj)).sort((x, y) => { const a = f(x), b = f(y); const r = typeof a === 'string' ? a.localeCompare(b) : (a - b); return anTDesc ? -r : r; });
   const th = (k, l) => `<th data-antsort="${k}" style="cursor:pointer;white-space:nowrap">${l}${anTSort === k ? (anTDesc ? ' ▼' : ' ▲') : ''}</th>`;
   const n = anTSel.size;
   const bad = ts.filter(t => t.fetch_error && anErr(t.fetch_error).s === '읽기 불가');
-  ab.innerHTML = `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 — 여러 개는 쉼표·줄바꿈, 인스타 링크도 됩니다" style="min-width:320px;flex:1"><input id="an-hm" placeholder="메모(선택)" style="max-width:200px"><button class="btn sm" id="an-hadd">＋ 추가</button></div>
+  const recs = anData.targets.filter(anIsRec).sort((a, b) => (b.followers || 0) - (a.followers || 0));
+  const recHtml = recs.length ? `<div class="an-rec"><div class="an-rec-h">⭐ 추천 계정 <span>${recs.length}</span><small>성과·꾸준함·상승세·관련성으로 매주 월요일에 고릅니다. <b>팔로업</b>을 누르면 바로 분석 대상에 들어가 다음 수집부터 영상이 모이고, <b>빼기</b>를 누르면 다시 추천하지 않습니다.</small></div>${recs.map(t => `<div class="an-rec-c"><div class="an-rec-t"><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener"><b>@${esc(t.handle)}</b></a> ${esc(t.name || '')} <span class="rv-sub">${[t.market, t.subject, t.concept].filter(Boolean).map(esc).join(' · ')}${t.followers ? ' · 팔로워 ' + opsN(t.followers) : ''}${t.median_views ? ' · 평소 조회 ' + opsN(t.median_views) : ''}</span>${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</div><div class="an-rec-b"><button class="btn sm" data-anrecok="${esc(t.handle)}">팔로업</button><button class="chip sm" data-anrecno="${esc(t.handle)}">빼기</button></div></div>`).join('')}</div>` : '';
+  ab.innerHTML = recHtml + `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 — 여러 개는 쉼표·줄바꿈, 인스타 링크도 됩니다" style="min-width:320px;flex:1"><input id="an-hm" placeholder="메모(선택)" style="max-width:200px"><button class="btn sm" id="an-hadd">＋ 추가</button></div>
     <p class="an-note">비즈니스·크리에이터 계정만 조회수 수집이 됩니다. <b>사용</b>을 끄면 수집에서만 빠지고 모아 둔 영상은 남습니다. <b>삭제</b>는 계정과 그 계정 영상까지 지웁니다. 제목 줄(팔로워·평소 조회 등)을 누르면 정렬됩니다.${bad.length ? ` <b style="color:var(--bad)">읽기 불가 ${bad.length}개</b> — 아이디가 바뀌었거나 개인 계정이라 조회수를 영영 못 모읍니다. 아래 버튼으로 한 번에 골라 지우세요.` : ''}</p>
     <div class="an-filters"><span>시장</span>${tchip('data-antmk', '', anTMk, '전체')}${AN_MK.map(v => tchip('data-antmk', v, anTMk, v + ' ' + cnt('market', v))).join('')}
       <span>주제</span>${tchip('data-antsj', '', anTSj, '전체')}${AN_SJ.map(v => tchip('data-antsj', v, anTSj, v + ' ' + cnt('subject', v))).join('')}
@@ -515,6 +519,21 @@ function renderAnTargets(ab, body){
       <td><button class="chip sm cd-del" data-andel="${esc(t.handle)}" title="계정과 그 계정 영상까지 지웁니다">삭제</button></td></tr>`).join('')}</table></div>
     <p class="an-note">* 팔로워 칸의 '만*'은 26.09 조사 당시 영향력 수치입니다.</p>`;
   const re = () => renderAnTargets(ab, body);
+  ab.querySelectorAll('[data-anrecok]').forEach(b => b.onclick = async () => {
+    const h = b.dataset.anrecok, t = anData.targets.find(x => x.handle === h); if (!t) return;
+    b.disabled = true;
+    const d = new Date(), tag = 'AI 추천 ' + String(d.getFullYear()).slice(2) + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0');
+    const src = (t.sources || []).filter(x => x !== AN_REC).concat(tag);
+    const { error } = await sb.from('kj_targets').update({ active: true, sources: src, updated_at: d.toISOString() }).eq('handle', h);
+    if (error) { b.disabled = false; return uiAlert(cleanErr(error.message)); }
+    t.active = true; t.sources = src; poToast('@' + h + ' 팔로업 시작 — 다음 수집부터 영상이 모입니다.'); re();
+  });
+  ab.querySelectorAll('[data-anrecno]').forEach(b => b.onclick = async () => {
+    const h = b.dataset.anrecno; b.disabled = true;
+    const { error } = await sb.from('kj_targets').delete().eq('handle', h);
+    if (error) { b.disabled = false; return uiAlert(cleanErr(error.message)); }
+    anData.targets = anData.targets.filter(x => x.handle !== h); poToast('@' + h + ' 추천에서 뺐습니다. 다시 추천하지 않습니다.'); re();
+  });
   ab.querySelectorAll('[data-antmk]').forEach(b => b.onclick = () => { anTMk = b.dataset.antmk; re(); });
   ab.querySelectorAll('[data-antcc]').forEach(b => b.onclick = () => { anTCc = b.dataset.antcc; re(); });
   ab.querySelectorAll('[data-antsj]').forEach(b => b.onclick = () => { anTSj = b.dataset.antsj; re(); });
@@ -732,3 +751,11 @@ function fmtEdit(f){
     setTimeout(() => { b.textContent = '🔗 링크 복사'; b.classList.remove('ok'); }, 1800);
   }, true);
 })();
+
+/* 11-16 추천 계정 칸 */
+(function(){ if (window.__anRecCss) return; window.__anRecCss = 1; const st = document.createElement('style');
+  st.textContent = '.an-rec{border:1.5px solid #f2c94c;background:#fffbea;border-radius:12px;padding:12px 14px;margin:0 0 14px}'
+  + '.an-rec-h{font-weight:800;margin-bottom:8px}.an-rec-h span{background:#f2c94c;color:#3a2c00;border-radius:999px;padding:0 8px;margin-left:4px;font-size:12px}.an-rec-h small{display:block;font-weight:400;color:#6b5a1e;margin-top:3px;font-size:12.5px}'
+  + '.an-rec-c{display:flex;gap:10px;align-items:center;justify-content:space-between;border-top:1px dashed #ecd98a;padding:9px 0}.an-rec-t{min-width:0;flex:1}.an-rec-b{display:flex;gap:6px;flex:0 0 auto}'
+  + '@media (max-width:720px){.an-rec-c{flex-direction:column;align-items:stretch}.an-rec-b button{flex:1}}';
+  document.head.appendChild(st); })();
