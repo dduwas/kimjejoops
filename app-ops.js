@@ -232,6 +232,7 @@ async function renderVideo(){
       <button data-opstab="mass" class="${opsTab === 'mass' ? 'on' : ''}">🏭 대본 양산</button>
       <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
       <a class="ops-ext" href="https://works.npksol.space/mcp/beauty/" target="_blank" rel="noopener" title="미모미약국 벤치마킹(새 창)">💊 미모미 벤치마킹 ↗</a>
+      <a class="ops-ext" href="https://works.npksol.space/pca/" target="_blank" rel="noopener" title="파마브로스 P.C.A. 강의 학습노트(새 창, 사내 로그인)">🎓 파마브로스 학습 ↗</a>
     </div><div id="ops-body"></div>
     ${profile?.role === 'master' ? `<details class="vd-card" style="max-width:420px;margin-top:28px"><summary style="cursor:pointer;font-weight:800">입장 비밀번호 바꾸기 (대표만)</summary>
       <form id="vd-set" autocomplete="off" style="margin-top:10px"><input type="password" id="vd-new" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
