@@ -335,13 +335,28 @@ async function kjFn(body){
   const r = await fetch(kjFnUrl(), { method: 'POST', headers: { Authorization: 'Bearer ' + session.access_token, apikey: window.SUPABASE_ANON_KEY, 'content-type': 'application/json' }, body: JSON.stringify(body) });
   return r.json().catch(() => ({ error: '응답 오류 ' + r.status }));
 }
+/* 11-16 대표: 분석 대상이 느림(게시물 2,400개를 매번 새로 받음, 약 4초) → 지난번 데이터를 브라우저(IndexedDB)에 두고 바로 보여 준 뒤 뒤에서 새로 받아 바꿔 끼운다 */
+function anIdb(){ return new Promise((res, rej) => { const r = indexedDB.open('kjcache', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+async function anCacheGet(k){ try { const d = await anIdb(); return await new Promise(res => { const q = d.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); } catch (e) { return null; } }
+async function anCacheSet(k, v){ try { const d = await anIdb(); d.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch (e) {} }
+let anBg = null, anRerender = null;
 async function loadAnal(){
+  const c = await anCacheGet('anal_v1');
+  if (c && c.d && Date.now() - c.at < 7 * 864e5) {
+    anData = c.d;
+    if (!anBg) anBg = loadAnalFresh().then(() => { anBg = null; if (anRerender) { try { anRerender(); } catch (e) {} } }).catch(() => { anBg = null; });
+    return;
+  }
+  await loadAnalFresh();
+}
+async function loadAnalFresh(){
   const [t, p, th] = await Promise.all([
     sb.from('kj_targets').select('*').order('influence', { ascending: false, nullsFirst: false }),
     sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,subject,status,content_id,product_type,thumb,created_at,ai_at,decided_at').order('views', { ascending: false, nullsFirst: false }).limit(1500),
     sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,created_at,ai_at,decided_at').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900)]);
   const isThr = x => /^THREADS/.test(x.product_type || '');
   anData = { targets: t.data || [], posts: (p.data || []).filter(x => !isThr(x)), threads: th.data || [], err: t.error || p.error };
+  if (!anData.err) anCacheSet('anal_v1', { at: Date.now(), d: anData });
 }
 const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10)) * (pushHit(p.topic, p.caption, p.hook, p.kj_angle) ? 2 : 1);   // v71: 밀기 소재는 추천순에서 위로
 function anCard(p, tg){
@@ -359,6 +374,7 @@ function anCard(p, tg){
 }
 async function renderOpsAnal(body){
   if (!anData) { body.innerHTML = '<p class="lede">불러오는 중…</p>'; await loadAnal(); }
+  anRerender = () => { if (document.body.contains(body)) { const y = window.scrollY; Promise.resolve(renderOpsAnal(body)).then(() => window.scrollTo(0, y)); } };
   await loadPush();
   const { targets, posts } = anData; const T = new Map(targets.map(t => [t.handle, t]));
   const fetched = targets.filter(t => t.last_fetch && !t.fetch_error).length, errs = targets.filter(t => t.fetch_error).length;
