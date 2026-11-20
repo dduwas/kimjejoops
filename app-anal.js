@@ -359,10 +359,25 @@ async function loadAnalFresh(){
   if (!anData.err) anCacheSet('anal_v1', { at: Date.now(), d: anData });
 }
 const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10)) * (pushHit(p.topic, p.caption, p.hook, p.kj_angle) ? 2 : 1);   // v71: 밀기 소재는 추천순에서 위로
+function anPerf(p){
+  const v = +p.views || 0, lk = +p.likes || 0, cm = +p.comments || 0, r = +p.ratio || 0;
+  const er = v ? ((lk + cm) / v * 100) : 0;
+  const days = p.posted_at ? Math.max(0, Math.floor((Date.now() - new Date(p.posted_at)) / 864e5)) : null;
+  const tone = r >= 3 ? '#d9480f' : r >= 1.5 ? '#e67700' : r > 0 && r < 0.8 ? '#868e96' : '#2b8a3e';
+  const bg = r >= 3 ? '#fff4e6' : r >= 1.5 ? '#fff9db' : '#f1f3f5';
+  const pill = (t, s) => `<span style="display:inline-block;padding:2px 7px;margin:2px 3px 2px 0;border-radius:10px;background:#fff;border:1px solid #dee2e6;font-size:12px;color:#343a40;white-space:nowrap">${t}${s ? `<b style="margin-left:3px">${s}</b>` : ''}</span>`;
+  return `<div class="an-perf" style="margin:0 0 6px;padding:8px 10px;border-radius:10px;background:${bg};line-height:1.5">
+    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+      <span style="font-size:18px;font-weight:800;color:#212529">▶ ${opsN(v)}</span>
+      ${r ? `<span style="font-size:13px;font-weight:700;color:${tone}">${p.hot || r >= 3 ? '🔥 ' : ''}평소의 ${r}배</span>` : ''}
+    </div>
+    <div>${pill('♥', opsN(lk))}${pill('💬', opsN(cm))}${v ? pill('반응률', er.toFixed(er < 1 ? 2 : 1) + '%') : ''}${days != null ? pill(days === 0 ? '오늘 게시' : days + '일 전') : ''}</div>
+  </div>`;
+}
 function anCard(p, tg){
   const sel = anSel.has(p.id);
   return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
-    ${kjReferenceMarkup(p.permalink, p.topic || p.handle)}<div class="an-acc">조회 ${opsN(p.views)}${p.ratio ? ` · 평소의 ${p.ratio}배` : ''}</div>
+    ${anPerf(p)}${kjReferenceMarkup(p.permalink, p.topic || p.handle)}
     <div class="an-b">${pushBadge(pushHit(p.topic, p.caption, p.hook, p.kj_angle))}<div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
       ${p.topic ? `<div class="an-ti">${esc(p.topic)}${anF(p) ? ` <span class="an-fmt">${esc(anF(p))}</span>` : ''}</div>` : ''}
       <div class="an-acc">${[tg && tg.market, anSubj(p, tg), tg && tg.concept].filter(Boolean).map(esc).join(' · ')}</div>
