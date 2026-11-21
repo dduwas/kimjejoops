@@ -88,7 +88,7 @@ document.querySelectorAll('.rv-f').forEach(b => b.onclick = () => {
 // 비밀번호 통과(gate 'video', 12시간) 뒤 3칸: 댓글·DM / AI 영상편집 / SNS 성과
 let vdOpen = null, opsTab = 'sns', opsData = null, opsPf = 'all', opsSort = 'views', opsCmAcc = 'all', opsCmSt = 'todo', opsUpSt = 'draft', opsThreadsReady = false, opsUp = 'threads', opsCarSt = 'draft';
 try { opsUp = localStorage.getItem('kj_opsup') || 'threads'; } catch (e) {}
-try { opsTab = localStorage.getItem('kj_opstab') || 'sns'; } catch (e) {}
+try { opsTab = (['comments', 'upload'].includes(localStorage.getItem('kj_opstab')) ? 'sns' : (localStorage.getItem('kj_opstab') || 'sns')); } catch (e) {}
 if (opsTab === 'video') opsTab = 'sns';   // v67: 🎬 AI 영상편집 탭 내림
 const opsN = n => (n == null ? '-' : Number(n).toLocaleString('ko-KR'));
 const PF_KO = { youtube:'유튜브', instagram:'인스타', instagram_global:'인스타 @jejo.kpharmacist', xiaohongshu:'샤오홍슈', douyin:'더우인', threads:'쓰레드', _summary:'요약' };
@@ -226,8 +226,8 @@ async function renderVideo(){
   const newCm = opsData.comments.filter(c => ['new','drafted'].includes(c.status)).length;
   root.innerHTML = `<h3>🔐 운영관리 <button class="btn sm ghost" id="vd-lockbtn" style="margin-left:8px">잠그기</button></h3>
     <div class="ops-tabs">
-      <button data-opstab="comments" class="${opsTab === 'comments' ? 'on' : ''}">💬 댓글·DM${newCm ? ` <span class="nbadge">${newCm}</span>` : ''}</button>
-      <button data-opstab="upload" class="${opsTab === 'upload' ? 'on' : ''}">📤 업로드 자동화</button>
+      <button data-opstab="comments" title="11-21 메인 인스타 보호 — 보조 계정 준비 전까지 잠시 중지" disabled style="opacity:.45;cursor:not-allowed">💬 댓글·DM ⏸</button>
+      <button data-opstab="upload" title="11-21 메인 인스타 보호 — 보조 계정 준비 전까지 잠시 중지" disabled style="opacity:.45;cursor:not-allowed">📤 업로드 자동화 ⏸</button>
       <button data-opstab="anal" class="${opsTab === 'anal' ? 'on' : ''}">🔎 분석 대상</button>
       <button data-opstab="mass" class="${opsTab === 'mass' ? 'on' : ''}">🏭 대본 양산</button>
       <button data-opstab="sns" class="${opsTab === 'sns' ? 'on' : ''}">📈 SNS 성과</button>
@@ -251,8 +251,8 @@ async function renderVideo(){
   };
   const body = $('#ops-body');
   if (opsTab === 'sns') return renderOpsSns(body);
-  if (opsTab === 'comments') return renderOpsComments(body);
-  if (opsTab === 'upload') return renderOpsUpload(body);
+  if (opsTab === 'comments') { opsTab = 'sns'; return renderOpsSns(body) };
+  if (opsTab === 'upload') { opsTab = 'sns'; return renderOpsSns(body) };
   if (opsTab === 'anal') return renderOpsAnal(body);
   if (opsTab === 'mass') return renderOpsMass(body);
   if (opsTab === 'tiktok' && typeof renderOpsTiktok === 'function') return renderOpsTiktok(body);
