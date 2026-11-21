@@ -223,10 +223,8 @@ function kjOpenProductionReference(raw, title = '레퍼런스 영상') {
 if (!window.__kjIgLazy) { window.__kjIgLazy = 1; document.addEventListener('click', function (e) {
   const z = e.target.closest && e.target.closest('.kj-ig-lazy'); if (!z) return;
   e.preventDefault(); e.stopPropagation();
-  document.querySelectorAll('iframe[data-kjig]').forEach(function (f) { const s = document.createElement('span'); s.className = 'kj-ig-lazy'; s.dataset.kjsrc = f.src; s.dataset.kjtitle = f.title; s.setAttribute('style', f.dataset.kjst || ''); s.innerHTML = '<span style="background:rgba(0,0,0,.62);color:#fff;border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px">▶ 눌러서 재생</span>'; f.replaceWith(s); });
-  const f = document.createElement('iframe'); f.src = z.dataset.kjsrc; f.title = z.dataset.kjtitle || ''; f.dataset.kjig = '1'; f.dataset.kjst = z.getAttribute('style') || '';
-  f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture'); f.setAttribute('allowfullscreen', ''); f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-  z.replaceWith(f);
+  /* 11-21 22:40 대표: 메인 계정이 다시는 영향받지 않게 — 웍스 화면 안에서는 인스타를 아예 불러오지 않는다. 필요한 영상 하나만 새 창으로. */
+  const u = (z.dataset.kjsrc || '').replace(/embed\/?(captioned\/?)?(\?.*)?$/, ''); if (u) window.open(u, '_blank', 'noopener');
 }, true); }
 function kjReferenceMarkup(raw, title = '레퍼런스 영상', thumb = '') {
   const source = kjReferenceSource(raw);
@@ -237,12 +235,12 @@ function kjReferenceMarkup(raw, title = '레퍼런스 영상', thumb = '') {
     : source.provider === 'Instagram'
       /* 11-21 대표: 인스타 임베드를 화면에 한꺼번에 띄우면 보는 브라우저의 인스타 계정으로 수십 건 요청이 몰려 '일시적으로 차단됨'·메인 계정 보안 경고가 났다.
          → 처음엔 썸네일만, 누른 영상 하나만 임베드를 불러온다. */
-      ? '<span class="kj-ig-lazy" data-kjsrc="' + esc(source.src) + '" data-kjtitle="' + label + '" style="display:flex;align-items:center;justify-content:center;position:relative;width:100%;aspect-ratio:9/12;max-height:520px;background:#111 ' + (thumb ? 'url(' + esc(thumb) + ') center/cover no-repeat' : '') + ';border-radius:8px;cursor:pointer;overflow:hidden"><span style="background:rgba(0,0,0,.62);color:#fff;border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px">▶ 눌러서 재생</span></span>'
+      ? '<span class="kj-ig-lazy" data-kjsrc="' + esc(source.src) + '" data-kjtitle="' + label + '" style="display:flex;align-items:center;justify-content:center;position:relative;width:100%;aspect-ratio:9/12;max-height:520px;background:#111 ' + (thumb ? 'url(' + esc(thumb) + ') center/cover no-repeat' : '') + ';border-radius:8px;cursor:pointer;overflow:hidden"><span style="background:rgba(0,0,0,.62);color:#fff;border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px">↗ 인스타에서 보기</span></span>'
       : '<iframe loading="lazy" title="' + label + '" src="' + esc(source.src) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
   const go = source.provider === 'Instagram'   // v98 비어 보이면 바로 열 수 있게
     ? '<a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a>' : '';
   const cpy = '<button type="button" class="kj-ref-copy" data-url="' + esc(raw) + '">🔗 링크 복사</button>';   // 11-15 대표 요청
-  return '<span class="kj-ref-inline">' + media + '<span class="kj-ref-acts">' + go + cpy + '</span><small>영상 안의 ▶로 바로 재생 · 비공개·삭제·임베드 제한 영상은 재생되지 않을 수 있습니다.</small></span>';
+  return '<span class="kj-ref-inline">' + media + '<span class="kj-ref-acts">' + go + cpy + '</span><small>메인 계정 보호를 위해 웍스 안에서는 인스타 영상을 불러오지 않습니다 · 눌러서 새 창으로 보기</small></span>';
 }
 
 /* ---------- v53 📥 콘텐츠 후보 (생산 라인 앞단, 10-25 대표 요청) ----------
