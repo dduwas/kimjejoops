@@ -218,13 +218,27 @@ function kjOpenProductionReference(raw, title = '레퍼런스 영상') {
   document.body.appendChild(dialog); dialog.showModal();
 }
 
-function kjReferenceMarkup(raw, title = '레퍼런스 영상') {
+
+/* 11-21: 인스타 임베드는 누를 때 하나만 */
+if (!window.__kjIgLazy) { window.__kjIgLazy = 1; document.addEventListener('click', function (e) {
+  const z = e.target.closest && e.target.closest('.kj-ig-lazy'); if (!z) return;
+  e.preventDefault(); e.stopPropagation();
+  document.querySelectorAll('iframe[data-kjig]').forEach(function (f) { const s = document.createElement('span'); s.className = 'kj-ig-lazy'; s.dataset.kjsrc = f.src; s.dataset.kjtitle = f.title; s.setAttribute('style', f.dataset.kjst || ''); s.innerHTML = '<span style="background:rgba(0,0,0,.62);color:#fff;border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px">▶ 눌러서 재생</span>'; f.replaceWith(s); });
+  const f = document.createElement('iframe'); f.src = z.dataset.kjsrc; f.title = z.dataset.kjtitle || ''; f.dataset.kjig = '1'; f.dataset.kjst = z.getAttribute('style') || '';
+  f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture'); f.setAttribute('allowfullscreen', ''); f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+  z.replaceWith(f);
+}, true); }
+function kjReferenceMarkup(raw, title = '레퍼런스 영상', thumb = '') {
   const source = kjReferenceSource(raw);
   if (!source) return '<span class="kj-ref-inline kj-ref-unavailable">이 링크는 화면 안 재생을 지원하지 않습니다.</span>';
   const label = esc(title || '레퍼런스 영상');
   const media = source.kind === 'video'
     ? '<video controls playsinline preload="none" src="' + esc(source.src) + '" aria-label="' + label + '"></video>'
-    : '<iframe loading="lazy" title="' + label + '" src="' + esc(source.src) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    : source.provider === 'Instagram'
+      /* 11-21 대표: 인스타 임베드를 화면에 한꺼번에 띄우면 보는 브라우저의 인스타 계정으로 수십 건 요청이 몰려 '일시적으로 차단됨'·메인 계정 보안 경고가 났다.
+         → 처음엔 썸네일만, 누른 영상 하나만 임베드를 불러온다. */
+      ? '<span class="kj-ig-lazy" data-kjsrc="' + esc(source.src) + '" data-kjtitle="' + label + '" style="display:flex;align-items:center;justify-content:center;position:relative;width:100%;aspect-ratio:9/12;max-height:520px;background:#111 ' + (thumb ? 'url(' + esc(thumb) + ') center/cover no-repeat' : '') + ';border-radius:8px;cursor:pointer;overflow:hidden"><span style="background:rgba(0,0,0,.62);color:#fff;border-radius:999px;padding:10px 18px;font-weight:700;font-size:14px">▶ 눌러서 재생</span></span>'
+      : '<iframe loading="lazy" title="' + label + '" src="' + esc(source.src) + '" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
   const go = source.provider === 'Instagram'   // v98 비어 보이면 바로 열 수 있게
     ? '<a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a>' : '';
   const cpy = '<button type="button" class="kj-ref-copy" data-url="' + esc(raw) + '">🔗 링크 복사</button>';   // 11-15 대표 요청
@@ -377,7 +391,7 @@ function anPerf(p){
 function anCard(p, tg){
   const sel = anSel.has(p.id);
   return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
-    ${anPerf(p)}${kjReferenceMarkup(p.permalink, p.topic || p.handle)}
+    ${anPerf(p)}${kjReferenceMarkup(p.permalink, p.topic || p.handle, p.thumb)}
     <div class="an-b">${pushBadge(pushHit(p.topic, p.caption, p.hook, p.kj_angle))}<div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
       ${p.topic ? `<div class="an-ti">${esc(p.topic)}${anF(p) ? ` <span class="an-fmt">${esc(anF(p))}</span>` : ''}</div>` : ''}
       <div class="an-acc">${[tg && tg.market, anSubj(p, tg), tg && tg.concept].filter(Boolean).map(esc).join(' · ')}</div>
