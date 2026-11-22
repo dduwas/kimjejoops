@@ -138,7 +138,7 @@ function cardHTML(c){
       <span class="sp"></span>
     ${(c.publish_url || c.reference_url) ? `<span class="cardlinks">
       ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '게시물')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 게시물</a>` : ''}
-      ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 레퍼런스</a>` : ''}
+      ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" data-nolink="1" data-production-ref data-ref-video="${esc(c.ref_video || '')}" data-ref-title="${esc(c.title || '레퍼런스 영상')}" title="여기서 바로 재생 (Ctrl+클릭하면 새 탭)">▶ 레퍼런스</a>` : ''}
     </span>` : ''}</div>
     ${doneBtn}
     <div class="cardmv"><button class="mvtoggle" data-mvt="${c.id}" title="단계와 생산 라인을 버튼으로 옮깁니다">⇄ 단계·라인</button></div></div>`;
@@ -392,7 +392,7 @@ function renderBoardTable(list){
       <td style="font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12.5px">${c.publish_date || '—'}</td>
       <td class="u-nowrap">
         ${c.publish_url ? `<a href="${esc(c.publish_url)}" target="_blank" rel="noopener" style="font-size:12px">게시</a> ` : ''}
-        ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px" data-production-ref data-ref-title="${esc(c.title || '레퍼런스 영상')}">참고</a> ` : ''}
+        ${c.reference_url ? `<a href="${esc(c.reference_url)}" target="_blank" rel="noopener" style="font-size:12px" data-production-ref data-ref-video="${esc(c.ref_video || '')}" data-ref-title="${esc(c.title || '레퍼런스 영상')}">참고</a> ` : ''}
         ${c.stage === REVIEW ? `<button class="btn sm" data-tpub="${c.id}">게시 승인</button>` : ''}
       </td></tr>`;
   });
