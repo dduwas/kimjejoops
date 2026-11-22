@@ -177,8 +177,8 @@ async function kjIgFallback(raw, screen){
     + (cap ? '<p class="kj-ig-cap">' + esc(cap.slice(0, 900)) + (cap.length > 900 ? '…' : '') + '</p>' : '');
   box.insertBefore(d, box.firstChild);
 }
-function kjOpenProductionReference(raw, title = '레퍼런스 영상') {
-  const source = kjReferenceSource(raw);
+function kjOpenProductionReference(raw, title = '레퍼런스 영상', video = '') {
+  const source = video ? { kind: 'video', src: video, provider: '사본' } : kjReferenceSource(raw);   // 11-23 생산 카드도 받아 둔 영상 사본으로
   const previous = document.activeElement;
   document.querySelector('#kj-reference-player')?.close();
   const dialog = document.createElement('dialog');
@@ -226,6 +226,11 @@ if (!window.__kjIgLazy) { window.__kjIgLazy = 1; document.addEventListener('clic
   /* 11-21 22:40 대표: 메인 계정이 다시는 영향받지 않게 — 웍스 화면 안에서는 인스타를 아예 불러오지 않는다. 필요한 영상 하나만 새 창으로. */
   const u = (z.dataset.kjsrc || '').replace(/embed\/?(captioned\/?)?(\?.*)?$/, ''); if (u) window.open(u, '_blank', 'noopener');
 }, true); }
+// 11-23: 주소 뒤 꼬리표는 지우되 유튜브 ?v= 는 남긴다 (예전엔 watch?v= 링크가 영상 번호를 잃었다)
+function kjCleanUrl(u){
+  try { const x = new URL(u); const v = /(^|\.)youtube\.com$/.test(x.hostname) ? x.searchParams.get('v') : null; return x.origin + x.pathname + (v ? '?v=' + v : ''); }
+  catch (e) { return String(u || '').split('?')[0]; }
+}
 function kjReferenceMarkup(raw, title = '레퍼런스 영상', thumb = '', video = '') {
   /* 11-22 대표: 보던 창에서 바로 재생 — Apify로 받아 김제조 저장소에 올린 영상 사본(인스타 접속 없음) */
   if (video) {
@@ -293,7 +298,7 @@ async function cdMove(c, team){
   // v93 미리보기가 아직 안 온 후보도 카드 제목이 겹치지 않게 — 계정이나 코드를 붙인다
   const fb = '인스타 레퍼런스' + (c.account ? ' · ' + c.account : c.shortcode ? ' · ' + c.shortcode : '');
   const title = (c.title || (c.caption || '').split('\n').find(x => x.trim()) || fb).replace(/\s+/g, ' ').trim().slice(0, 60);
-  const { data, error } = await sb.from('contents').insert({ title, stage: IDEA, team_tag: team, reference_url: c.url,
+  const { data, error } = await sb.from('contents').insert({ title, stage: IDEA, team_tag: team, reference_url: c.url, ref_video: c.video || null, ref_thumb: c.thumb || null,
     next_action: `콘텐츠 후보(${cdRoomRow(cdRoomOf(c))[2]})에서 넘어옴 · ${c.account || ''}${c.note ? ' · 메모: ' + c.note : ''}`.slice(0, 500) }).select('id').single();
   if (error) return uiAlert(cleanErr(error.message));
   if (await cdSet(c, { status: 'moved', team_tag: team, content_id: data.id })) { await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); }
@@ -327,7 +332,7 @@ async function renderCands(){
   box.querySelectorAll('[data-cddel]').forEach(b => b.onclick = async () => { const c = get(b); if (!await uiConfirm('이 후보를 지웁니다.\n목록에서 사라지고 다시 수집되지 않습니다.', { ok: '지우기', danger: true })) return; if (await cdSet(c, { status: 'deleted' })) { CANDS = CANDS.filter(x => x !== c); cdBadge(); renderCands(); } });
 }
 $('#cd-add') && ($('#cd-add').onclick = async () => {
-  const u = $('#cd-url').value.trim().split('?')[0]; if (!/^https?:\/\//.test(u)) return uiAlert('릴스·게시물 링크를 넣어 주세요.');
+  const u = kjCleanUrl($('#cd-url').value.trim()); if (!/^https?:\/\//.test(u)) return uiAlert('릴스·게시물 링크를 넣어 주세요.');
   const sc = (u.match(/\/(?:reel|reels|p|tv)\/([\w-]+)/) || [])[1] || null;
   const { error } = await sb.from('kj_candidates').insert({ src: 'manual', url: u, shortcode: sc, ext_key: cdRoom + ':' + (sc || 'manual:' + u), shared_at: new Date().toISOString() });
   if (error) return uiAlert(/duplicate|unique/i.test(error.message) ? '이미 후보에 있는 링크입니다.' : cleanErr(error.message));
@@ -465,7 +470,7 @@ async function renderOpsAnal(body){
   ab.querySelectorAll('[data-anline]').forEach(b => b.onclick = async () => {
     const p = P(b); const team = b.dataset.anline; if (!TEAM_LABEL[team] || b.disabled) return; ab.querySelectorAll('[data-anid="' + p.id + '"] [data-anline]').forEach(x => x.disabled = true);
     const title = (p.topic ? p.topic + ' — ' : '') + ((p.caption || '').split('\n').find(x => x.trim()) || '@' + p.handle);
-    const { data, error } = await sb.from('contents').insert({ title: title.replace(/\s+/g, ' ').slice(0, 60), stage: IDEA, team_tag: team, reference_url: p.permalink,
+    const { data, error } = await sb.from('contents').insert({ title: title.replace(/\s+/g, ' ').slice(0, 60), stage: IDEA, team_tag: team, reference_url: p.permalink, ref_video: p.video || null, ref_thumb: p.thumb || null,
       next_action: `🔎 분석 대상(@${p.handle}, 조회 ${opsN(p.views)}${p.ratio ? ', 평소의 ' + p.ratio + '배' : ''})에서 넘어옴${p.kj_angle ? ' · 각도: ' + p.kj_angle : ''}`.slice(0, 500) }).select('id').single();
     if (error) return uiAlert(cleanErr(error.message));
     await upd(p, { status: 'line', content_id: data.id }); await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); re(); });
@@ -670,7 +675,7 @@ async function renderOpsMass(body){
   body.querySelectorAll('[data-msretry]').forEach(b => b.onclick = async () => { await kjFn({ action: 'mass_retry', id: J(b).id }); setTimeout(() => renderOpsMass(body), 800); });
   body.querySelectorAll('[data-msdrop]').forEach(b => b.onclick = async () => { await sb.from('kj_mass_jobs').update({ status: 'dropped', updated_at: new Date().toISOString() }).eq('id', J(b).id); renderOpsMass(body); });
   body.querySelector('#ms-fromtext').onclick = () => { const ls = body.querySelector('#ms-lines').value.split('\n').map(s => s.trim()).filter(Boolean); if (!ls.length) return;
-    kjMassModal(ls.map(l => /^https?:\/\//.test(l) ? { url: l.split('?')[0], label: l.slice(0, 60) } : { text: l, title: l.slice(0, 60), label: l.slice(0, 60) })); };
+    kjMassModal(ls.map(l => /^https?:\/\//.test(l) ? { url: kjCleanUrl(l), label: l.slice(0, 60) } : { text: l, title: l.slice(0, 60), label: l.slice(0, 60) })); };
   body.querySelector('#ms-fromanal').onclick = () => { opsTab = 'anal'; try { localStorage.setItem('kj_opstab', 'anal'); } catch (e) {} renderVideo(); };
   body.querySelector('#ms-fromcand').onclick = async () => {
     const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb, video, url, ext_key').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
