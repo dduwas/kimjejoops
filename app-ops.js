@@ -11,9 +11,7 @@ const fmtMB = n => n ? (n / 1048576 >= 1024 ? (n / 1073741824).toFixed(1) + 'GB'
 const fmtKst = t => t ? new Date(t).toLocaleString('ko-KR', { timeZone:'Asia/Seoul', month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
 function canReview(r){
   if (!profile) return false;
-  if (['master','admin','lead'].includes(profile.role)) return true;
-  const c = cards.find(x => x.id === r.content_id);
-  return !!(c && (c.owner_ids || []).includes(me.id));
+  return profile.status === 'approved';   // 11-23 대표: 최종검수는 승인된 팀원 누구나
 }
 // 11-09 카드 고르기: 단계별 묶음, 편집 중인 카드를 맨 위에
 const RV_GROUPS = ['편집', '검수·승인', '촬영', '대본', '아이디어', '게시예정', '게시완료'];
@@ -61,7 +59,7 @@ function renderReview(){
       <td>${warns.length ? warns.map(w => `<div class="rv-warn">⚠ ${esc(w)}</div>`).join('') : '<span class="rv-ok">제목·날짜 일치</span>'}
         ${r.note ? `<div class="rv-sub">메모: ${esc(r.note)}</div>` : ''}</td>
       <td>${r.status === 'pending'
-        ? (can ? `<button class="btn sm" data-rvok="${r.id}">OK</button> <button class="btn sm danger" data-rvno="${r.id}">반려</button>` : '<span class="rv-sub">카드 담당자·관리자만 검수</span>')
+        ? (can ? `<button class="btn sm" data-rvok="${r.id}">OK</button> <button class="btn sm danger" data-rvno="${r.id}">반려</button>` : '<span class="rv-sub">승인된 팀원만 검수</span>')
         : `<span class="${r.status === 'ok' ? 'rv-ok' : r.status === 'rejected' ? 'rv-bad' : ''}">${rvStatusKo[r.status]}</span>${r.reviewed_by ? `<div class="rv-sub">${esc(nameOf(r.reviewed_by))} · ${esc(fmtKst(r.reviewed_at))}</div>` : ''}`}</td></tr>`;
   }).join('')}</tbody></table>`;
   box.querySelectorAll('[data-rvlink]').forEach(s => s.onchange = async () => {
