@@ -58,11 +58,14 @@ function openCard(c, preset){
 
     <div class="sect">대본과 결과</div>
     <div class="field"><label>대본 · 메모 ${isNew ? '' : '<button type="button" class="chip" id="f-aiscript" style="margin-left:6px;font-size:11.5px">🤖 AI 대본 쓰기</button>'}</label><textarea id="f-script" style="min-height:150px">${esc(d.script)}</textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="f-final" style="width:auto;margin:0" ${d.chk_final || d.final_approved_at ? 'checked' : ''}>최종검수 OK — 게시해도 됨
+      ${d.final_approved_at ? `<span class="u-muted">· ${esc(nameOf(d.final_approved_by) || '')} ${esc(String(d.final_approved_at).slice(0, 10))}</span>` : ''}</label>
+      <p class="note">게시완료로 옮기려면 최종검수 OK와 게시 링크가 둘 다 있어야 합니다. 검수는 팀원 누구나 할 수 있습니다.</p></div>
     <div class="field"><label>게시 링크 — 실제 올라간 곳</label>
       <input id="f-url" value="${esc(d.publish_url)}" placeholder="https://"></div>
     <div class="field"><label>레퍼런스 링크 — 참고 자료·벤치마크</label>
       <input id="f-ref" value="${esc(d.reference_url)}" placeholder="https://"></div>
-    ${(d.publish_url || d.reference_url) ? `<div class="field"><label>미리보기 — ${d.publish_url ? '게시물' : '레퍼런스'}</label>${kjReferenceMarkup(d.publish_url || d.reference_url, d.title || '콘텐츠')}</div>` : ''}
+    ${(d.publish_url || d.reference_url) ? `<div class="field"><label>미리보기 — ${d.publish_url ? '게시물' : '레퍼런스'}</label>${d.publish_url ? kjReferenceMarkup(d.publish_url, d.title || '콘텐츠') : kjReferenceMarkup(d.reference_url, d.title || '콘텐츠', d.ref_thumb || '', d.ref_video || '')}</div>` : ''}
     ${!isNew && d.publish_url ? `<button class="btn sm ghost" id="f-sync">게시 링크에서 불러오기</button>
     <div id="f-sync-msg" style="margin-top:9px"></div>
     <p class="note">유튜브·인스타 게시 링크가 있으면 조회수·좋아요·댓글을 자동으로 채웁니다.
@@ -115,6 +118,7 @@ function openCard(c, preset){
       script: $('#f-script').value || null,
       publish_url: $('#f-url').value.trim() || null,
       reference_url: $('#f-ref').value.trim() || null,
+      chk_final: $('#f-final').checked,
       views: num('#f-v'), likes: num('#f-lk'), comments: num('#f-cm'),
       saves: num('#f-s'), shares: num('#f-sh'), link_clicks: num('#f-lc')
     };
@@ -245,7 +249,7 @@ document.addEventListener('click', e => {
     // Ordinary production-reference clicks preview here; modifiers retain native new-tab behavior.
     if (a.hasAttribute('data-production-ref') && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0) {
       e.preventDefault();
-      kjOpenProductionReference(a.href, a.dataset.refTitle);
+      kjOpenProductionReference(a.href, a.dataset.refTitle, a.dataset.refVideo || '');
       return;
     }
     if (!a.target) a.target = '_blank';
@@ -308,6 +312,7 @@ document.addEventListener('contextmenu', e => {
   if (t.kind === 'card') items.push(['🤖 AI 대본 쓰기', () => aiScript(obj)]);
   // v32: 정리 필요 등에서 바로 처리 — 게시완료·계속 진행·삭제
   if (t.kind === 'card' && obj.stage !== DONE) items.push(['✅ 게시완료로', async () => {
+    if (!(obj.chk_final || obj.final_approved_at) || !obj.publish_url) return uiAlert('게시완료로 옮기려면 최종검수 OK와 게시 링크가 둘 다 있어야 합니다.\n카드를 열어 「최종검수 OK」 체크와 「게시 링크」를 채운 뒤 다시 해 주세요.');
     const { error } = await sb.from('contents').update({ stage: DONE, publish_date: obj.publish_date || new Date().toISOString().slice(0, 10), updated_at: new Date().toISOString() }).eq('id', obj.id);
     if (error) return uiAlert(cleanErr(error.message)); await refresh(); poToast('게시완료로 옮겼습니다.', 2500);
   }]);
