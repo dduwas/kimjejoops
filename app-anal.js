@@ -226,7 +226,14 @@ if (!window.__kjIgLazy) { window.__kjIgLazy = 1; document.addEventListener('clic
   /* 11-21 22:40 대표: 메인 계정이 다시는 영향받지 않게 — 웍스 화면 안에서는 인스타를 아예 불러오지 않는다. 필요한 영상 하나만 새 창으로. */
   const u = (z.dataset.kjsrc || '').replace(/embed\/?(captioned\/?)?(\?.*)?$/, ''); if (u) window.open(u, '_blank', 'noopener');
 }, true); }
-function kjReferenceMarkup(raw, title = '레퍼런스 영상', thumb = '') {
+function kjReferenceMarkup(raw, title = '레퍼런스 영상', thumb = '', video = '') {
+  /* 11-22 대표: 보던 창에서 바로 재생 — Apify로 받아 김제조 저장소에 올린 영상 사본(인스타 접속 없음) */
+  if (video) {
+    const lb = esc(title || '레퍼런스 영상');
+    return '<span class="kj-ref-inline"><video controls playsinline preload="none"' + (thumb ? ' poster="' + esc(thumb) + '"' : '') + ' src="' + esc(video) + '" aria-label="' + lb + '" style="width:100%;aspect-ratio:9/16;max-height:560px;background:#000;border-radius:8px;object-fit:contain"></video>'
+      + '<span class="kj-ref-acts"><a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a><button type="button" class="kj-ref-copy" data-url="' + esc(raw) + '">🔗 링크 복사</button></span>'
+      + '<small>▶ 화면 안에서 바로 재생 · AI 컴퓨터가 받아 둔 사본이라 인스타 계정과 무관</small></span>';
+  }
   const source = kjReferenceSource(raw);
   if (!source) return '<span class="kj-ref-inline kj-ref-unavailable">이 링크는 화면 안 재생을 지원하지 않습니다.</span>';
   const label = esc(title || '레퍼런스 영상');
@@ -269,7 +276,7 @@ function cdCard(c){
     : c.status === 'moved' ? `<div class="cd-done">✅ 생산 라인(${esc(TEAM_LABEL[c.team_tag] || c.team_tag || '')})으로 넘김 · ${cdDate(c.decided_at)}</div>`
     : `<div class="cd-act"><button class="chip sm" data-cdback>되살리기</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`;
   return `<div class="cd-card" data-cdid="${c.id}">
-    ${kjReferenceMarkup(c.url, t)}
+    ${kjReferenceMarkup(c.url, t, c.thumb, c.video)}
     <div class="cd-b">${pushBadge(pushHit(c.title, c.caption, c.account))}<div class="cd-acc">${esc(c.account || '인스타그램')}</div>
       <div class="cd-ti">${esc(t)}</div>
       ${c.caption ? `<div class="cd-cap">${esc(c.caption.slice(0, 220))}</div>` : ''}
@@ -364,8 +371,8 @@ async function loadAnal(){
 async function loadAnalFresh(){
   const [t, p, th] = await Promise.all([
     sb.from('kj_targets').select('*').order('influence', { ascending: false, nullsFirst: false }),
-    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,subject,status,content_id,product_type,thumb,created_at,ai_at,decided_at').order('views', { ascending: false, nullsFirst: false }).limit(1500),
-    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,created_at,ai_at,decided_at').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900)]);
+    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,subject,status,content_id,product_type,thumb,video,created_at,ai_at,decided_at').order('views', { ascending: false, nullsFirst: false }).limit(1500),
+    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,video,created_at,ai_at,decided_at').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900)]);
   const isThr = x => /^THREADS/.test(x.product_type || '');
   anData = { targets: t.data || [], posts: (p.data || []).filter(x => !isThr(x)), threads: th.data || [], err: t.error || p.error };
   if (!anData.err) anCacheSet('anal_v1', { at: Date.now(), d: anData });
@@ -389,7 +396,7 @@ function anPerf(p){
 function anCard(p, tg){
   const sel = anSel.has(p.id);
   return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
-    ${anPerf(p)}${kjReferenceMarkup(p.permalink, p.topic || p.handle, p.thumb)}
+    ${anPerf(p)}${kjReferenceMarkup(p.permalink, p.topic || p.handle, p.thumb, p.video)}
     <div class="an-b">${pushBadge(pushHit(p.topic, p.caption, p.hook, p.kj_angle))}<div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
       ${p.topic ? `<div class="an-ti">${esc(p.topic)}${anF(p) ? ` <span class="an-fmt">${esc(anF(p))}</span>` : ''}</div>` : ''}
       <div class="an-acc">${[tg && tg.market, anSubj(p, tg), tg && tg.concept].filter(Boolean).map(esc).join(' · ')}</div>
@@ -666,9 +673,9 @@ async function renderOpsMass(body){
     kjMassModal(ls.map(l => /^https?:\/\//.test(l) ? { url: l.split('?')[0], label: l.slice(0, 60) } : { text: l, title: l.slice(0, 60), label: l.slice(0, 60) })); };
   body.querySelector('#ms-fromanal').onclick = () => { opsTab = 'anal'; try { localStorage.setItem('kj_opstab', 'anal'); } catch (e) {} renderVideo(); };
   body.querySelector('#ms-fromcand').onclick = async () => {
-    const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb, url, ext_key').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
+    const { data: cs } = await sb.from('kj_candidates').select('id, account, title, thumb, video, url, ext_key').eq('status', 'new').order('shared_at', { ascending: false }).limit(80);
     const bg = document.createElement('div'); bg.className = 'aiw-bg';
-    bg.innerHTML = `<div class="aiw"><h3>📥 콘텐츠 후보에서 고르기</h3><div class="ms-pick">${(cs || []).map(c => `<label><input type="checkbox" value="${c.id}">${kjReferenceMarkup(c.url, c.title)}<span>${esc(c.title || '(미리보기 준비 중)')}<br><small>${esc(c.account || '')} · ${cdRoomRow(cdRoomOf(c))[1]}</small></span></label>`).join('') || '<p class="lede">새 후보가 없습니다.</p>'}</div>
+    bg.innerHTML = `<div class="aiw"><h3>📥 콘텐츠 후보에서 고르기</h3><div class="ms-pick">${(cs || []).map(c => `<label><input type="checkbox" value="${c.id}">${kjReferenceMarkup(c.url, c.title, c.thumb, c.video)}<span>${esc(c.title || '(미리보기 준비 중)')}<br><small>${esc(c.account || '')} · ${cdRoomRow(cdRoomOf(c))[1]}</small></span></label>`).join('') || '<p class="lede">새 후보가 없습니다.</p>'}</div>
       <div class="row"><button class="btn sm" id="pk-go">다음</button><button class="chip" id="pk-x">닫기</button></div></div>`;
     document.body.appendChild(bg); const close = () => bg.remove(); bg.querySelector('#pk-x').onclick = close;
 
