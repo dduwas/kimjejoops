@@ -217,7 +217,7 @@ $$('.po-f').forEach(b => b.onclick = () => {
 /* --- 글 편집 --- */
 function openPost(p){
   const isNew = !p;
-  const d = p || { title:'', content:'', excerpt:'', cover_url:'', tags:[], status:'published', slug:null };
+  const d = p || { title:'', content:'', excerpt:'', cover_url:'', tags:[], status:'draft', slug:null };   // 11-23 대표: 새 글은 팀 전용이 기본
 
   const body = `
     <h2>${isNew ? '새 글' : '글 편집'}</h2>
@@ -262,7 +262,7 @@ function openPost(p){
     <div class="grid2">
       <div class="field"><label>보내기 링크</label>
         <label style="display:flex;gap:7px;align-items:center;font-size:13px;font-weight:500;margin-top:6px;cursor:pointer">
-          <input type="checkbox" id="po-team" style="width:auto;margin:0" ${(!isNew && d.status==='draft')?'checked':''}>
+          <input type="checkbox" id="po-team" style="width:auto;margin:0" ${d.status==='draft'?'checked':''}>
           팀 전용으로 두기 (링크 만들지 않음)</label>
         <div class="note" style="margin-top:4px">체크하지 않으면 저장할 때 보낼 링크가 바로 만들어집니다.</div></div>
       <div class="field"><label>주소 — 비워두면 짧은 주소가 자동으로 생깁니다</label>
