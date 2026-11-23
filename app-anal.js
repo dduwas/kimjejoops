@@ -231,11 +231,24 @@ function kjCleanUrl(u){
   try { const x = new URL(u); const v = /(^|\.)youtube\.com$/.test(x.hostname) ? x.searchParams.get('v') : null; return x.origin + x.pathname + (v ? '?v=' + v : ''); }
   catch (e) { return String(u || '').split('?')[0]; }
 }
+// 11-23: 받아 둔 영상 사본 재생 — 화면 어디서 누르든(▶ 또는 영상) 그 자리에서 재생
+if (!window.__kjvBound) { window.__kjvBound = true;
+  document.addEventListener('click', function (e) {
+    var t = e.target; if (!t || !t.closest) return;
+    var btn = t.closest('[data-kjvplay]'); var v = btn ? btn.parentElement.querySelector('video[data-kjv]') : t.closest('video[data-kjv]');
+    if (!v || v.controls) return;
+    e.preventDefault(); e.stopPropagation();
+    document.querySelectorAll('video[data-kjv]').forEach(function (o) { if (o !== v && !o.paused) o.pause(); });
+    v.controls = true; var b2 = v.parentElement.querySelector('[data-kjvplay]'); if (b2) b2.remove();
+    var p = v.play(); if (p && p.catch) p.catch(function () { v.muted = true; v.play().catch(function () {}); });
+  }, true);
+}
 function kjReferenceMarkup(raw, title = '레퍼런스 영상', thumb = '', video = '') {
   /* 11-22 대표: 보던 창에서 바로 재생 — Apify로 받아 김제조 저장소에 올린 영상 사본(인스타 접속 없음) */
   if (video) {
     const lb = esc(title || '레퍼런스 영상');
-    return '<span class="kj-ref-inline"><video controls playsinline preload="none"' + (thumb ? ' poster="' + esc(thumb) + '"' : '') + ' src="' + esc(video) + '" aria-label="' + lb + '" style="width:100%;aspect-ratio:9/16;max-height:560px;background:#000;border-radius:8px;object-fit:contain"></video>'
+    /* 11-23 대표: 재생 버튼을 눌러도 안 돌던 문제 — 처음엔 기본 컨트롤 없이 포스터+▶만 두고, 누르면 직접 재생 후 컨트롤을 켠다 */
+    return '<span class="kj-ref-inline" style="position:relative;display:block"><video data-kjv playsinline preload="metadata"' + (thumb ? ' poster="' + esc(thumb) + '"' : '') + ' src="' + esc(video) + '" aria-label="' + lb + '" style="width:100%;aspect-ratio:9/16;max-height:560px;background:#000;border-radius:8px;object-fit:contain;cursor:pointer;display:block"></video><button type="button" class="kj-vplay" data-kjvplay aria-label="재생" style="position:absolute;left:50%;top:calc(50% - 30px);transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:26px;cursor:pointer;line-height:64px;padding:0 0 0 5px">▶</button>'
       + '<span class="kj-ref-acts"><a class="kj-ig-go" href="' + esc(raw) + '" target="_blank" rel="noopener">인스타그램에서 열기 ↗</a><button type="button" class="kj-ref-copy" data-url="' + esc(raw) + '">🔗 링크 복사</button></span>'
       + '<small>▶ 화면 안에서 바로 재생 · AI 컴퓨터가 받아 둔 사본이라 인스타 계정과 무관</small></span>';
   }
