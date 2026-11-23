@@ -171,11 +171,9 @@ function colVisBar(list){
       + '#col-vis .cv-lab{font-size:12.5px;font-weight:700;color:var(--muted);margin-right:4px}'
       + '#col-vis .chip b{font-weight:800;margin-left:3px}'
       + '#col-vis .chip.off{opacity:.55;text-decoration:line-through}'
-      + '.colfold{border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;font-size:13px;font-weight:700;line-height:1;padding:7px 14px;min-height:0;min-width:72px;border-radius:99px;white-space:nowrap;align-self:center}'
-      + '.colfold:hover{border-color:var(--blue);background:var(--blue-50,#e8f0fe)}'
-      + '#col-vis .chip{padding:8px 20px;font-size:14px;min-width:96px}'
-      + '.line .col.col-folded .colfold{min-width:0;padding:8px 9px;font-size:15px}'
-      + '.line .col.col-folded{flex:0 0 52px;min-height:220px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 10px;border-radius:var(--r,10px);background:var(--wash,#f1f4f8);cursor:pointer}'
+      + '.colfold{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;min-height:0;border-radius:6px}'
+      + '.colfold:hover{color:var(--navy);background:var(--wash,#f1f4f8)}'
+      + '.line .col.col-folded{flex:0 0 44px;min-height:220px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 10px;border-radius:var(--r,10px);background:var(--wash,#f1f4f8);cursor:pointer}'
       + '.line .col.col-folded:hover{background:var(--blue-50,#e8f0fe)}'
       + '.line .col.col-folded .vname{writing-mode:vertical-rl;font-size:13.5px;font-weight:700;color:var(--navy);letter-spacing:.04em}'
       + '@media (max-width:640px){#col-vis{padding:10px 14px 0}}';
@@ -200,6 +198,35 @@ function colVisBar(list){
   });
   const a = bar.querySelector('[data-cvall]'); if (a) a.onclick = () => { COLFOLD.clear(); colFoldSave(); renderBoard(); };
 }
+
+
+/* 11-23 대표: 생산 라인 칸의 줄 수 자동 조절 — 펼친 단계 수·각 칸 카드 수·화면 폭을 보고
+   카드가 많은 칸은 줄을 늘리고(최대 카드 수까지), 비거나 적은 칸은 1줄로 줄인다. 화면 크기가 바뀌면 다시 계산 */
+const KB_CARD_W = 270, KB_GAP = 10;
+function kbAutoCols(){
+  const line = document.getElementById('line'); if (!line || line.classList.contains('hide')) return;
+  const open = [...line.querySelectorAll(':scope > .col:not(.col-folded)')];
+  if (!open.length) return;
+  const folded = line.querySelectorAll(':scope > .col.col-folded').length;
+  const W = line.clientWidth - folded * 56 - open.length * 24;
+  const n = open.map(c => c.querySelectorAll('.colbody > .card').length);
+  let slots = Math.max(open.length, Math.floor(W / (KB_CARD_W + KB_GAP)));
+  const k = n.map(() => 1); slots -= open.length;
+  // 남는 줄은 '줄 하나당 카드 수'가 가장 많은 칸에 하나씩 준다(카드 수보다 많이는 안 줌)
+  while (slots > 0) {
+    let best = -1, bestLoad = 0;
+    n.forEach((x, i) => { const load = x / k[i]; if (k[i] < x && load > bestLoad) { bestLoad = load; best = i; } });
+    if (best < 0 || bestLoad <= 1) break;
+    k[best]++; slots--;
+  }
+  open.forEach((col, i) => {
+    const body = col.querySelector('.colbody'); const cols = k[i];
+    col.style.flex = cols + ' 1 0'; col.style.minWidth = (n[i] ? cols * (KB_CARD_W - 40) : 150) + 'px'; col.style.maxWidth = 'none';
+    if (body) { body.style.display = 'grid'; body.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))'; body.style.gap = KB_GAP + 'px'; body.style.alignItems = 'start'; }
+    col.dataset.kbcols = cols;
+  });
+}
+if (!window.__kbResize) { window.__kbResize = true; let t = null; addEventListener('resize', () => { clearTimeout(t); t = setTimeout(kbAutoCols, 150); }); }
 
 function renderBoard(){
   if (document.getElementById('view-board').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
@@ -256,7 +283,7 @@ function renderBoard(){
     </div>`;   // v108 접힌 칸
     return `<div class="col ${col.wide ? 'wide' : ''}" data-drop="${esc(col.drop)}" data-stages="${esc(col.stages.join('|'))}">
       <div class="colhead">
-        <button class="colfold" data-fold="${esc(col.name)}" title="이 단계 접기" aria-label="접기">◂ 접기</button>
+        <button class="colfold" data-fold="${esc(col.name)}" title="이 단계 접기" aria-label="접기">◂</button>
         <span class="colnum">${String(i+1).padStart(2,'0')}</span>
         <span class="colname">${esc(col.name)}</span>
         <span class="colcount">${items.length}</span>
@@ -265,6 +292,7 @@ function renderBoard(){
       <div class="colbody">${items.map(cardHTML).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px 3px">비어 있음</div>'}</div>
     </div>`;
   }).join('');
+  kbAutoCols();   // 11-23 대표: 칸마다 줄 수를 펼친 단계·카드 수에 맞춰 자동 조절
 
   $$('#line [data-nolink]').forEach(a => a.onclick = e => e.stopPropagation());
   $$('#line [data-fold]').forEach(b => b.onclick = e => { e.stopPropagation(); colFoldSet(b.dataset.fold, true); });   // v108
