@@ -321,7 +321,7 @@ function renderOpsComments(body){
   const list = cm.filter(inAcc).filter(c => !ST[opsCmSt] || ST[opsCmSt].includes(c.status));
   const cnt = (k, st) => cm.filter(c => (k === 'all' || accOf(c) === k) && (!ST[st] || ST[st].includes(c.status))).length;
   const curAcc = ACC.find(a => a.k === opsCmAcc) || ACC[0];
-  body.innerHTML = `<p class="lede">계정별 댓글·DM을 5분마다 모으고 AI가 추천 답장을 붙입니다. <b>이대로 보내기</b>를 누르거나, 아래 칸에 직접 써서 <b>확인</b>을 누르면 그 댓글에 답글이 달립니다(1분 안에 AI 컴퓨터가 보냄).</p>
+  body.innerHTML = `<p class="lede">계정별 댓글·DM을 모으고(유튜브·글로벌 5분, 메인 인스타 1시간마다) AI가 추천 답장을 붙입니다. <b>이대로 보내기</b>를 누르거나, 아래 칸에 직접 써서 <b>확인</b>을 누르면 그 댓글에 답글이 달립니다(1분 안에 AI 컴퓨터가 보냄).</p>
     <div class="toolbar" style="padding:0 0 8px">${ACC.map(a => `<button class="chip ${opsCmAcc === a.k ? 'on' : ''}" data-cmacc="${a.k}">${esc(a.label)} <b>${a.k === 'all' || a.on ? cnt(a.k, 'todo') : '-'}</b></button>`).join('')}</div>
     ${curAcc.warn ? `<div class="rv-warn" style="margin:0 0 10px">⚠ ${esc(curAcc.warn)}</div>` : ''}${opsCmAcc === 'xiaohongshu' ? '<div style="margin:0 0 12px"><button class="btn primary" id="cm-xhs-login2" style="font-size:15px;padding:10px 18px">🔑 샤오홍슈 로그인 (QR 만들기)</button> <span class="rv-sub">새 창에서 QR 만들기 → 1~2분 뒤 QR → 앱 ≡ 扫一扫</span></div>' : ''}
     ${CHINA_CHANNELS[opsCmAcc] ? chinaChannelPanel(opsCmAcc) : ''}
