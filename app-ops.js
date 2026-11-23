@@ -224,7 +224,7 @@ async function renderVideo(){
   const newCm = opsData.comments.filter(c => ['new','drafted'].includes(c.status)).length;
   root.innerHTML = `<h3>🔐 운영관리 <button class="btn sm ghost" id="vd-lockbtn" style="margin-left:8px">잠그기</button></h3>
     <div class="ops-tabs">
-      <button data-opstab="comments" title="11-21 메인 인스타 보호 — 보조 계정 준비 전까지 잠시 중지" disabled style="opacity:.45;cursor:not-allowed">💬 댓글·DM ⏸</button>
+      
       <button data-opstab="upload" title="11-21 메인 인스타 보호 — 보조 계정 준비 전까지 잠시 중지" disabled style="opacity:.45;cursor:not-allowed">📤 업로드 자동화 ⏸</button>
       <button data-opstab="comments" class="${opsTab === 'comments' ? 'on' : ''}">💬 댓글·DM</button>
       <button data-opstab="anal" class="${opsTab === 'anal' ? 'on' : ''}">🔎 분석 대상</button>
