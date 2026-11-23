@@ -173,6 +173,7 @@ function colVisBar(list){
       + '#col-vis .chip.off{opacity:.55;text-decoration:line-through}'
       + '.colfold{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;min-height:0;border-radius:6px}'
       + '.colfold:hover{color:var(--navy);background:var(--wash,#f1f4f8)}'
+      + '.colfold.cf-txt{font-size:11.5px;font-weight:600;border:1px solid var(--line,#dde3ea);border-radius:999px;padding:2px 8px;margin-left:8px;flex:none;white-space:nowrap}'
       + '.line .col.col-folded{flex:0 0 44px;min-height:220px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 10px;border-radius:var(--r,10px);background:var(--wash,#f1f4f8);cursor:pointer}'
       + '.line .col.col-folded:hover{background:var(--blue-50,#e8f0fe)}'
       + '.line .col.col-folded .vname{writing-mode:vertical-rl;font-size:13.5px;font-weight:700;color:var(--navy);letter-spacing:.04em}'
@@ -286,10 +287,10 @@ function renderBoard(){
     </div>`;   // v108 접힌 칸
     return `<div class="col ${col.wide ? 'wide' : ''}" data-drop="${esc(col.drop)}" data-stages="${esc(col.stages.join('|'))}">
       <div class="colhead">
-        <button class="colfold" data-fold="${esc(col.name)}" title="이 단계 접기" aria-label="접기">◂</button>
         <span class="colnum">${String(i+1).padStart(2,'0')}</span>
         <span class="colname">${esc(col.name)}</span>
         <span class="colcount">${items.length}</span>
+        <button class="colfold cf-txt" data-fold="${esc(col.name)}" title="이 단계 접기 (위 「보이는 단계」에서 다시 펼침)" aria-label="접기">접기</button>
         ${scPick && items.length ? `<button class="colpick ${items.every(c => scPick.has(c.id)) ? 'on' : ''}" data-colpick="${i}" title="이 칸 카드를 모두 고르기/빼기">☑ 칸 전체</button>` : ''}
       </div>
       <div class="colbody">${items.map(cardHTML).join('') || '<div style="font-size:12px;color:var(--muted);padding:8px 3px">비어 있음</div>'}</div>
