@@ -171,9 +171,11 @@ function colVisBar(list){
       + '#col-vis .cv-lab{font-size:12.5px;font-weight:700;color:var(--muted);margin-right:4px}'
       + '#col-vis .chip b{font-weight:800;margin-left:3px}'
       + '#col-vis .chip.off{opacity:.55;text-decoration:line-through}'
-      + '.colfold{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;min-height:0;border-radius:6px}'
-      + '.colfold:hover{color:var(--navy);background:var(--wash,#f1f4f8)}'
-      + '.line .col.col-folded{flex:0 0 44px;min-height:220px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 10px;border-radius:var(--r,10px);background:var(--wash,#f1f4f8);cursor:pointer}'
+      + '.colfold{border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;font-size:13px;font-weight:700;line-height:1;padding:7px 14px;min-height:0;min-width:72px;border-radius:99px;white-space:nowrap;align-self:center}'
+      + '.colfold:hover{border-color:var(--blue);background:var(--blue-50,#e8f0fe)}'
+      + '#col-vis .chip{padding:8px 20px;font-size:14px;min-width:96px}'
+      + '.line .col.col-folded .colfold{min-width:0;padding:8px 9px;font-size:15px}'
+      + '.line .col.col-folded{flex:0 0 52px;min-height:220px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 10px;border-radius:var(--r,10px);background:var(--wash,#f1f4f8);cursor:pointer}'
       + '.line .col.col-folded:hover{background:var(--blue-50,#e8f0fe)}'
       + '.line .col.col-folded .vname{writing-mode:vertical-rl;font-size:13.5px;font-weight:700;color:var(--navy);letter-spacing:.04em}'
       + '@media (max-width:640px){#col-vis{padding:10px 14px 0}}';
@@ -254,7 +256,7 @@ function renderBoard(){
     </div>`;   // v108 접힌 칸
     return `<div class="col ${col.wide ? 'wide' : ''}" data-drop="${esc(col.drop)}" data-stages="${esc(col.stages.join('|'))}">
       <div class="colhead">
-        <button class="colfold" data-fold="${esc(col.name)}" title="이 단계 접기" aria-label="접기">◂</button>
+        <button class="colfold" data-fold="${esc(col.name)}" title="이 단계 접기" aria-label="접기">◂ 접기</button>
         <span class="colnum">${String(i+1).padStart(2,'0')}</span>
         <span class="colname">${esc(col.name)}</span>
         <span class="colcount">${items.length}</span>
