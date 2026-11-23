@@ -36,7 +36,9 @@ window.KJ_NB = (function () {
     function say() {
       var on = document.querySelector('nav button.on'); var v = on ? on.dataset.view : '';
       var t = document.querySelector('.ops-tabs button.on'); var ops = t ? t.dataset.opstab : '';
-      try { parent.postMessage({ kjnb: 'at', v: v, ops: v === 'video' ? ops : '' }, PARENT); } catch (e) {}
+      // 11-23 대표: 콘텐츠 후보·최종검수 숫자를 바깥(솔루션즈 웍스) 메뉴에도 보낸다
+      var bg = {}; [['cands', 'cd-badge'], ['review', 'rv-badge']].forEach(function (x) { var el = document.getElementById(x[1]); bg[x[0]] = (el && !el.classList.contains('hide') && +el.textContent) || 0; });
+      try { parent.postMessage({ kjnb: 'at', v: v, ops: v === 'video' ? ops : '', badges: bg }, PARENT); } catch (e) {}
     }
     function goOps(t) {
       try { localStorage.setItem('kj_opstab', t); } catch (e) {}
@@ -58,7 +60,8 @@ window.KJ_NB = (function () {
     document.addEventListener('click', function () { setTimeout(say, 80); }, true);
     var mo = new MutationObserver(function () { clearTimeout(mo.t); mo.t = setTimeout(say, 120); });
     mo.observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] });
-    say();
+    say(); setInterval(say, 30000);
+    ['cd-badge', 'rv-badge'].forEach(function (id) { var el = document.getElementById(id); if (el) new MutationObserver(function () { setTimeout(say, 50); }).observe(el, { childList: true, characterData: true, subtree: true }); });
     /* 11-15b 자동 로그인: 김제조 로그인이 없으면 바깥(솔루션즈 웍스)에 1회용 토큰을 받아 와서 들어간다 */
     var tries = 0;
     function needLogin() {
