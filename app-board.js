@@ -208,10 +208,11 @@ function kbAutoCols(){
   const open = [...line.querySelectorAll(':scope > .col:not(.col-folded)')];
   if (!open.length) return;
   const folded = line.querySelectorAll(':scope > .col.col-folded').length;
-  const W = line.clientWidth - folded * 56 - open.length * 24;
+  const empty = open.filter(c => !c.querySelector('.colbody > .card')).length;
+  const W = line.clientWidth - folded * 56 - empty * 194 - (open.length - empty) * 24;
   const n = open.map(c => c.querySelectorAll('.colbody > .card').length);
-  let slots = Math.max(open.length, Math.floor(W / (KB_CARD_W + KB_GAP)));
-  const k = n.map(() => 1); slots -= open.length;
+  const k = n.map(() => 1); const busy = n.filter(x => x).length;
+  let slots = Math.max(busy, Math.floor(W / (KB_CARD_W + KB_GAP))) - busy;
   // 남는 줄은 '줄 하나당 카드 수'가 가장 많은 칸에 하나씩 준다(카드 수보다 많이는 안 줌)
   while (slots > 0) {
     let best = -1, bestLoad = 0;
@@ -221,7 +222,9 @@ function kbAutoCols(){
   }
   open.forEach((col, i) => {
     const body = col.querySelector('.colbody'); const cols = k[i];
-    col.style.flex = cols + ' 1 0'; col.style.minWidth = (n[i] ? cols * (KB_CARD_W - 40) : 150) + 'px'; col.style.maxWidth = 'none';
+    if (!n[i]) { col.style.flex = '0 0 170px'; col.style.minWidth = '170px'; }   // 빈 칸은 좁게
+    else { col.style.flex = cols + ' 1 0'; col.style.minWidth = cols * (KB_CARD_W - 40) + 'px'; }
+    col.style.maxWidth = 'none';
     if (body) { body.style.display = 'grid'; body.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))'; body.style.gap = KB_GAP + 'px'; body.style.alignItems = 'start'; }
     col.dataset.kbcols = cols;
   });
