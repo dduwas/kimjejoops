@@ -159,6 +159,46 @@ function buildStageChips(){
   buildChips('#stage-chips', '#stage-clear', items, stageFilter, renderBoard);
 }
 
+/* v108 생산 라인 — 단계(칸) 접기·골라 보기. 접은 칸은 좁은 세로 띠로 남아 카드 끌어 놓기는 그대로 된다. 브라우저마다 기억(localStorage kj_colfold) */
+let COLFOLD = (() => { try { return new Set(JSON.parse(localStorage.getItem('kj_colfold') || '[]')); } catch (e) { return new Set(); } })();
+const colFolded = n => COLFOLD.has(n);
+function colFoldSave(){ try { localStorage.setItem('kj_colfold', JSON.stringify([...COLFOLD])); } catch (e) {} }
+function colFoldSet(n, on){ on ? COLFOLD.add(n) : COLFOLD.delete(n); colFoldSave(); renderBoard(); }
+function colVisBar(list){
+  if (!document.getElementById('colfold-css')) {
+    const st = document.createElement('style'); st.id = 'colfold-css';
+    st.textContent = '#col-vis{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:12px 24px 0}'
+      + '#col-vis .cv-lab{font-size:12.5px;font-weight:700;color:var(--muted);margin-right:4px}'
+      + '#col-vis .chip b{font-weight:800;margin-left:3px}'
+      + '#col-vis .chip.off{opacity:.55;text-decoration:line-through}'
+      + '.colfold{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;min-height:0;border-radius:6px}'
+      + '.colfold:hover{color:var(--navy);background:var(--wash,#f1f4f8)}'
+      + '.line .col.col-folded{flex:0 0 44px;min-height:220px;display:flex;flex-direction:column;align-items:center;gap:8px;padding:6px 0 10px;border-radius:var(--r,10px);background:var(--wash,#f1f4f8);cursor:pointer}'
+      + '.line .col.col-folded:hover{background:var(--blue-50,#e8f0fe)}'
+      + '.line .col.col-folded .vname{writing-mode:vertical-rl;font-size:13.5px;font-weight:700;color:var(--navy);letter-spacing:.04em}'
+      + '@media (max-width:640px){#col-vis{padding:10px 14px 0}}';
+    document.head.appendChild(st);
+  }
+  let bar = document.getElementById('col-vis');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'col-vis'; const ln = document.getElementById('line'); ln.parentNode.insertBefore(bar, ln); }
+  bar.classList.remove('hide');
+  const folded = BOARD_COLS.filter(c => colFolded(c.name)).length;
+  bar.innerHTML = '<span class="cv-lab">보이는 단계</span>'
+    + BOARD_COLS.map(c => { const k = list.filter(x => c.stages.includes(x.stage)).length; const on = !colFolded(c.name);
+        return `<button class="chip ${on ? 'on' : 'off'}" data-cv="${esc(c.name)}" title="${on ? '누르면 접힘' : '누르면 펼침'} · 길게 누르면 이 단계만">${esc(c.name)}<b>${k}</b></button>`; }).join('')
+    + (folded ? '<button class="chip reset" data-cvall="1">모두 펼치기</button>' : '');
+  bar.querySelectorAll('[data-cv]').forEach(b => {
+    let t = null, long = false;
+    const only = () => { long = true; COLFOLD = new Set(BOARD_COLS.map(c => c.name).filter(n => n !== b.dataset.cv)); colFoldSave(); renderBoard(); };
+    b.onpointerdown = () => { long = false; t = setTimeout(only, 550); };
+    b.onpointerup = b.onpointerleave = () => clearTimeout(t);
+    b.oncontextmenu = e => e.preventDefault();
+    b.onclick = () => { if (long) return; colFoldSet(b.dataset.cv, !colFolded(b.dataset.cv)); };
+    b.ondblclick = only;
+  });
+  const a = bar.querySelector('[data-cvall]'); if (a) a.onclick = () => { COLFOLD.clear(); colFoldSave(); renderBoard(); };
+}
+
 function renderBoard(){
   if (document.getElementById('view-board').classList.contains('hide')) return;   // v106 안 보이는 화면은 그리지 않는다
   const list = visible();
@@ -178,6 +218,7 @@ function renderBoard(){
   $('#board-table').classList.toggle('hide', bdView !== 'table');
   $('#stage-bar').classList.toggle('hide', bdView !== 'table');
   buildStageChips();
+  if (bdView === 'kanban') colVisBar(list); else { const vb = document.getElementById('col-vis'); if (vb) vb.classList.add('hide'); }   // v108
 
   paintFilterCounts();   // v106 접힌 필터 버튼에 개수 표시
   syncHash();            // v106 지금 보는 화면을 주소에 남긴다
@@ -205,8 +246,15 @@ function renderBoard(){
 
   $('#line').innerHTML = BOARD_COLS.map((col, i) => {
     const items = list.filter(c => col.stages.includes(c.stage));
+    if (colFolded(col.name)) return `<div class="col col-folded" data-drop="${esc(col.drop)}" data-stages="${esc(col.stages.join('|'))}" data-unfold="${esc(col.name)}" title="펼치기: ${esc(col.name)} ${items.length}개">
+      <button class="colfold" data-unfold="${esc(col.name)}" aria-label="펼치기">▸</button>
+      <span class="colnum">${String(i+1).padStart(2,'0')}</span>
+      <span class="colcount" style="margin:0">${items.length}</span>
+      <span class="vname">${esc(col.name)}</span>
+    </div>`;   // v108 접힌 칸
     return `<div class="col ${col.wide ? 'wide' : ''}" data-drop="${esc(col.drop)}" data-stages="${esc(col.stages.join('|'))}">
       <div class="colhead">
+        <button class="colfold" data-fold="${esc(col.name)}" title="이 단계 접기" aria-label="접기">◂</button>
         <span class="colnum">${String(i+1).padStart(2,'0')}</span>
         <span class="colname">${esc(col.name)}</span>
         <span class="colcount">${items.length}</span>
@@ -217,6 +265,8 @@ function renderBoard(){
   }).join('');
 
   $$('#line [data-nolink]').forEach(a => a.onclick = e => e.stopPropagation());
+  $$('#line [data-fold]').forEach(b => b.onclick = e => { e.stopPropagation(); colFoldSet(b.dataset.fold, true); });   // v108
+  $$('#line [data-unfold]').forEach(b => b.onclick = e => { e.stopPropagation(); colFoldSet(b.dataset.unfold, false); });
   $$('#line .card').forEach(el => {
     el.onclick = e => {
       if (e.target.closest('[data-nolink]')) return;
