@@ -446,14 +446,14 @@ async function renderOpsAnal(body){
   body.innerHTML = `<div class="an-head"><b>분석 대상 ${targets.length}계정</b> · 수집 ${fetched}${errs ? ` · 오류 ${errs}` : ''} · 영상 ${posts.length} · 🔥 ${posts.filter(p => p.hot).length}
       <button class="chip sm" id="an-re">↻</button><button class="chip sm" id="an-addjump">＋ 계정 추가·삭제</button>${posts.some(p => p.hot && !p.ai_at) ? '<button class="chip sm" id="an-tag">🤖 AI 분류 지금</button>' : ''}</div>
     
-    <div class="an-tabs">${chip('data-antab', 'hot', anTab, '🔥 추천')}${chip('data-antab', 'all', anTab, '📊 전체 영상')}${chip('data-antab', 'thr', anTab, '🧵 쓰레드 ' + (anData.threads || []).filter(x => x.product_type === 'THREADS').length)}${chip('data-antab', 'targets', anTab, '👥 계정 ' + targets.length)}</div>
+    <div class="an-tabs">${chip('data-antab', 'hot', anTab, '🔥 추천')}${chip('data-antab', 'all', anTab, '📊 전체 영상')}${chip('data-antab', 'targets', anTab, '👥 계정 ' + targets.length)}</div>
     <div id="an-body"></div>`;
   body.querySelector('#an-re').onclick = async () => { anData = null; renderOpsAnal(body); };
   body.querySelector('#an-addjump').onclick = () => { anTab = 'targets'; renderOpsAnal(body); setTimeout(() => { const i = body.querySelector('#an-h'); if (i) i.focus(); }, 60); };
   const tb = body.querySelector('#an-tag'); if (tb) tb.onclick = async () => { tb.disabled = true; tb.textContent = '분류 중…'; const j = await kjFn({ action: 'tag_now' }); if (j.error) uiAlert(j.error); anData = null; renderOpsAnal(body); };
   body.querySelectorAll('[data-antab]').forEach(b => b.onclick = () => { anTab = b.dataset.antab; renderOpsAnal(body); });
   const ab = body.querySelector('#an-body');
-  if (anTab === 'thr') return renderAnThreads(ab, body);
+  if (anTab === 'thr') anTab = 'hot';   // 11-26 대표: 쓰레드 탭 없앰
   if (anTab === 'targets') return renderAnTargets(ab, body);
   ab.innerHTML = `<div class="an-filters"><span>기간</span>${[[30, '30일'], [90, '90일'], [0, '전체']].map(([v, l]) => chip('data-andays', v, anDays, l)).join('')}
       <span>정렬</span>${chip('data-ansort', 'score', anSort, '추천순')}${chip('data-ansort', 'views', anSort, '조회수')}${chip('data-ansort', 'new', anSort, '최신')}
