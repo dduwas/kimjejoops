@@ -295,7 +295,7 @@ function cdCard(c){
     : `<div class="cd-act"><button class="chip sm" data-cdback>되살리기</button><button class="chip sm cd-del" data-cddel>삭제</button></div>`;
   return `<div class="cd-card" data-cdid="${c.id}">
     ${kjReferenceMarkup(c.url, t, c.thumb, c.video)}
-    <div class="cd-b">${pushBadge(pushHit(c.title, c.caption, c.account))}<div class="cd-acc">${esc(c.account || '인스타그램')}</div>
+    <div class="cd-b"><div class="cd-acc">${esc(c.account || '인스타그램')}</div>
       <div class="cd-ti">${esc(t)}</div>
       ${c.caption ? `<div class="cd-cap">${esc(c.caption.slice(0, 220))}</div>` : ''}
       ${c.note ? `<div class="cd-note">💬 ${esc(c.note)}</div>` : ''}
@@ -395,7 +395,7 @@ async function loadAnalFresh(){
   anData = { targets: t.data || [], posts: (p.data || []).filter(x => !isThr(x)), threads: th.data || [], err: t.error || p.error };
   if (!anData.err) anCacheSet('anal_v1', { at: Date.now(), d: anData });
 }
-const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10)) * (pushHit(p.topic, p.caption, p.hook, p.kj_angle) ? 2 : 1);   // v71: 밀기 소재는 추천순에서 위로
+const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10));   // 11-26 밀기 가중치 제거
 function anPerf(p){
   const v = +p.views || 0, lk = +p.likes || 0, cm = +p.comments || 0, r = +p.ratio || 0;
   const er = v ? ((lk + cm) / v * 100) : 0;
@@ -415,9 +415,9 @@ function anCard(p, tg){
   const sel = anSel.has(p.id);
   return `<div class="an-card ${sel ? 'sel' : ''} ${p.status === 'starred' ? 'star' : ''}" data-anid="${esc(p.id)}">
     ${anPerf(p)}${kjReferenceMarkup(p.permalink, p.topic || p.handle, p.thumb, p.video)}
-    <div class="an-b">${pushBadge(pushHit(p.topic, p.caption, p.hook, p.kj_angle))}<div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
-      ${p.topic ? `<div class="an-ti">${esc(p.topic)}${anF(p) ? ` <span class="an-fmt">${esc(anF(p))}</span>` : ''}</div>` : ''}
-      <div class="an-acc">${[tg && tg.market, anSubj(p, tg), tg && tg.concept].filter(Boolean).map(esc).join(' · ')}</div>
+    <div class="an-b"><div class="an-acc">@${esc(p.handle)}${tg && tg.followers ? ' · ' + opsN(tg.followers) : ''}${p.posted_at ? ' · ' + (new Date(p.posted_at).getMonth() + 1) + '/' + new Date(p.posted_at).getDate() : ''}</div>
+      ${p.topic ? `<div class="an-ti">${esc(p.topic)}</div>` : ''}
+      <div class="an-acc">${[tg && tg.market, anSubj(p, tg)].filter(Boolean).map(esc).join(' · ')}</div>
       ${p.hook ? `<div class="an-hook">“${esc(p.hook)}”</div>` : `<div class="an-cap">${esc((p.caption || '').slice(0, 110))}</div>`}
       ${p.kj_angle ? `<div class="an-angle">💡 ${esc(p.kj_angle)}</div>` : ''}
       <div class="an-act">${p.status === 'mass' ? '<span class="an-st">🏭 양산 중</span>' : p.status === 'line' ? '<span class="an-st">✅ 생산 라인</span>' : `<label class="an-chk"><input type="checkbox" data-ansel ${sel ? 'checked' : ''}> 선택</label>
@@ -445,7 +445,7 @@ async function renderOpsAnal(body){
   const chip = (attr, v, cur, l) => `<button class="chip sm ${String(v) === String(cur) ? 'on' : ''}" ${attr}="${esc(String(v))}">${esc(l)}</button>`;
   body.innerHTML = `<div class="an-head"><b>분석 대상 ${targets.length}계정</b> · 수집 ${fetched}${errs ? ` · 오류 ${errs}` : ''} · 영상 ${posts.length} · 🔥 ${posts.filter(p => p.hot).length}
       <button class="chip sm" id="an-re">↻</button><button class="chip sm" id="an-addjump">＋ 계정 추가·삭제</button>${posts.some(p => p.hot && !p.ai_at) ? '<button class="chip sm" id="an-tag">🤖 AI 분류 지금</button>' : ''}</div>
-    ${!fetched ? `<div class="an-wait">🔌 <b>조회수 수집 연결 대기</b> — 인스타 공식 API(Facebook 로그인) 토큰이 연결되면 1시간마다 20계정씩 최근 게시물·조회수를 모읍니다. 계정 목록은 준비됐습니다(아래 '👥 계정').</div>` : ''}
+    
     <div class="an-tabs">${chip('data-antab', 'hot', anTab, '🔥 추천')}${chip('data-antab', 'all', anTab, '📊 전체 영상')}${chip('data-antab', 'thr', anTab, '🧵 쓰레드 ' + (anData.threads || []).filter(x => x.product_type === 'THREADS').length)}${chip('data-antab', 'targets', anTab, '👥 계정 ' + targets.length)}</div>
     <div id="an-body"></div>`;
   body.querySelector('#an-re').onclick = async () => { anData = null; renderOpsAnal(body); };
@@ -457,11 +457,11 @@ async function renderOpsAnal(body){
   if (anTab === 'targets') return renderAnTargets(ab, body);
   ab.innerHTML = `<div class="an-filters"><span>기간</span>${[[30, '30일'], [90, '90일'], [0, '전체']].map(([v, l]) => chip('data-andays', v, anDays, l)).join('')}
       <span>정렬</span>${chip('data-ansort', 'score', anSort, '추천순')}${chip('data-ansort', 'views', anSort, '조회수')}${chip('data-ansort', 'new', anSort, '최신')}
-      ${pushLive().length ? `<span>밀기</span><button class="chip sm ${anPush ? 'on' : ''}" id="an-pushf">🎯 ${pushLive().map(p => esc(p.name)).join('·')}만</button>` : ''}
+      
       <br><span>시장</span>${chip('data-anmk', '', anMk, '전체')}${AN_MK.map(v => chip('data-anmk', v, anMk, v)).join('')}
       <span>주제</span>${chip('data-ansj', '', anSj, '전체')}${AN_SJ.slice(0, 3).map(v => chip('data-ansj', v, anSj, v)).join('')}
-      <br><span>계정 유형</span>${chip('data-ancc', '', anCc, '전체')}${AN_CC.map(v => chip('data-ancc', v, anCc, v)).join('')}
-      ${fmts.length ? `<br><span>영상 틀</span>${chip('data-anfmt', '', anFmt, '전체')}${fmts.map(f => chip('data-anfmt', f, anFmt, f)).join('')}` : ''}</div>
+      
+      </div>
     ${anTab === 'hot' ? '<p class="an-note">🔥 = 그 계정 평소(최근 영상 중앙값) 대비 2.5배 이상이면서 2만 회 이상, 또는 30만 회 이상. 추천순 = 배수 × 조회수 규모.</p>' : ''}
     <div class="an-grid">${list.slice(0, 240).map(p => anCard(p, T.get(p.handle))).join('') || '<p class="lede">아직 없습니다.</p>'}</div>
     <div class="an-bar ${anSel.size ? '' : 'hide'}" id="an-bar"><b>${anSel.size}개 선택</b><button class="btn sm" id="an-go">🏭 대본 양산으로</button><button class="chip sm" id="an-clr">선택 해제</button></div>`;
@@ -567,20 +567,20 @@ function renderAnTargets(ab, body){
   const n = anTSel.size;
   const bad = ts.filter(t => t.fetch_error && anErr(t.fetch_error).s === '읽기 불가');
   const recs = anData.targets.filter(anIsRec).sort((a, b) => (b.followers || 0) - (a.followers || 0));
-  const recHtml = recs.length ? `<div class="an-rec"><div class="an-rec-h">⭐ 추천 계정 <span>${recs.length}</span><small>성과·꾸준함·상승세·관련성으로 매주 월요일에 고릅니다. <b>팔로업</b>을 누르면 바로 분석 대상에 들어가 다음 수집부터 영상이 모이고, <b>빼기</b>를 누르면 다시 추천하지 않습니다.</small></div>${recs.map(t => `<div class="an-rec-c"><div class="an-rec-t"><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener"><b>@${esc(t.handle)}</b></a> ${esc(t.name || '')} <span class="rv-sub">${[t.market, t.subject, t.concept].filter(Boolean).map(esc).join(' · ')}${t.followers ? ' · 팔로워 ' + opsN(t.followers) : ''}${t.median_views ? ' · 평소 조회 ' + opsN(t.median_views) : ''}</span>${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</div><div class="an-rec-b"><button class="btn sm" data-anrecok="${esc(t.handle)}">팔로업</button><button class="chip sm" data-anrecno="${esc(t.handle)}">빼기</button></div></div>`).join('')}</div>` : '';
+  const recHtml = recs.length ? `<div class="an-rec"><div class="an-rec-h">⭐ 추천 계정 <span>${recs.length}</span><small>성과·꾸준함·상승세·관련성으로 매주 월요일에 고릅니다. <b>팔로업</b>을 누르면 바로 분석 대상에 들어가 다음 수집부터 영상이 모이고, <b>빼기</b>를 누르면 다시 추천하지 않습니다.</small></div>${recs.map(t => `<div class="an-rec-c"><div class="an-rec-t"><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener"><b>@${esc(t.handle)}</b></a> ${esc(t.name || '')} <span class="rv-sub">${[t.market, t.subject].filter(Boolean).map(esc).join(' · ')}${t.followers ? ' · 팔로워 ' + opsN(t.followers) : ''}${t.median_views ? ' · 평소 조회 ' + opsN(t.median_views) : ''}</span>${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</div><div class="an-rec-b"><button class="btn sm" data-anrecok="${esc(t.handle)}">팔로업</button><button class="chip sm" data-anrecno="${esc(t.handle)}">빼기</button></div></div>`).join('')}</div>` : '';
   ab.innerHTML = recHtml + `<div class="an-filters"><input id="an-h" placeholder="@계정 추가 — 여러 개는 쉼표·줄바꿈, 인스타 링크도 됩니다" style="min-width:320px;flex:1"><input id="an-hm" placeholder="메모(선택)" style="max-width:200px"><button class="btn sm" id="an-hadd">＋ 추가</button></div>
     <p class="an-note">비즈니스·크리에이터 계정만 조회수 수집이 됩니다. <b>사용</b>을 끄면 수집에서만 빠지고 모아 둔 영상은 남습니다. <b>삭제</b>는 계정과 그 계정 영상까지 지웁니다. 제목 줄(팔로워·평소 조회 등)을 누르면 정렬됩니다.${bad.length ? ` <b style="color:var(--bad)">읽기 불가 ${bad.length}개</b> — 아이디가 바뀌었거나 개인 계정이라 조회수를 영영 못 모읍니다. 아래 버튼으로 한 번에 골라 지우세요.` : ''}</p>
     <div class="an-filters"><span>시장</span>${tchip('data-antmk', '', anTMk, '전체')}${AN_MK.map(v => tchip('data-antmk', v, anTMk, v + ' ' + cnt('market', v))).join('')}
       <span>주제</span>${tchip('data-antsj', '', anTSj, '전체')}${AN_SJ.map(v => tchip('data-antsj', v, anTSj, v + ' ' + cnt('subject', v))).join('')}
-      <br><span>계정 유형</span>${tchip('data-antcc', '', anTCc, '전체')}${AN_CC.map(v => tchip('data-antcc', v, anTCc, v + ' ' + cnt('concept', v))).join('')}
+      
       <label class="an-chk"><input type="checkbox" id="an-tarc" ${anTArc ? 'checked' : ''}> 보관(사용 끈 계정)도 보기</label></div>
     <div class="an-filters"><label class="an-chk"><input type="checkbox" id="an-tall" ${n && n === ts.length ? 'checked' : ''}> 전체 선택</label>
       ${bad.length ? `<button class="chip sm" id="an-tbad">읽기 불가 ${bad.length}개 선택</button>` : ''}
       ${n ? `<button class="btn sm danger" id="an-tdel">선택한 ${n}개 삭제</button><button class="chip sm" id="an-tclr">선택 해제</button>` : '<span class="rv-sub">왼쪽 칸을 체크하면 여러 개를 한 번에 지울 수 있습니다</span>'}</div>
-    <div class="tbl-wrap"><table class="an-tbl"><tr><th></th>${th('handle', '계정')}<th>시장</th><th>계정 유형</th><th>주제</th>${th('followers', '팔로워')}${th('views', '평소 조회')}${th('hot', '🔥')}${th('fetch', '수집')}<th>사용</th><th></th></tr>
+    <div class="tbl-wrap"><table class="an-tbl"><tr><th></th>${th('handle', '계정')}<th>시장</th><th>주제</th>${th('followers', '팔로워')}${th('views', '평소 조회')}${th('hot', '🔥')}${th('fetch', '수집')}<th>사용</th><th></th></tr>
     ${ts.map(t => `<tr class="${t.active ? '' : 'off'}"><td><input type="checkbox" data-antsel="${esc(t.handle)}" ${anTSel.has(t.handle) ? 'checked' : ''}></td>
       <td><a href="https://www.instagram.com/${esc(t.handle)}/" target="_blank" rel="noopener">@${esc(t.handle)}</a>${t.name ? ' ' + esc(t.name) : ''}${t.lang === 'en' ? ' 🌐' : ''}${t.info ? `<div class="an-info">${esc(t.info)}</div>` : ''}</td>
-      ${[['market', AN_MK], ['concept', AN_CC], ['subject', AN_SJ]].map(([k, opts]) => `<td><select class="an-sel" data-anset="${k}" data-h="${esc(t.handle)}"><option value="">-</option>${opts.map(o => `<option ${t[k] === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></td>`).join('')}
+      ${[['market', AN_MK], ['subject', AN_SJ]].map(([k, opts]) => `<td><select class="an-sel" data-anset="${k}" data-h="${esc(t.handle)}"><option value="">-</option>${opts.map(o => `<option ${t[k] === o ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></td>`).join('')}
       <td>${t.followers ? opsN(t.followers) : (t.influence ? t.influence + '만*' : '-')}</td><td>${t.median_views ? opsN(t.median_views) : '-'}</td><td>${t.hot_n || ''}</td>
       <td>${t.fetch_error ? `<span title="${esc(anErr(t.fetch_error).t)}" style="color:var(--bad)">${anErr(t.fetch_error).s}</span>` : t.last_fetch ? (new Date(t.last_fetch).getMonth() + 1) + '/' + new Date(t.last_fetch).getDate() : '대기'}</td>
       <td><input type="checkbox" data-anact="${esc(t.handle)}" ${t.active ? 'checked' : ''}></td>
