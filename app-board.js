@@ -10,7 +10,7 @@ async function loadPush(force){
   const { data } = await sb.from('kj_push_topics').select('*').order('active', { ascending: false }).order('created_at', { ascending: false });
   PUSH = data || []; pushLoaded = true;
 }
-const pushLive = () => { const t = new Date(Date.now() + 9 * 36e5).toISOString().slice(0, 10); return PUSH.filter(p => p.active && (!p.until || String(p.until) >= t)); };
+const pushLive = () => [];   // 11-26 대표: 밀기 기능 사용 안 함 (원래 코드는 app-board.js.bak_1126)
 const pushWords = p => [p.name].concat(p.keywords || []).map(w => String(w || '').trim().toLowerCase()).filter(w => w.length > 1);
 function pushHit(...texts){
   const s = texts.filter(Boolean).join(' ').toLowerCase();
