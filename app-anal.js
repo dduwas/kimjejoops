@@ -378,7 +378,7 @@ async function anCacheGet(k){ try { const d = await anIdb(); return await new Pr
 async function anCacheSet(k, v){ try { const d = await anIdb(); d.transaction('kv', 'readwrite').objectStore('kv').put(v, k); } catch (e) {} }
 let anBg = null, anRerender = null;
 async function loadAnal(){
-  const c = await anCacheGet('anal_v1');
+  const c = await anCacheGet('anal_v2');
   if (c && c.d && Date.now() - c.at < 7 * 864e5) {
     anData = c.d;
     if (!anBg) anBg = loadAnalFresh().then(() => { anBg = null; if (anRerender) { try { anRerender(); } catch (e) {} } }).catch(() => { anBg = null; });
@@ -387,13 +387,14 @@ async function loadAnal(){
   await loadAnalFresh();
 }
 async function loadAnalFresh(){
-  const [t, p, th] = await Promise.all([
+  const [t, p, th, ca] = await Promise.all([
     sb.from('kj_targets').select('*').order('influence', { ascending: false, nullsFirst: false }),
     sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,subject,status,content_id,product_type,thumb,video,created_at,ai_at,decided_at').order('views', { ascending: false, nullsFirst: false }).limit(1500),
-    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,video,created_at,ai_at,decided_at').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900)]);
+    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,status,content_id,product_type,thumb,video,created_at,ai_at,decided_at').like('product_type', 'THREADS%').order('posted_at', { ascending: false, nullsFirst: false }).limit(900),
+    sb.from('kj_tposts').select('id,handle,caption,permalink,posted_at,views,likes,comments,ratio,hot,topic,hook,kj_angle,fmt_guess,subject,status,content_id,product_type,thumb,video,created_at,ai_at,decided_at').eq('media_type', 'CAROUSEL_ALBUM').gte('posted_at', new Date(Date.now() - 90 * 864e5).toISOString()).order('posted_at', { ascending: false }).limit(2500)]);
   const isThr = x => /^THREADS/.test(x.product_type || '');
-  anData = { targets: t.data || [], posts: (p.data || []).filter(x => !isThr(x)), threads: th.data || [], err: t.error || p.error };
-  if (!anData.err) anCacheSet('anal_v1', { at: Date.now(), d: anData });
+  anData = { targets: t.data || [], posts: (p.data || []).filter(x => !isThr(x)), threads: th.data || [], caro: (ca && ca.data) || [], err: t.error || p.error };
+  if (!anData.err) anCacheSet('anal_v2', { at: Date.now(), d: anData });
 }
 const anScore = p => (p.ratio || 1) * Math.log10(Math.max(10, p.views || 10));   // 11-26 밀기 가중치 제거
 function anPerf(p){
@@ -446,7 +447,7 @@ async function renderOpsAnal(body){
   body.innerHTML = `<div class="an-head"><b>분석 대상 ${targets.length}계정</b> · 수집 ${fetched}${errs ? ` · 오류 ${errs}` : ''} · 영상 ${posts.length} · 🔥 ${posts.filter(p => p.hot).length}
       <button class="chip sm" id="an-re">↻</button><button class="chip sm" id="an-addjump">＋ 계정 추가·삭제</button>${posts.some(p => p.hot && !p.ai_at) ? '<button class="chip sm" id="an-tag">🤖 AI 분류 지금</button>' : ''}</div>
     
-    <div class="an-tabs">${chip('data-antab', 'hot', anTab, '🔥 추천')}${chip('data-antab', 'all', anTab, '📊 전체 영상')}${chip('data-antab', 'targets', anTab, '👥 계정 ' + targets.length)}</div>
+    <div class="an-tabs">${chip('data-antab', 'hot', anTab, '🔥 추천')}${chip('data-antab', 'all', anTab, '📊 전체 영상')}${chip('data-antab', 'caro', anTab, '🖼 캐러셀')}${chip('data-antab', 'targets', anTab, '👥 계정 ' + targets.length)}</div>
     <div id="an-body"></div>`;
   body.querySelector('#an-re').onclick = async () => { anData = null; renderOpsAnal(body); };
   body.querySelector('#an-addjump').onclick = () => { anTab = 'targets'; renderOpsAnal(body); setTimeout(() => { const i = body.querySelector('#an-h'); if (i) i.focus(); }, 60); };
@@ -455,6 +456,7 @@ async function renderOpsAnal(body){
   const ab = body.querySelector('#an-body');
   if (anTab === 'thr') anTab = 'hot';   // 11-26 대표: 쓰레드 탭 없앰
   if (anTab === 'targets') return renderAnTargets(ab, body);
+  if (anTab === 'caro') return renderAnCaro(ab, body, T);
   ab.innerHTML = `<div class="an-filters"><span>기간</span>${[[30, '30일'], [90, '90일'], [0, '전체']].map(([v, l]) => chip('data-andays', v, anDays, l)).join('')}
       <span>정렬</span>${chip('data-ansort', 'score', anSort, '추천순')}${chip('data-ansort', 'views', anSort, '조회수')}${chip('data-ansort', 'new', anSort, '최신')}
       
@@ -489,6 +491,55 @@ async function renderOpsAnal(body){
     await upd(p, { status: 'line', content_id: data.id }); await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); re(); });
   const go = ab.querySelector('#an-go'); if (go) go.onclick = () => kjMassModal([...anSel].map(id => { const p = posts.find(x => x.id === id); return { post_id: id, label: '@' + (p ? p.handle + ' ' + (p.topic || '') : id) }; }), () => { anSel.clear(); });
   const clr = ab.querySelector('#an-clr'); if (clr) clr.onclick = () => { anSel.clear(); re(); };
+}
+
+/* 11-26 대표: 🖼 캐러셀 신설 — 분석 대상 계정의 캐러셀(여러 장 게시물). 캐러셀은 조회수가 공개되지 않아
+   (좋아요+댓글)을 그 계정 캐러셀 중앙값과 비교한 '평소의 N배'로 고른다. 저장·공유는 남의 게시물이라 볼 수 없다. */
+let caDays = 30, caSort = 'ratio';
+function renderAnCaro(ab, body, T){
+  const all = (anData.caro || []).filter(p => p.status !== 'dropped');
+  const eng = p => (+p.likes || 0) + (+p.comments || 0);
+  const byH = {};
+  all.forEach(p => { (byH[p.handle] = byH[p.handle] || []).push(eng(p)); });
+  const med = {};
+  Object.keys(byH).forEach(h => { const v = byH[h].slice().sort((x, y) => x - y); med[h] = v.length ? v[Math.floor(v.length / 2)] : 0; });
+  const rt = p => med[p.handle] ? Math.round(eng(p) / med[p.handle] * 10) / 10 : 0;
+  const since = Date.now() - caDays * 864e5;
+  let list = all.filter(p => p.posted_at && new Date(p.posted_at).getTime() >= since);
+  list = list.filter(p => { const t = T.get(p.handle) || {}; return t.active !== false && t.subject !== '제외'; });
+  list.sort(caSort === 'likes' ? (x, y) => eng(y) - eng(x) : caSort === 'new' ? (x, y) => String(y.posted_at).localeCompare(String(x.posted_at)) : (x, y) => (rt(y) * Math.log10(Math.max(10, eng(y)))) - (rt(x) * Math.log10(Math.max(10, eng(x)))));
+  const chip = (attr, v, cur, l) => `<button class="chip sm ${String(v) === String(cur) ? 'on' : ''}" ${attr}="${esc(String(v))}">${esc(l)}</button>`;
+  const card = p => { const r = rt(p), e = eng(p), tg = T.get(p.handle) || {}, days = Math.max(0, Math.floor((Date.now() - new Date(p.posted_at)) / 864e5));
+    return `<div class="an-card ${p.status === 'starred' ? 'star' : ''}" data-caid="${esc(p.id)}">
+      <div class="an-perf" style="margin:0 0 6px;padding:8px 10px;border-radius:10px;background:${r >= 3 ? '#fff4e6' : r >= 1.5 ? '#fff9db' : '#f1f3f5'};line-height:1.5">
+        <span style="font-size:18px;font-weight:800">♥ ${opsN(+p.likes || 0)}</span> <span style="font-size:14px;font-weight:700">💬 ${opsN(+p.comments || 0)}</span>
+        ${r ? ` <span style="font-size:13px;font-weight:700;color:${r >= 3 ? '#d9480f' : r >= 1.5 ? '#e67700' : '#868e96'}">${r >= 3 ? '🔥 ' : ''}평소의 ${r}배</span>` : ''}
+        <div style="font-size:12px;color:#495057">${days === 0 ? '오늘 게시' : days + '일 전'}${e && p.comments ? ' · 댓글 비중 ' + Math.round(p.comments / e * 100) + '%' : ''}</div></div>
+      ${kjReferenceMarkup(p.permalink, p.topic || p.handle, p.thumb, null)}
+      <div class="an-b"><div class="an-acc">@${esc(p.handle)}${tg.followers ? ' · ' + opsN(tg.followers) : ''}</div>
+        ${p.topic ? `<div class="an-ti">${esc(p.topic)}</div>` : ''}
+        <div class="an-cap">${esc((p.caption || '').slice(0, 140))}</div>
+        <div class="an-act">${p.status === 'line' ? '<span class="an-st">✅ 생산 라인</span>' : `<button class="chip sm" data-castar>${p.status === 'starred' ? '★' : '☆'}</button>
+          <button class="chip sm" data-caline="기타" title="롱폼/퀵릴스/캐러셀 라인 아이디어로">→캐러셀 라인</button><button class="chip sm" data-caline="솔">→솔루션즈</button><button class="chip sm" data-caline="웰">→웰니스</button>
+          <button class="chip sm cd-del" data-cadrop>드랍</button>`}</div></div></div>`; };
+  ab.innerHTML = `<div class="an-filters"><span>기간</span>${[[7, '7일'], [30, '30일'], [90, '90일']].map(([v, l]) => chip('data-cadays', v, caDays, l)).join('')}
+      <span>정렬</span>${chip('data-casort', 'ratio', caSort, '추천순')}${chip('data-casort', 'likes', caSort, '반응 많은 순')}${chip('data-casort', 'new', caSort, '최신')}</div>
+    <p class="an-note">분석 대상 계정의 캐러셀 ${list.length}개. 캐러셀은 조회수가 공개되지 않아 <b>좋아요+댓글</b>을 그 계정 캐러셀 평소값과 비교합니다. 추천순 = 배수 × 반응 규모. 댓글 비중이 높으면 질문을 부르는 글입니다.</p>
+    <div class="an-grid">${list.slice(0, 240).map(card).join('') || '<p class="lede">이 기간에 모은 캐러셀이 없습니다.</p>'}</div>`;
+  const re = () => renderAnCaro(ab, body, T);
+  ab.querySelectorAll('[data-cadays]').forEach(b => b.onclick = () => { caDays = +b.dataset.cadays; re(); });
+  ab.querySelectorAll('[data-casort]').forEach(b => b.onclick = () => { caSort = b.dataset.casort; re(); });
+  const P = el => all.find(x => x.id === el.closest('[data-caid]').dataset.caid);
+  const upd = async (p, patch) => { const { data, error } = await sb.from('kj_tposts').update({ ...patch, decided_at: new Date().toISOString() }).eq('id', p.id).select('id'); if (error || !data?.length) { uiAlert(error ? cleanErr(error.message) : '저장 안 됨'); return false; } Object.assign(p, patch); return true; };
+  ab.querySelectorAll('[data-castar]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: p.status === 'starred' ? 'new' : 'starred' })) re(); });
+  ab.querySelectorAll('[data-cadrop]').forEach(b => b.onclick = async () => { const p = P(b); if (await upd(p, { status: 'dropped' })) re(); });
+  ab.querySelectorAll('[data-caline]').forEach(b => b.onclick = async () => {
+    const p = P(b); const team = b.dataset.caline; if (!TEAM_LABEL[team] || b.disabled) return; b.disabled = true;
+    const title = (p.topic ? p.topic + ' — ' : '') + ((p.caption || '').split('\n').find(x => x.trim()) || '@' + p.handle);
+    const { data, error } = await sb.from('contents').insert({ title: title.replace(/\s+/g, ' ').slice(0, 60), stage: IDEA, team_tag: team, reference_url: p.permalink, ref_thumb: p.thumb || null,
+      next_action: `🖼 분석 대상 캐러셀(@${p.handle}, ♥${opsN(+p.likes || 0)} 💬${opsN(+p.comments || 0)}, 평소의 ${rt(p)}배)에서 넘어옴`.slice(0, 500) }).select('id').single();
+    if (error) { b.disabled = false; return uiAlert(cleanErr(error.message)); }
+    await upd(p, { status: 'line', content_id: data.id }); await refresh(); poToast(`생산 라인(${TEAM_LABEL[team]}) 아이디어로 넘겼습니다.`); re(); });
 }
 /* v87 🧵 쓰레드 — 분석 대상 계정이 같은 아이디로 쓰는 쓰레드를 모아 벤치마크 재료로 쓴다.
    AI 컴퓨터의 수집기(D:\AI\Automations\kj_threads)가 쓰레드 공개 프로필을 읽어 kj_tposts 에 넣는다.
