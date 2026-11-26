@@ -399,7 +399,7 @@ function renderInsight(){
   stale.forEach(c => { const k = (c.owner_ids || []).length ? ownerNames([c.owner_ids[0]]) : '담당 미정'; (groups[k] = groups[k] || []).push(c); });
   const srow = c => `<tr data-insrow="${c.id}" title="우클릭: 게시완료·단계 이동·삭제"><td class="ttl" data-insopen="${c.id}" title="${esc(c.title)}">${esc(c.title)}</td><td>${esc(c.stage)}</td>
     <td class="num">${Math.floor((now - new Date(c.updated_at)) / DAY)}일</td>
-    <td class="u-nowrap"><button class="mini-b" data-inskeep="${c.id}" title="계속 진행 — 오늘 날짜로 갱신">계속</button><input type="date" class="mini-b" data-insdate="${c.id}" title="게시예정일 지정" style="padding:1px 3px"><button class="mini-b" data-insdrop="${c.id}">드랍</button></td></tr>`;
+    <td class="u-nowrap"><button class="mini-b" data-inskeep="${c.id}" title="계속 진행 — 오늘 날짜로 갱신">계속</button><input type="date" class="mini-b" data-insdate="${c.id}" title="게시예정일 지정" style="padding:1px 3px"><button class="mini-b" data-insdrop="${c.id}">드랍</button>${isAdmin() ? `<button class="mini-b" data-insdel="${c.id}" title="카드를 완전히 지웁니다(되돌릴 수 없음)" style="color:#c92a2a">삭제</button>` : ''}</td></tr>`;
   const clean = `<details data-ins="stale" ${open('stale') ? 'open' : ''}><summary>🧹 ${TEAM_LABEL[curLine]} 라인 정리 필요 — 14일 넘게 안 움직인 카드 ${stale.length}개</summary>
     ${stale.length ? Object.entries(groups).sort((a, b) => b[1].length - a[1].length).map(([k, list]) => `<div class="owner">${esc(k)} · ${list.length}개</div>
       <table>${list.slice(0, 15).map(srow).join('')}</table>${list.length > 15 ? `<p class="note">… 외 ${list.length - 15}개</p>` : ''}`).join('')
@@ -417,6 +417,13 @@ function renderInsight(){
   $$('#kj-ins [data-insdate]').forEach(i => i.onchange = () => i.value && touch(i.dataset.insdate, { publish_date: i.value }));
   $$('#kj-ins [data-insdrop]').forEach(b => b.onclick = () => {
     dropNow(b.dataset.insdrop);
+  });
+  $$('#kj-ins [data-insdel]').forEach(b => b.onclick = async () => {   // 11-26 대표: 정리 필요에서 바로 삭제
+    const c = cards.find(x => x.id === b.dataset.insdel); if (!c) return;
+    if (!await uiConfirm(`"${c.title}" 카드를 완전히 삭제합니다. 되돌릴 수 없습니다.\n보관만 원하시면 '드랍'을 쓰세요.`, { ok: '완전히 삭제', danger: true })) return;
+    const { error } = await sb.from('contents').delete().eq('id', c.id);
+    if (error) return uiAlert(cleanErr(error.message));
+    await refresh(); poToast('삭제했습니다.', 2500);
   });
   $$('#kj-ins [data-insrep]').forEach(b => b.onclick = async () => {
     const c = cards.find(x => x.id === b.dataset.insrep); if (!c) return;
